@@ -1257,7 +1257,7 @@ table! {
         advance_filters -> Nullable<Jsonb>,
         group_advance_filters -> Nullable<Jsonb>,
         filter_groups -> Nullable<Jsonb>,
-    }
+}
 }
 
 table! {
@@ -2855,7 +2855,7 @@ table! {
         emotions -> Nullable<Jsonb>,
         time -> Nullable<Text>,
         hypertable_timestamp -> Nullable<Text>,
-    }
+}
 }
 
 table! {
@@ -3027,5 +3027,96 @@ table! {
         phone_country_code -> Nullable<Text>,
         phone_extension -> Nullable<Text>,
         screen_name -> Nullable<Text>,
+    }
+}
+
+table! {
+    smtp_headers(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
+        header_key -> Nullable<Text>,
+        header_value -> Nullable<Text>,
+        smtp_payload_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    school_admins(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
+        school_id -> Nullable<Text>,
+        school_admin_id -> Nullable<Text>,
+        department_id -> Nullable<Text>,
+        district_id -> Nullable<Text>,
+    }
+}
+
+table! {
+    district_admins(id) {
+        tombstone -> Nullable<Int4>,
+        status -> Nullable<Text>,
+        previous_status -> Nullable<Text>,
+        version -> Nullable<Int4>,
+        created_date -> Nullable<Text>,
+        created_time -> Nullable<Text>,
+        updated_date -> Nullable<Text>,
+        updated_time -> Nullable<Text>,
+        organization_id -> Nullable<Text>,
+        created_by -> Nullable<Text>,
+        updated_by -> Nullable<Text>,
+        deleted_by -> Nullable<Text>,
+        requested_by -> Nullable<Text>,
+        timestamp -> Nullable<Timestamp>,
+        tags -> Nullable<Array<Text>>,
+        categories -> Nullable<Array<Text>>,
+        code -> Nullable<Text>,
+        id -> Nullable<Text>,
+        sensitivity_level -> Nullable<Int4>,
+        sync_status -> Nullable<Text>,
+        is_batch -> Nullable<Bool>,
+        image_url -> Nullable<Text>,
+        district_id -> Nullable<Text>,
+        district_admin_id -> Nullable<Text>,
+        department_id -> Nullable<Text>,
     }
 }

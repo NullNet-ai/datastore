@@ -8,7 +8,7 @@ use crate::{system_fields, system_foreign_keys, system_indexes};
 
 /// District admins table for managing district admin information
 pub struct DistrictAdminsTable;
-
+// TODO: able to add condition when creating a unique compound indexes
 define_table_schema! {
     hypertable: false,
     fields: {
@@ -17,7 +17,7 @@ define_table_schema! {
 
         // District admins fields
         district_id: nullable(text()),
-        district_admin_id: nullable(integer()), default: "0",
+        district_admin_id: nullable(text()),
         department_id: nullable(text()),
     },
     indexes: {
@@ -39,6 +39,11 @@ define_table_schema! {
             columns: ["department_id"],
             unique: false,
             type: "btree"
+        },
+        idx_district_admins_district_id_district_admin_id: {
+            columns: ["district_id", "district_admin_id"],
+            unique: true,
+            type: "btree",
         },
     },
     foreign_keys: {

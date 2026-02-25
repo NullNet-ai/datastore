@@ -2842,6 +2842,94 @@ message ReportChildVictims {
   optional string screen_name = 36;
 }
 
+// SmtpHeaders entity definition
+message SmtpHeaders {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string image_url = 22;
+  optional string header_key = 23;
+  optional string header_value = 24;
+  optional string smtp_payload_id = 25;
+}
+
+// SchoolAdmins entity definition
+message SchoolAdmins {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string image_url = 22;
+  optional string school_id = 23;
+  optional string school_admin_id = 24;
+  optional string department_id = 25;
+  optional string district_id = 26;
+}
+
+// DistrictAdmins entity definition
+message DistrictAdmins {
+  optional int32 tombstone = 1;
+  optional string status = 2;
+  optional string previous_status = 3;
+  optional int32 version = 4;
+  optional string created_date = 5;
+  optional string created_time = 6;
+  optional string updated_date = 7;
+  optional string updated_time = 8;
+  optional string organization_id = 9;
+  optional string created_by = 10;
+  optional string updated_by = 11;
+  optional string deleted_by = 12;
+  optional string requested_by = 13;
+  optional string timestamp = 14;
+  repeated string tags = 15;
+  repeated string categories = 16;
+  optional string code = 17;
+  optional string id = 18;
+  optional int32 sensitivity_level = 19;
+  optional string sync_status = 20;
+  optional bool is_batch = 21;
+  optional string image_url = 22;
+  optional string district_id = 23;
+  optional string district_admin_id = 24;
+  optional string department_id = 25;
+}
+
 // Create UserRoles request
 message CreateUserRolesRequest {
   UserRoles user_roles = 1;
@@ -13291,6 +13379,393 @@ message UpsertReportChildVictimsResponse {
   repeated ReportChildVictims data = 4;
 }
 
+// Create SmtpHeaders request
+message CreateSmtpHeadersRequest {
+  SmtpHeaders smtp_headers = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create SmtpHeaders response
+message CreateSmtpHeadersResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  SmtpHeaders data = 4;
+}
+
+// Get SmtpHeaders request
+message GetSmtpHeadersRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get SmtpHeaders response
+message GetSmtpHeadersResponse {
+  bool success = 1;
+  string message = 2;
+  SmtpHeaders data = 3;
+}
+
+// Update SmtpHeaders request
+message UpdateSmtpHeadersRequest {
+  SmtpHeaders smtp_header = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update SmtpHeaders response
+message UpdateSmtpHeadersResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  SmtpHeaders data = 4;
+}
+
+// BatchUpdate SmtpHeaders request
+message BatchUpdateSmtpHeadersRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated FilterCriteria advance_filters = 1;
+  SmtpHeaders updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate SmtpHeaders response
+message BatchUpdateSmtpHeadersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SmtpHeaders data = 4;
+}
+
+// BatchDelete SmtpHeaders request
+message BatchDeleteSmtpHeadersRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated FilterCriteria advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete SmtpHeaders response
+message BatchDeleteSmtpHeadersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  SmtpHeaders data = 4;
+}
+
+// Delete SmtpHeaders request
+message DeleteSmtpHeadersRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete SmtpHeaders response
+message DeleteSmtpHeadersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  SmtpHeaders data = 4;
+}
+
+// BatchInsert SmtpHeaders request
+message BatchInsertSmtpHeadersRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated SmtpHeaders smtp_headers = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert SmtpHeaders response
+message BatchInsertSmtpHeadersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SmtpHeaders data = 4;
+}
+
+// Upsert SmtpHeaders request
+message UpsertSmtpHeadersRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    SmtpHeaders data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert SmtpHeaders response
+message UpsertSmtpHeadersResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SmtpHeaders data = 4;
+}
+
+// Create SchoolAdmins request
+message CreateSchoolAdminsRequest {
+  SchoolAdmins school_admins = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create SchoolAdmins response
+message CreateSchoolAdminsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  SchoolAdmins data = 4;
+}
+
+// Get SchoolAdmins request
+message GetSchoolAdminsRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get SchoolAdmins response
+message GetSchoolAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  SchoolAdmins data = 3;
+}
+
+// Update SchoolAdmins request
+message UpdateSchoolAdminsRequest {
+  SchoolAdmins school_admin = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update SchoolAdmins response
+message UpdateSchoolAdminsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  SchoolAdmins data = 4;
+}
+
+// BatchUpdate SchoolAdmins request
+message BatchUpdateSchoolAdminsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated FilterCriteria advance_filters = 1;
+  SchoolAdmins updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate SchoolAdmins response
+message BatchUpdateSchoolAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SchoolAdmins data = 4;
+}
+
+// BatchDelete SchoolAdmins request
+message BatchDeleteSchoolAdminsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated FilterCriteria advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete SchoolAdmins response
+message BatchDeleteSchoolAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  SchoolAdmins data = 4;
+}
+
+// Delete SchoolAdmins request
+message DeleteSchoolAdminsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete SchoolAdmins response
+message DeleteSchoolAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  SchoolAdmins data = 4;
+}
+
+// BatchInsert SchoolAdmins request
+message BatchInsertSchoolAdminsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated SchoolAdmins school_admins = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert SchoolAdmins response
+message BatchInsertSchoolAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SchoolAdmins data = 4;
+}
+
+// Upsert SchoolAdmins request
+message UpsertSchoolAdminsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    SchoolAdmins data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert SchoolAdmins response
+message UpsertSchoolAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated SchoolAdmins data = 4;
+}
+
+// Create DistrictAdmins request
+message CreateDistrictAdminsRequest {
+  DistrictAdmins district_admins = 1;
+  CreateParams params = 2;
+  CreateQuery query = 3;
+}
+
+// Create DistrictAdmins response
+message CreateDistrictAdminsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DistrictAdmins data = 4;
+}
+
+// Get DistrictAdmins request
+message GetDistrictAdminsRequest {
+  GetParams params = 1;
+  GetQuery query = 2;
+}
+
+// Get DistrictAdmins response
+message GetDistrictAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  DistrictAdmins data = 3;
+}
+
+// Update DistrictAdmins request
+message UpdateDistrictAdminsRequest {
+  DistrictAdmins district_admin = 1;
+  UpdateParams params = 2;
+  UpdateQuery query = 3;
+}
+
+// Update DistrictAdmins response
+message UpdateDistrictAdminsResponse {
+  bool success = 1;
+  int32 count = 2;
+  string message = 3;
+  DistrictAdmins data = 4;
+}
+
+// BatchUpdate DistrictAdmins request
+message BatchUpdateDistrictAdminsRequest {
+  BatchUpdateParams params = 1;
+  message BatchUpdateBody {
+    repeated FilterCriteria advance_filters = 1;
+  DistrictAdmins updates = 2;
+  }
+  BatchUpdateBody body = 2;
+}
+
+// BatchUpdate DistrictAdmins response
+message BatchUpdateDistrictAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DistrictAdmins data = 4;
+}
+
+// BatchDelete DistrictAdmins request
+message BatchDeleteDistrictAdminsRequest {
+  BatchDeleteParams params = 1;
+  message BatchDeleteBody {
+    repeated FilterCriteria advance_filters = 1;
+  }
+  BatchDeleteBody body = 2;
+}
+
+// BatchDelete DistrictAdmins response
+message BatchDeleteDistrictAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DistrictAdmins data = 4;
+}
+
+// Delete DistrictAdmins request
+message DeleteDistrictAdminsRequest {
+  DeleteParams params = 1;
+  DeleteQuery query = 2;
+}
+
+// Delete DistrictAdmins response
+message DeleteDistrictAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  DistrictAdmins data = 4;
+}
+
+// BatchInsert DistrictAdmins request
+message BatchInsertDistrictAdminsRequest {
+  BatchInsertParams params = 1;
+  BatchInsertQuery query = 2;
+  message BatchBody {
+    repeated DistrictAdmins district_admins = 1;
+  }
+  BatchBody body = 3;
+}
+
+// BatchInsert DistrictAdmins response
+message BatchInsertDistrictAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DistrictAdmins data = 4;
+}
+
+// Upsert DistrictAdmins request
+message UpsertDistrictAdminsRequest {
+  UpsertParams params = 1;
+  UpsertQuery query = 2;
+  message UpsertBody {
+    repeated string conflict_columns = 1;
+    DistrictAdmins data = 2;
+  }
+  UpsertBody body = 3;
+}
+
+// Upsert DistrictAdmins response
+message UpsertDistrictAdminsResponse {
+  bool success = 1;
+  string message = 2;
+  int32 count = 3;
+  repeated DistrictAdmins data = 4;
+}
+
 // Enum for aggregation types
 enum AggregationType {
   SUM = 0;
@@ -15355,6 +15830,78 @@ service StoreService {
 
   // Upsert a ReportChildVictims (create if not exists, update if exists)
   rpc UpsertReportChildVictims(UpsertReportChildVictimsRequest) returns (UpsertReportChildVictimsResponse);
+
+  // Create a new SmtpHeaders
+  rpc CreateSmtpHeaders(CreateSmtpHeadersRequest) returns (CreateSmtpHeadersResponse);
+
+  // Get a SmtpHeaders by ID
+  rpc GetSmtpHeaders(GetSmtpHeadersRequest) returns (GetSmtpHeadersResponse);
+
+  // Update an existing SmtpHeaders
+  rpc UpdateSmtpHeaders(UpdateSmtpHeadersRequest) returns (UpdateSmtpHeadersResponse);
+
+  // Delete a SmtpHeaders by ID
+  rpc DeleteSmtpHeaders(DeleteSmtpHeadersRequest) returns (DeleteSmtpHeadersResponse);
+
+  // Batch insert multiple SmtpHeaderss
+  rpc BatchInsertSmtpHeaders(BatchInsertSmtpHeadersRequest) returns (BatchInsertSmtpHeadersResponse);
+
+  // Batch update multiple SmtpHeaderss based on filters
+  rpc BatchUpdateSmtpHeaders(BatchUpdateSmtpHeadersRequest) returns (BatchUpdateSmtpHeadersResponse);
+
+  // Batch delete multiple SmtpHeaderss based on filters
+  rpc BatchDeleteSmtpHeaders(BatchDeleteSmtpHeadersRequest) returns (BatchDeleteSmtpHeadersResponse);
+
+  // Upsert a SmtpHeaders (create if not exists, update if exists)
+  rpc UpsertSmtpHeaders(UpsertSmtpHeadersRequest) returns (UpsertSmtpHeadersResponse);
+
+  // Create a new SchoolAdmins
+  rpc CreateSchoolAdmins(CreateSchoolAdminsRequest) returns (CreateSchoolAdminsResponse);
+
+  // Get a SchoolAdmins by ID
+  rpc GetSchoolAdmins(GetSchoolAdminsRequest) returns (GetSchoolAdminsResponse);
+
+  // Update an existing SchoolAdmins
+  rpc UpdateSchoolAdmins(UpdateSchoolAdminsRequest) returns (UpdateSchoolAdminsResponse);
+
+  // Delete a SchoolAdmins by ID
+  rpc DeleteSchoolAdmins(DeleteSchoolAdminsRequest) returns (DeleteSchoolAdminsResponse);
+
+  // Batch insert multiple SchoolAdminss
+  rpc BatchInsertSchoolAdmins(BatchInsertSchoolAdminsRequest) returns (BatchInsertSchoolAdminsResponse);
+
+  // Batch update multiple SchoolAdminss based on filters
+  rpc BatchUpdateSchoolAdmins(BatchUpdateSchoolAdminsRequest) returns (BatchUpdateSchoolAdminsResponse);
+
+  // Batch delete multiple SchoolAdminss based on filters
+  rpc BatchDeleteSchoolAdmins(BatchDeleteSchoolAdminsRequest) returns (BatchDeleteSchoolAdminsResponse);
+
+  // Upsert a SchoolAdmins (create if not exists, update if exists)
+  rpc UpsertSchoolAdmins(UpsertSchoolAdminsRequest) returns (UpsertSchoolAdminsResponse);
+
+  // Create a new DistrictAdmins
+  rpc CreateDistrictAdmins(CreateDistrictAdminsRequest) returns (CreateDistrictAdminsResponse);
+
+  // Get a DistrictAdmins by ID
+  rpc GetDistrictAdmins(GetDistrictAdminsRequest) returns (GetDistrictAdminsResponse);
+
+  // Update an existing DistrictAdmins
+  rpc UpdateDistrictAdmins(UpdateDistrictAdminsRequest) returns (UpdateDistrictAdminsResponse);
+
+  // Delete a DistrictAdmins by ID
+  rpc DeleteDistrictAdmins(DeleteDistrictAdminsRequest) returns (DeleteDistrictAdminsResponse);
+
+  // Batch insert multiple DistrictAdminss
+  rpc BatchInsertDistrictAdmins(BatchInsertDistrictAdminsRequest) returns (BatchInsertDistrictAdminsResponse);
+
+  // Batch update multiple DistrictAdminss based on filters
+  rpc BatchUpdateDistrictAdmins(BatchUpdateDistrictAdminsRequest) returns (BatchUpdateDistrictAdminsResponse);
+
+  // Batch delete multiple DistrictAdminss based on filters
+  rpc BatchDeleteDistrictAdmins(BatchDeleteDistrictAdminsRequest) returns (BatchDeleteDistrictAdminsResponse);
+
+  // Upsert a DistrictAdmins (create if not exists, update if exists)
+  rpc UpsertDistrictAdmins(UpsertDistrictAdminsRequest) returns (UpsertDistrictAdminsResponse);
 
   // Aggregation filter for advanced queries
   rpc AggregationFilter(AggregationFilterRequest) returns (AggregationFilterResponse);

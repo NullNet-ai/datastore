@@ -5663,6 +5663,179 @@ pub struct ReportChildVictims {
     #[prost(string, optional, tag = "36")]
     pub screen_name: ::core::option::Option<::prost::alloc::string::String>,
 }
+/// SmtpHeaders entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SmtpHeaders {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "14")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "16")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
+    pub image_url: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub header_key: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub header_value: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub smtp_payload_id: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// SchoolAdmins entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct SchoolAdmins {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "14")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "16")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
+    pub image_url: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub school_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub school_admin_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub department_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "26")]
+    pub district_id: ::core::option::Option<::prost::alloc::string::String>,
+}
+/// DistrictAdmins entity definition
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DistrictAdmins {
+    #[prost(int32, optional, tag = "1")]
+    pub tombstone: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "2")]
+    pub status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "3")]
+    pub previous_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "4")]
+    pub version: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "5")]
+    pub created_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "6")]
+    pub created_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "7")]
+    pub updated_date: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "8")]
+    pub updated_time: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "9")]
+    pub organization_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "10")]
+    pub created_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "11")]
+    pub updated_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "12")]
+    pub deleted_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "13")]
+    pub requested_by: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "14")]
+    pub timestamp: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "15")]
+    pub tags: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "16")]
+    pub categories: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "17")]
+    pub code: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "18")]
+    pub id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(int32, optional, tag = "19")]
+    pub sensitivity_level: ::core::option::Option<i32>,
+    #[prost(string, optional, tag = "20")]
+    pub sync_status: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(bool, optional, tag = "21")]
+    pub is_batch: ::core::option::Option<bool>,
+    #[prost(string, optional, tag = "22")]
+    pub image_url: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "23")]
+    pub district_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
+    pub district_admin_id: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "25")]
+    pub department_id: ::core::option::Option<::prost::alloc::string::String>,
+}
 /// Create UserRoles request
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(dead_code)]
@@ -27211,6 +27384,800 @@ pub struct UpsertReportChildVictimsResponse {
     #[prost(message, repeated, tag = "4")]
     pub data: ::prost::alloc::vec::Vec<ReportChildVictims>,
 }
+/// Create SmtpHeaders request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateSmtpHeadersRequest {
+    #[prost(message, optional, tag = "1")]
+    pub smtp_headers: ::core::option::Option<SmtpHeaders>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+}
+/// Create SmtpHeaders response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateSmtpHeadersResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SmtpHeaders>,
+}
+/// Get SmtpHeaders request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSmtpHeadersRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
+}
+/// Get SmtpHeaders response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSmtpHeadersResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<SmtpHeaders>,
+}
+/// Update SmtpHeaders request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateSmtpHeadersRequest {
+    #[prost(message, optional, tag = "1")]
+    pub smtp_header: ::core::option::Option<SmtpHeaders>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update SmtpHeaders response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateSmtpHeadersResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SmtpHeaders>,
+}
+/// BatchUpdate SmtpHeaders request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateSmtpHeadersRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_update_smtp_headers_request::BatchUpdateBody>,
+}
+/// Nested message and enum types in `BatchUpdateSmtpHeadersRequest`.
+pub mod batch_update_smtp_headers_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::SmtpHeaders>,
+    }
+}
+/// BatchUpdate SmtpHeaders response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateSmtpHeadersResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<SmtpHeaders>,
+}
+/// BatchDelete SmtpHeaders request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteSmtpHeadersRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<batch_delete_smtp_headers_request::BatchDeleteBody>,
+}
+/// Nested message and enum types in `BatchDeleteSmtpHeadersRequest`.
+pub mod batch_delete_smtp_headers_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
+    }
+}
+/// BatchDelete SmtpHeaders response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteSmtpHeadersResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SmtpHeaders>,
+}
+/// Delete SmtpHeaders request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteSmtpHeadersRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete SmtpHeaders response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteSmtpHeadersResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SmtpHeaders>,
+}
+/// BatchInsert SmtpHeaders request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertSmtpHeadersRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_smtp_headers_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertSmtpHeadersRequest`.
+pub mod batch_insert_smtp_headers_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(message, repeated, tag = "1")]
+        pub smtp_headers: ::prost::alloc::vec::Vec<super::SmtpHeaders>,
+    }
+}
+/// BatchInsert SmtpHeaders response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertSmtpHeadersResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<SmtpHeaders>,
+}
+/// Upsert SmtpHeaders request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertSmtpHeadersRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_smtp_headers_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertSmtpHeadersRequest`.
+pub mod upsert_smtp_headers_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::SmtpHeaders>,
+    }
+}
+/// Upsert SmtpHeaders response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertSmtpHeadersResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<SmtpHeaders>,
+}
+/// Create SchoolAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateSchoolAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub school_admins: ::core::option::Option<SchoolAdmins>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+}
+/// Create SchoolAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateSchoolAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SchoolAdmins>,
+}
+/// Get SchoolAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSchoolAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
+}
+/// Get SchoolAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetSchoolAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<SchoolAdmins>,
+}
+/// Update SchoolAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateSchoolAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub school_admin: ::core::option::Option<SchoolAdmins>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update SchoolAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateSchoolAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SchoolAdmins>,
+}
+/// BatchUpdate SchoolAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateSchoolAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_school_admins_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateSchoolAdminsRequest`.
+pub mod batch_update_school_admins_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::SchoolAdmins>,
+    }
+}
+/// BatchUpdate SchoolAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateSchoolAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<SchoolAdmins>,
+}
+/// BatchDelete SchoolAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteSchoolAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_school_admins_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteSchoolAdminsRequest`.
+pub mod batch_delete_school_admins_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
+    }
+}
+/// BatchDelete SchoolAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteSchoolAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SchoolAdmins>,
+}
+/// Delete SchoolAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteSchoolAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete SchoolAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteSchoolAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<SchoolAdmins>,
+}
+/// BatchInsert SchoolAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertSchoolAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_school_admins_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertSchoolAdminsRequest`.
+pub mod batch_insert_school_admins_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(message, repeated, tag = "1")]
+        pub school_admins: ::prost::alloc::vec::Vec<super::SchoolAdmins>,
+    }
+}
+/// BatchInsert SchoolAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertSchoolAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<SchoolAdmins>,
+}
+/// Upsert SchoolAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertSchoolAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_school_admins_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertSchoolAdminsRequest`.
+pub mod upsert_school_admins_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::SchoolAdmins>,
+    }
+}
+/// Upsert SchoolAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertSchoolAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<SchoolAdmins>,
+}
+/// Create DistrictAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateDistrictAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub district_admins: ::core::option::Option<DistrictAdmins>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<CreateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<CreateQuery>,
+}
+/// Create DistrictAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct CreateDistrictAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DistrictAdmins>,
+}
+/// Get DistrictAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetDistrictAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<GetParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<GetQuery>,
+}
+/// Get DistrictAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetDistrictAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "3")]
+    pub data: ::core::option::Option<DistrictAdmins>,
+}
+/// Update DistrictAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateDistrictAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub district_admin: ::core::option::Option<DistrictAdmins>,
+    #[prost(message, optional, tag = "2")]
+    pub params: ::core::option::Option<UpdateParams>,
+    #[prost(message, optional, tag = "3")]
+    pub query: ::core::option::Option<UpdateQuery>,
+}
+/// Update DistrictAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpdateDistrictAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(int32, tag = "2")]
+    pub count: i32,
+    #[prost(string, tag = "3")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DistrictAdmins>,
+}
+/// BatchUpdate DistrictAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateDistrictAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchUpdateParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_update_district_admins_request::BatchUpdateBody,
+    >,
+}
+/// Nested message and enum types in `BatchUpdateDistrictAdminsRequest`.
+pub mod batch_update_district_admins_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchUpdateBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
+        #[prost(message, optional, tag = "2")]
+        pub updates: ::core::option::Option<super::DistrictAdmins>,
+    }
+}
+/// BatchUpdate DistrictAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchUpdateDistrictAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<DistrictAdmins>,
+}
+/// BatchDelete DistrictAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteDistrictAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchDeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub body: ::core::option::Option<
+        batch_delete_district_admins_request::BatchDeleteBody,
+    >,
+}
+/// Nested message and enum types in `BatchDeleteDistrictAdminsRequest`.
+pub mod batch_delete_district_admins_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchDeleteBody {
+        #[prost(message, repeated, tag = "1")]
+        pub advance_filters: ::prost::alloc::vec::Vec<super::FilterCriteria>,
+    }
+}
+/// BatchDelete DistrictAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchDeleteDistrictAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DistrictAdmins>,
+}
+/// Delete DistrictAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteDistrictAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<DeleteParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<DeleteQuery>,
+}
+/// Delete DistrictAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct DeleteDistrictAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, optional, tag = "4")]
+    pub data: ::core::option::Option<DistrictAdmins>,
+}
+/// BatchInsert DistrictAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertDistrictAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<BatchInsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<BatchInsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<batch_insert_district_admins_request::BatchBody>,
+}
+/// Nested message and enum types in `BatchInsertDistrictAdminsRequest`.
+pub mod batch_insert_district_admins_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct BatchBody {
+        #[prost(message, repeated, tag = "1")]
+        pub district_admins: ::prost::alloc::vec::Vec<super::DistrictAdmins>,
+    }
+}
+/// BatchInsert DistrictAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct BatchInsertDistrictAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<DistrictAdmins>,
+}
+/// Upsert DistrictAdmins request
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertDistrictAdminsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub params: ::core::option::Option<UpsertParams>,
+    #[prost(message, optional, tag = "2")]
+    pub query: ::core::option::Option<UpsertQuery>,
+    #[prost(message, optional, tag = "3")]
+    pub body: ::core::option::Option<upsert_district_admins_request::UpsertBody>,
+}
+/// Nested message and enum types in `UpsertDistrictAdminsRequest`.
+pub mod upsert_district_admins_request {
+    #[derive(serde::Serialize, serde::Deserialize)]
+    #[allow(dead_code)]
+    #[serde(default)]
+    #[derive(Clone, PartialEq, ::prost::Message)]
+    pub struct UpsertBody {
+        #[prost(string, repeated, tag = "1")]
+        pub conflict_columns: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+        #[prost(message, optional, tag = "2")]
+        pub data: ::core::option::Option<super::DistrictAdmins>,
+    }
+}
+/// Upsert DistrictAdmins response
+#[derive(serde::Serialize, serde::Deserialize)]
+#[allow(dead_code)]
+#[serde(default)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct UpsertDistrictAdminsResponse {
+    #[prost(bool, tag = "1")]
+    pub success: bool,
+    #[prost(string, tag = "2")]
+    pub message: ::prost::alloc::string::String,
+    #[prost(int32, tag = "3")]
+    pub count: i32,
+    #[prost(message, repeated, tag = "4")]
+    pub data: ::prost::alloc::vec::Vec<DistrictAdmins>,
+}
 /// Individual aggregation definition
 #[derive(serde::Serialize, serde::Deserialize)]
 #[allow(dead_code)]
@@ -32737,6 +33704,198 @@ pub mod store_service_server {
             request: tonic::Request<super::UpsertReportChildVictimsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::UpsertReportChildVictimsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new SmtpHeaders
+        async fn create_smtp_headers(
+            &self,
+            request: tonic::Request<super::CreateSmtpHeadersRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateSmtpHeadersResponse>,
+            tonic::Status,
+        >;
+        /// Get a SmtpHeaders by ID
+        async fn get_smtp_headers(
+            &self,
+            request: tonic::Request<super::GetSmtpHeadersRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetSmtpHeadersResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing SmtpHeaders
+        async fn update_smtp_headers(
+            &self,
+            request: tonic::Request<super::UpdateSmtpHeadersRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateSmtpHeadersResponse>,
+            tonic::Status,
+        >;
+        /// Delete a SmtpHeaders by ID
+        async fn delete_smtp_headers(
+            &self,
+            request: tonic::Request<super::DeleteSmtpHeadersRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteSmtpHeadersResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple SmtpHeaderss
+        async fn batch_insert_smtp_headers(
+            &self,
+            request: tonic::Request<super::BatchInsertSmtpHeadersRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertSmtpHeadersResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple SmtpHeaderss based on filters
+        async fn batch_update_smtp_headers(
+            &self,
+            request: tonic::Request<super::BatchUpdateSmtpHeadersRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateSmtpHeadersResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple SmtpHeaderss based on filters
+        async fn batch_delete_smtp_headers(
+            &self,
+            request: tonic::Request<super::BatchDeleteSmtpHeadersRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteSmtpHeadersResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a SmtpHeaders (create if not exists, update if exists)
+        async fn upsert_smtp_headers(
+            &self,
+            request: tonic::Request<super::UpsertSmtpHeadersRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertSmtpHeadersResponse>,
+            tonic::Status,
+        >;
+        /// Create a new SchoolAdmins
+        async fn create_school_admins(
+            &self,
+            request: tonic::Request<super::CreateSchoolAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateSchoolAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Get a SchoolAdmins by ID
+        async fn get_school_admins(
+            &self,
+            request: tonic::Request<super::GetSchoolAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetSchoolAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing SchoolAdmins
+        async fn update_school_admins(
+            &self,
+            request: tonic::Request<super::UpdateSchoolAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateSchoolAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a SchoolAdmins by ID
+        async fn delete_school_admins(
+            &self,
+            request: tonic::Request<super::DeleteSchoolAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteSchoolAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple SchoolAdminss
+        async fn batch_insert_school_admins(
+            &self,
+            request: tonic::Request<super::BatchInsertSchoolAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertSchoolAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple SchoolAdminss based on filters
+        async fn batch_update_school_admins(
+            &self,
+            request: tonic::Request<super::BatchUpdateSchoolAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateSchoolAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple SchoolAdminss based on filters
+        async fn batch_delete_school_admins(
+            &self,
+            request: tonic::Request<super::BatchDeleteSchoolAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteSchoolAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a SchoolAdmins (create if not exists, update if exists)
+        async fn upsert_school_admins(
+            &self,
+            request: tonic::Request<super::UpsertSchoolAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertSchoolAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Create a new DistrictAdmins
+        async fn create_district_admins(
+            &self,
+            request: tonic::Request<super::CreateDistrictAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::CreateDistrictAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Get a DistrictAdmins by ID
+        async fn get_district_admins(
+            &self,
+            request: tonic::Request<super::GetDistrictAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetDistrictAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Update an existing DistrictAdmins
+        async fn update_district_admins(
+            &self,
+            request: tonic::Request<super::UpdateDistrictAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpdateDistrictAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Delete a DistrictAdmins by ID
+        async fn delete_district_admins(
+            &self,
+            request: tonic::Request<super::DeleteDistrictAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::DeleteDistrictAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Batch insert multiple DistrictAdminss
+        async fn batch_insert_district_admins(
+            &self,
+            request: tonic::Request<super::BatchInsertDistrictAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchInsertDistrictAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Batch update multiple DistrictAdminss based on filters
+        async fn batch_update_district_admins(
+            &self,
+            request: tonic::Request<super::BatchUpdateDistrictAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchUpdateDistrictAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Batch delete multiple DistrictAdminss based on filters
+        async fn batch_delete_district_admins(
+            &self,
+            request: tonic::Request<super::BatchDeleteDistrictAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::BatchDeleteDistrictAdminsResponse>,
+            tonic::Status,
+        >;
+        /// Upsert a DistrictAdmins (create if not exists, update if exists)
+        async fn upsert_district_admins(
+            &self,
+            request: tonic::Request<super::UpsertDistrictAdminsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::UpsertDistrictAdminsResponse>,
             tonic::Status,
         >;
         /// Aggregation filter for advanced queries
@@ -64631,6 +65790,1151 @@ pub mod store_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let method = UpsertReportChildVictimsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateSmtpHeaders" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateSmtpHeadersSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateSmtpHeadersRequest>
+                    for CreateSmtpHeadersSvc<T> {
+                        type Response = super::CreateSmtpHeadersResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateSmtpHeadersRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_smtp_headers(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateSmtpHeadersSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetSmtpHeaders" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetSmtpHeadersSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetSmtpHeadersRequest>
+                    for GetSmtpHeadersSvc<T> {
+                        type Response = super::GetSmtpHeadersResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetSmtpHeadersRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_smtp_headers(&inner, request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetSmtpHeadersSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateSmtpHeaders" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateSmtpHeadersSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateSmtpHeadersRequest>
+                    for UpdateSmtpHeadersSvc<T> {
+                        type Response = super::UpdateSmtpHeadersResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateSmtpHeadersRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_smtp_headers(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateSmtpHeadersSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteSmtpHeaders" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteSmtpHeadersSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteSmtpHeadersRequest>
+                    for DeleteSmtpHeadersSvc<T> {
+                        type Response = super::DeleteSmtpHeadersResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteSmtpHeadersRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_smtp_headers(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteSmtpHeadersSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertSmtpHeaders" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertSmtpHeadersSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertSmtpHeadersRequest>
+                    for BatchInsertSmtpHeadersSvc<T> {
+                        type Response = super::BatchInsertSmtpHeadersResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchInsertSmtpHeadersRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_smtp_headers(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertSmtpHeadersSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateSmtpHeaders" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateSmtpHeadersSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdateSmtpHeadersRequest>
+                    for BatchUpdateSmtpHeadersSvc<T> {
+                        type Response = super::BatchUpdateSmtpHeadersResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchUpdateSmtpHeadersRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_smtp_headers(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateSmtpHeadersSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteSmtpHeaders" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteSmtpHeadersSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteSmtpHeadersRequest>
+                    for BatchDeleteSmtpHeadersSvc<T> {
+                        type Response = super::BatchDeleteSmtpHeadersResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::BatchDeleteSmtpHeadersRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_smtp_headers(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteSmtpHeadersSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertSmtpHeaders" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertSmtpHeadersSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertSmtpHeadersRequest>
+                    for UpsertSmtpHeadersSvc<T> {
+                        type Response = super::UpsertSmtpHeadersResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertSmtpHeadersRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_smtp_headers(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertSmtpHeadersSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateSchoolAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateSchoolAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateSchoolAdminsRequest>
+                    for CreateSchoolAdminsSvc<T> {
+                        type Response = super::CreateSchoolAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateSchoolAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_school_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateSchoolAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetSchoolAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetSchoolAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetSchoolAdminsRequest>
+                    for GetSchoolAdminsSvc<T> {
+                        type Response = super::GetSchoolAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetSchoolAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_school_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetSchoolAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateSchoolAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateSchoolAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateSchoolAdminsRequest>
+                    for UpdateSchoolAdminsSvc<T> {
+                        type Response = super::UpdateSchoolAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateSchoolAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_school_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateSchoolAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteSchoolAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteSchoolAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteSchoolAdminsRequest>
+                    for DeleteSchoolAdminsSvc<T> {
+                        type Response = super::DeleteSchoolAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteSchoolAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_school_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteSchoolAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertSchoolAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertSchoolAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchInsertSchoolAdminsRequest>
+                    for BatchInsertSchoolAdminsSvc<T> {
+                        type Response = super::BatchInsertSchoolAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertSchoolAdminsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_school_admins(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertSchoolAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateSchoolAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateSchoolAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchUpdateSchoolAdminsRequest>
+                    for BatchUpdateSchoolAdminsSvc<T> {
+                        type Response = super::BatchUpdateSchoolAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateSchoolAdminsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_school_admins(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateSchoolAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteSchoolAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteSchoolAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::BatchDeleteSchoolAdminsRequest>
+                    for BatchDeleteSchoolAdminsSvc<T> {
+                        type Response = super::BatchDeleteSchoolAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteSchoolAdminsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_school_admins(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteSchoolAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertSchoolAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertSchoolAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertSchoolAdminsRequest>
+                    for UpsertSchoolAdminsSvc<T> {
+                        type Response = super::UpsertSchoolAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertSchoolAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_school_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertSchoolAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/CreateDistrictAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct CreateDistrictAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::CreateDistrictAdminsRequest>
+                    for CreateDistrictAdminsSvc<T> {
+                        type Response = super::CreateDistrictAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::CreateDistrictAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::create_district_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = CreateDistrictAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/GetDistrictAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetDistrictAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::GetDistrictAdminsRequest>
+                    for GetDistrictAdminsSvc<T> {
+                        type Response = super::GetDistrictAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::GetDistrictAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::get_district_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = GetDistrictAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpdateDistrictAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpdateDistrictAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpdateDistrictAdminsRequest>
+                    for UpdateDistrictAdminsSvc<T> {
+                        type Response = super::UpdateDistrictAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpdateDistrictAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::update_district_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpdateDistrictAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/DeleteDistrictAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct DeleteDistrictAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::DeleteDistrictAdminsRequest>
+                    for DeleteDistrictAdminsSvc<T> {
+                        type Response = super::DeleteDistrictAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::DeleteDistrictAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::delete_district_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = DeleteDistrictAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchInsertDistrictAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchInsertDistrictAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchInsertDistrictAdminsRequest,
+                    > for BatchInsertDistrictAdminsSvc<T> {
+                        type Response = super::BatchInsertDistrictAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchInsertDistrictAdminsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_insert_district_admins(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchInsertDistrictAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchUpdateDistrictAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchUpdateDistrictAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchUpdateDistrictAdminsRequest,
+                    > for BatchUpdateDistrictAdminsSvc<T> {
+                        type Response = super::BatchUpdateDistrictAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchUpdateDistrictAdminsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_update_district_admins(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchUpdateDistrictAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/BatchDeleteDistrictAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct BatchDeleteDistrictAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<
+                        super::BatchDeleteDistrictAdminsRequest,
+                    > for BatchDeleteDistrictAdminsSvc<T> {
+                        type Response = super::BatchDeleteDistrictAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::BatchDeleteDistrictAdminsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::batch_delete_district_admins(
+                                        &inner,
+                                        request,
+                                    )
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = BatchDeleteDistrictAdminsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/store.StoreService/UpsertDistrictAdmins" => {
+                    #[allow(non_camel_case_types)]
+                    struct UpsertDistrictAdminsSvc<T: StoreService>(pub Arc<T>);
+                    impl<
+                        T: StoreService,
+                    > tonic::server::UnaryService<super::UpsertDistrictAdminsRequest>
+                    for UpsertDistrictAdminsSvc<T> {
+                        type Response = super::UpsertDistrictAdminsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::UpsertDistrictAdminsRequest>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                <T as StoreService>::upsert_district_admins(&inner, request)
+                                    .await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let method = UpsertDistrictAdminsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
