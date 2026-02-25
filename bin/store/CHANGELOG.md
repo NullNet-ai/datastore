@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.34
+
+### Author
+Kashan
+
+### Fixed
+  - ***CRDT message batch insert: duplicate conflict key***:
+    - `insert_messages_batch` now deduplicates by the ON CONFLICT key `(timestamp, group_id, row, column)` using a set before running the upsert, so PostgreSQL no longer errors with "ON CONFLICT DO UPDATE command cannot affect row a second time" when a batch contains duplicate keys (e.g. from sync). Implemented in `bin/store/src/providers/operations/sync/message_service.rs`.
+
+---
 ## 0.2.33
 
 ### Author
