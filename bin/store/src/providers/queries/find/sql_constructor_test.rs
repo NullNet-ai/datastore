@@ -1546,7 +1546,7 @@ mod tests {
     /// cargo test should_execute_constructed_sql_against_database -- --ignored
     /// when you have a DB with a schema matching the JSON.
     #[tokio::test]
-    #[ignore = "integration test: requires DATABASE_URL and organizations schema matching organizations_filter.json"]
+    #[ignore]
     async fn should_execute_constructed_sql_against_database() {
         use crate::providers::queries::find::sql_constructor::SQLConstructor;
         use crate::structs::core::GetByFilter;

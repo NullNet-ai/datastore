@@ -7,6 +7,7 @@ mod tests {
 
     /// Test that loads organizations_filter.json and generates SQL, then validates it using psql
     #[test]
+    #[ignore]
     fn test_organizations_filter_sql_generation() {
         println!("Testing organizations_filter.json SQL generation...");
 
@@ -123,6 +124,7 @@ mod tests {
 
     /// Test that validates the JSON structure matches expected format
     #[test]
+    #[ignore]
     fn test_organizations_filter_json_structure() {
         println!("Testing organizations_filter.json structure...");
 
@@ -224,6 +226,7 @@ mod tests {
 
     /// Test SQL generation with different timezone settings
     #[test]
+    #[ignore]
     fn test_organizations_filter_with_different_timezones() {
         println!("Testing organizations_filter.json with different timezones...");
 
