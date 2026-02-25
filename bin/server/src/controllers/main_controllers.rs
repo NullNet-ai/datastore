@@ -150,6 +150,20 @@ pub async fn get_chunk(
             .limit(limit as i64)
             .load::<CrdtClientMessage>(&mut conn)?;
 
+        // Debug: chunk slice vs total (DEBUG to avoid flooding when client fetches many chunks)
+        let first_record_id = chunk_rows.first().map(|r| r.record_id.as_str()).unwrap_or("(none)");
+        let last_record_id = chunk_rows.last().map(|r| r.record_id.as_str()).unwrap_or("(none)");
+        log::debug!(
+            "[GET_CHUNK] client_id={} start={} limit={} total_size={} chunk_len={} first_record_id={} last_record_id={}",
+            client_id_param,
+            start,
+            limit,
+            total_size,
+            chunk_rows.len(),
+            first_record_id,
+            last_record_id
+        );
+
         let parsed_messages: Vec<serde_json::Value> = chunk_rows
             .into_iter()
             .filter_map(|msg| {
@@ -176,12 +190,22 @@ pub async fn get_chunk(
 
     match result {
         Ok(Ok((messages, size))) => {
-            log::info!(
-                "Chunk response: client_id={} returning {} messages in this chunk (total buffered: {})",
-                query.client_id,
-                messages.len(),
-                size
-            );
+            let is_last_chunk = messages.len() < limit as usize || messages.is_empty();
+            if is_last_chunk {
+                log::info!(
+                    "Chunk catch-up done: client_id={} returned {} in final chunk (total buffered: {})",
+                    query.client_id,
+                    messages.len(),
+                    size
+                );
+            } else {
+                log::debug!(
+                    "Chunk response: client_id={} returning {} messages in this chunk (total buffered: {})",
+                    query.client_id,
+                    messages.len(),
+                    size
+                );
+            }
             let response = serde_json::json!({
                 "status": "ok",
                 "data": {
@@ -280,7 +304,35 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
     // ! check for release the connection to the pool afterwards
     let mut incomplete = 0;
     let mut new_messages: Vec<CrdtMessage> = vec![];
-    if let Some(merkle) = req_client_merkle.clone() {
+    let client_merkle_empty_or_missing = req_client_merkle
+        .as_ref()
+        .map(|m| m.trim().is_empty() || m.trim() == "{}")
+        .unwrap_or(true);
+    if client_merkle_empty_or_missing {
+        // Bootstrap: client has no / empty merkle — send all messages from server so client can catch up
+        log::info!(
+            "[NEW_CLIENT_CATCHUP] Step 2b: Path BOOTSTRAP (client merkle empty) client_id={}",
+            req_client_id
+        );
+        match get_all_messages_from_timestamp(
+            &mut conn,
+            "",
+            &req_group_id,
+            &req_client_id,
+        ) {
+            Ok(messages) => {
+                log::info!(
+                    "Bootstrap: sending {} messages to client_id={}",
+                    messages.len(),
+                    req_client_id
+                );
+                new_messages = messages;
+            }
+            Err(err) => {
+                log::error!("Bootstrap: error retrieving messages: {:?}", err);
+            }
+        }
+    } else if let Some(merkle) = req_client_merkle.clone() {
         if !merkle.trim().is_empty() && merkle.trim() != "{}" {
             log::info!(
                 "[NEW_CLIENT_CATCHUP] Step 2a: Path MERKLE_DIFF (client has non-empty merkle) client_id={}",
@@ -313,7 +365,29 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
                     return actix_web::HttpResponse::BadRequest().json(response);
                 }
             };
+
+            // Log both trees and the diff for debugging
+            let server_root = trie.root.as_ref().map(|n| format!("hash={} value={}", n.hash, n.value)).unwrap_or_else(|| "None".to_string());
+            let client_root = parsed_client_merkle.root.as_ref().map(|n| format!("hash={} value={}", n.hash, n.value)).unwrap_or_else(|| "None".to_string());
+            log::info!(
+                "[MERKLE_TREES] client_id={} server_root=[{}] client_root=[{}]",
+                req_client_id,
+                server_root,
+                client_root
+            );
             let diff_time = trie.find_differences(&parsed_client_merkle);
+            for (idx, (path, server_node, client_node)) in diff_time.iter().enumerate() {
+                log::info!(
+                    "[MERKLE_DIFF] client_id={} diff[{}] path={} server_value={} client_value={} server_hash={} client_hash={}",
+                    req_client_id,
+                    idx,
+                    path,
+                    server_node.value,
+                    client_node.value,
+                    server_node.hash,
+                    client_node.hash
+                );
+            }
             log::info!(
                 "Sync catch-up: client_id={} merkle diff size={}",
                 req_client_id,

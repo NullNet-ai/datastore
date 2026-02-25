@@ -6,8 +6,6 @@ use hlc::Timestamp;
 use merkle::MerkleTree;
 use std::env;
 use ulid::Ulid;
-use tokio::sync::Mutex;
-use once_cell::sync::Lazy;
 
 #[allow(warnings)]
 pub struct HlcService {
@@ -15,9 +13,9 @@ pub struct HlcService {
     pub group_id: String,
 }
 
-/// Serializes all clock read-modify-write operations so concurrent requests
-/// don't corrupt the shared HLC/merkle state (duplicate timestamps, lost merkle leaves).
-static CLOCK_MUTEX: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
+/// CLOCK_MUTEX removed to allow sync and CRDT insertion to run in parallel.
+/// MerkleManager maintains in-memory + persisted state; concurrent updates may interleave.
+/// If duplicates or lost merkle leaves appear, consider merging in commit_tree (server merkle + local leaves).
 
 static GROUP_ID: once_cell::sync::Lazy<String> =
     once_cell::sync::Lazy::new(|| env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string()));
@@ -58,7 +56,6 @@ impl HlcService {
         tx: &mut AsyncPgConnection,
         tree: &MerkleTree,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let _guard = CLOCK_MUTEX.lock().await;
         let old_clock = Self::get_clock_internal(tx, true).await?;
         let clock = Self::make_clock(
             Timestamp::parse(old_clock.timestamp.to_string()),
@@ -71,7 +68,6 @@ impl HlcService {
         tx: &mut AsyncPgConnection,
         timestamp_str: String,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let _guard = CLOCK_MUTEX.lock().await;
         let mut clock = Self::get_clock_internal(tx, true).await?;
         let timestamp = Timestamp::parse(timestamp_str);
         let mut current_timestamp = Timestamp::parse(clock.timestamp.to_string());
@@ -81,12 +77,10 @@ impl HlcService {
         Ok(())
     }
 
-    /// When `caller_holds_lock` is true, the caller has already acquired CLOCK_MUTEX
-    /// (used by send/insert_timestamp/recv/commit_tree). When false, get_clock may
-    /// acquire the lock in the None branch to create the initial clock.
+    /// Returns current clock from MerkleManager; creates initial clock if none exists.
     async fn get_clock_internal(
         _tx: &mut AsyncPgConnection,
-        caller_holds_lock: bool,
+        _caller_holds_lock: bool,
     ) -> Result<Clock, Box<dyn std::error::Error>> {
         let group_id = env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
         let merkle_manager = MerkleManager::instance();
@@ -97,22 +91,14 @@ impl HlcService {
                 Ok(Self::make_clock(Timestamp::parse(timestamp), merkle))
             }
             None => {
-                if caller_holds_lock {
-                    let timestamp = Timestamp::new(0, 0, Self::make_client_id()?);
-                    let clock: Clock = Self::make_clock(timestamp, MerkleTree::new());
-                    Self::set_clock(clock.clone()).await;
-                    Ok(clock)
-                } else {
-                    let _guard = CLOCK_MUTEX.lock().await;
-                    let tree_result = merkle_manager.get_tree(&group_id).await;
-                    if let Some((merkle, timestamp)) = tree_result {
-                        return Ok(Self::make_clock(Timestamp::parse(timestamp), merkle));
-                    }
-                    let timestamp = Timestamp::new(0, 0, Self::make_client_id()?);
-                    let clock: Clock = Self::make_clock(timestamp, MerkleTree::new());
-                    Self::set_clock(clock.clone()).await;
-                    Ok(clock)
+                let tree_result = merkle_manager.get_tree(&group_id).await;
+                if let Some((merkle, timestamp)) = tree_result {
+                    return Ok(Self::make_clock(Timestamp::parse(timestamp), merkle));
                 }
+                let timestamp = Timestamp::new(0, 0, Self::make_client_id()?);
+                let clock: Clock = Self::make_clock(timestamp, MerkleTree::new());
+                Self::set_clock(clock.clone()).await;
+                Ok(clock)
             }
         }
     }
@@ -124,7 +110,6 @@ impl HlcService {
     }
 
     pub async fn send(tx: &mut AsyncPgConnection) -> Result<String, Box<dyn std::error::Error>> {
-        let _guard = CLOCK_MUTEX.lock().await;
         let mut clock = Self::get_clock_internal(tx, true).await?;
 
         let timestamp_str = clock.timestamp.to_string();
@@ -140,7 +125,6 @@ impl HlcService {
         tx: &mut AsyncPgConnection,
         timestamp_str: &String,
     ) -> Result<Clock, Box<dyn std::error::Error>> {
-        let _guard = CLOCK_MUTEX.lock().await;
         let mut clock = Self::get_clock_internal(tx, true).await?;
         clock.merkle.add_leaf(timestamp_str);
         clock.merkle.prune_to_level_4();

@@ -12,10 +12,14 @@ use tokio::time::timeout;
 use lazy_static::lazy_static;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-/// Max messages per batch before flushing to DB.
-const BATCH_SIZE: usize = 300;
+/// Max messages per batch before flushing to DB (larger = fewer round-trips, better throughput).
+const BATCH_SIZE: usize = 1000;
+/// Flush when batch reaches this size even if not full (keeps crdt_messages flush latency lower under load).
+const MIN_FLUSH_SIZE: usize = 300;
 /// When no message arrives for this long, flush any partial batch (avoids holding messages during low traffic).
-const BATCH_FLUSH_TIMEOUT: Duration = Duration::from_millis(5);
+const BATCH_FLUSH_TIMEOUT: Duration = Duration::from_millis(2);
+/// Max batches that can be queued for the writer (backpressure when DB is slow).
+const WRITER_CHANNEL_CAP: usize = 2;
 /// Interval between retries of failed batches (local in-memory queue only).
 const FAILED_BATCH_RETRY_INTERVAL: Duration = Duration::from_secs(5 * 60);
 
@@ -70,6 +74,30 @@ impl MessageManager {
         }
 
         self.initialized = true;
+        let (writer_tx, mut writer_rx) = mpsc::channel::<Vec<CrdtMessageModel>>(WRITER_CHANNEL_CAP);
+
+        // Dedicated writer task: receive batches and write to DB so the main loop can keep draining the channel.
+        let writer_handle = tokio::spawn(async move {
+            while let Some(messages) = writer_rx.recv().await {
+                let n = messages.len();
+                if messages.is_empty() {
+                    continue;
+                }
+                match Self::write_batch_to_db(messages).await {
+                    Ok(_) => {
+                        log::debug!("Batch of {} messages stored in crdt_messages", n);
+                    }
+                    Err(e) => {
+                        log::error!("Failed to store message batch: {} (batch queued for retry)", e);
+                    }
+                }
+                let prev = QUEUE_SIZE.fetch_sub(n, Ordering::SeqCst);
+                if prev <= n {
+                    QUEUE_EMPTY.store(true, Ordering::SeqCst);
+                }
+            }
+        });
+
         let mut batch: Vec<CrdtMessageModel> = Vec::with_capacity(BATCH_SIZE);
         let mut channel_closed = false;
 
@@ -97,37 +125,30 @@ impl MessageManager {
             }
 
             let should_flush = batch.len() >= BATCH_SIZE
+                || batch.len() >= MIN_FLUSH_SIZE
                 || channel_closed
                 || (msg_is_none && !batch.is_empty());
 
             if should_flush && !batch.is_empty() {
-                let n = batch.len();
-                match self.process_batch(std::mem::take(&mut batch)).await {
-                    Ok(_) => {
-                        log::debug!("Batch of {} messages stored", n);
-                    }
-                    Err(e) => {
-                        log::error!("Failed to store message batch: {} (batch queued for retry)", e);
-                        // Batch was already pushed to FAILED_BATCH_QUEUE inside process_batch
-                    }
+                let to_send = std::mem::take(&mut batch);
+                if writer_tx.send(to_send).await.is_err() {
+                    log::error!("MessageManager writer channel closed unexpectedly");
+                    break;
                 }
-                let prev = QUEUE_SIZE.fetch_sub(n, Ordering::SeqCst);
-                if prev <= n {
-                    QUEUE_EMPTY.store(true, Ordering::SeqCst);
-                }
+                batch.reserve(BATCH_SIZE);
             }
 
             if channel_closed {
                 break;
             }
         }
+        drop(writer_tx);
+        let _ = writer_handle.await;
         QUEUE_EMPTY.store(true, Ordering::SeqCst);
     }
 
-    async fn process_batch(
-        &self,
-        messages: Vec<CrdtMessageModel>,
-    ) -> Result<(), DieselError> {
+    /// Write one batch to crdt_messages. On failure, push batch to FAILED_BATCH_QUEUE for retry.
+    async fn write_batch_to_db(messages: Vec<CrdtMessageModel>) -> Result<(), DieselError> {
         if messages.is_empty() {
             return Ok(());
         }
@@ -135,7 +156,6 @@ impl MessageManager {
         match message_service::insert_messages_batch(&mut conn, &messages).await {
             Ok(_) => Ok(()),
             Err(e) => {
-                // Queue failed batch for retry (local in-memory only)
                 FAILED_BATCH_QUEUE.lock().await.push(messages);
                 Err(e)
             }

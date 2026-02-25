@@ -327,6 +327,7 @@ impl HttpTransportDriver {
             }
         };
 
+        log::debug!("Sync POST response status: {}", response.status());
         if response.status() != StatusCode::OK {
             return Err(Box::new(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -353,6 +354,9 @@ impl HttpTransportDriver {
                 return Err(Box::new(e));
             }
         };
+
+        let msg_count = result.get("messages").and_then(|m| m.as_array()).map(|a| a.len()).unwrap_or(0);
+        log::debug!("Sync POST response: messages={}, has merkle={}", msg_count, result.get("merkle").is_some());
 
         // Check if incomplete and chunks are needed (server sends incomplete as 0/1 number, not bool)
         let is_incomplete = result.get("incomplete").map(|v| {

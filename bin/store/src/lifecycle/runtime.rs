@@ -240,39 +240,21 @@ impl RuntimeManager {
         HealthStatus::Healthy
     }
 
-    /// Check database health
+    /// Check database health using the connection pool (reuses connections instead of opening new ones)
     pub async fn check_database_health() -> Result<(), String> {
-        use crate::database::db::create_connection;
+        use crate::database::db::get_async_connection;
+        use diesel_async::RunQueryDsl;
         use std::time::Duration;
 
         debug!("[RUNTIME] Checking database health");
 
-        // Perform actual database health check with timeout
+        // Perform actual database health check with timeout using pooled connection
         match tokio::time::timeout(Duration::from_secs(5), async {
-            // Create database connection
-            let client = create_connection()
-                .await
-                .map_err(|e| format!("Failed to create database connection: {}", e))?;
-
-            // Execute simple health check query
-            let rows = client
-                .query("SELECT 1 as health_check", &[])
+            let mut conn = get_async_connection().await;
+            diesel::sql_query("SELECT 1 as health_check")
+                .execute(&mut *conn)
                 .await
                 .map_err(|e| format!("Health check query failed: {}", e))?;
-
-            // Verify we got expected result
-            if rows.is_empty() {
-                return Err("Health check query returned no rows".to_string());
-            }
-
-            let health_value: i32 = rows[0].get(0);
-            if health_value != 1 {
-                return Err(format!(
-                    "Health check query returned unexpected value: {}",
-                    health_value
-                ));
-            }
-
             debug!("[RUNTIME] Database health check successful");
             Ok(())
         })
