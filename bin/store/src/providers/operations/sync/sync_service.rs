@@ -58,7 +58,7 @@ pub async fn bootstrap_sync_once(
     let clock = HlcService::get_clock(conn).await?;
     let empty_merkle =
         serde_json::to_string(&MerkleTree::new()).unwrap_or_else(|_| "{}".to_string());
-    log::info!(
+    log::debug!(
         "Bootstrap sync: pulling all messages from {} (group_id={})",
         opts.url,
         group_id
@@ -84,7 +84,7 @@ pub async fn bootstrap_sync_once(
     }
     if let Some(received_messages) = result.get("messages").and_then(|m| m.as_array()) {
         if !received_messages.is_empty() {
-            log::info!(
+            log::debug!(
                 "Bootstrap sync: applying {} messages from server",
                 received_messages.len()
             );
@@ -100,11 +100,11 @@ pub async fn bootstrap_sync_once(
         if !merkle_str.is_empty() && merkle_str != "{}" {
             if let Ok(tree) = MerkleTree::deserialize(&merkle_str) {
                 HlcService::commit_tree(conn, &tree).await?;
-                log::info!("Bootstrap sync: merkle updated from server");
+                log::debug!("Bootstrap sync: merkle updated from server");
             }
         }
     }
-    log::info!("Bootstrap sync complete");
+    log::debug!("Bootstrap sync complete");
     Ok(())
 }
 
@@ -704,7 +704,7 @@ async fn sync(
                     err_msg,
                 )));
             }
-            log::info!(
+            log::debug!(
                 "Synced {} at {}",
                 received_messages.len(),
                 chrono::Utc::now().to_rfc3339()
@@ -806,7 +806,7 @@ async fn sync(
             messages.len()
         );
     }
-    log::info!("Sync done - transaction_id:{}", transaction_id_clone);
+    log::debug!("Sync done - transaction_id:{}", transaction_id_clone);
     TransactionService::stop_transaction(conn, &transaction_id_clone).await?;
     Ok(())
 }

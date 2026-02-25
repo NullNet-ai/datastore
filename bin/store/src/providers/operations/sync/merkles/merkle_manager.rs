@@ -1,7 +1,6 @@
 use crate::database::db;
 use crate::providers::operations::sync::merkles::merkle_service::MerkleService;
 use lazy_static::lazy_static;
-use log::info;
 use merkle::MerkleTree;
 use std::collections::HashMap;
 use std::sync::{Arc, Once};
@@ -124,7 +123,7 @@ impl MerkleManager {
                 )
                 .await?;
 
-            info!(
+            log::debug!(
                 "Saved tree for group {} with timestamp {}",
                 group_id, entry.timestamp
             );

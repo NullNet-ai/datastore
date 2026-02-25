@@ -170,7 +170,7 @@ pub async fn save_pending_messages() -> Result<(), String> {
 
     log::info!("Waiting for message queue to drain...");
     let initial_size = get_queue_size();
-    log::info!("Current message queue size: {}", initial_size);
+    log::debug!("Current message queue size: {}", initial_size);
 
     // Wait for the background MessageManager to process all messages; do not force-reset
     // so that shutdown does not proceed with messages still in the channel.
@@ -195,7 +195,7 @@ pub async fn save_pending_messages() -> Result<(), String> {
 
         if last_log.elapsed() >= Duration::from_secs(5) {
             let current_size = get_queue_size();
-            log::info!(
+            log::debug!(
                 "Still waiting for message queue to drain... ({:.0}s elapsed) - {} messages remaining",
                 start_time.elapsed().as_secs_f64(),
                 current_size
@@ -232,7 +232,7 @@ pub async fn save_pending_messages() -> Result<(), String> {
                 pending_count
             ));
         }
-        log::info!(
+        log::debug!(
             "Shutdown flush: retrying {} failed batch(es)",
             to_retry.len()
         );
@@ -263,7 +263,7 @@ pub async fn save_pending_messages() -> Result<(), String> {
         sleep(Duration::from_millis(100)).await;
         if last_flush_log.elapsed() >= Duration::from_secs(5) {
             let remaining = FAILED_BATCH_QUEUE.lock().await.len();
-            log::info!(
+            log::debug!(
                 "Still waiting for failed-batch queue to flush... ({:.0}s elapsed) - {} batch(es) remaining",
                 flush_start.elapsed().as_secs_f64(),
                 remaining
@@ -286,7 +286,7 @@ async fn run_failed_batch_retry_loop() {
         if to_retry.is_empty() {
             continue;
         }
-        log::info!(
+        log::debug!(
             "Retrying {} failed batch(es) from local queue",
             to_retry.len()
         );
@@ -298,7 +298,7 @@ async fn run_failed_batch_retry_loop() {
             let n = batch.len();
             match try_insert_batch(&batch).await {
                 Ok(_) => {
-                    log::info!("Retry succeeded for batch of {} messages", n);
+                    log::debug!("Retry succeeded for batch of {} messages", n);
                 }
                 Err(e) => {
                     log::warn!(
