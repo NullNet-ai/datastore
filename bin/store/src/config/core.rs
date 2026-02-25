@@ -183,9 +183,9 @@ impl Default for EnvConfig {
                 .parse()
                 .unwrap_or(false),
             sync_timer_ms: std::env::var("SYNC_TIMER_MS")
-                .unwrap_or_else(|_| "60000".to_string())
+                .unwrap_or_else(|_| "30000".to_string())
                 .parse()
-                .unwrap_or(60000),
+                .unwrap_or(30000),
             batch_sync_enabled: std::env::var("BATCH_SYNC_ENABLED")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
@@ -288,9 +288,9 @@ impl Default for EnvConfig {
                 .parse()
                 .unwrap_or(false),
             merkle_save_interval: std::env::var("MERKLE_SAVE_INTERVAL")
-                .unwrap_or_else(|_| "300".to_string())
+                .unwrap_or_else(|_| "30000".to_string())
                 .parse()
-                .unwrap_or(300),
+                .unwrap_or(30000),
             max_concurrent_flushes: std::env::var("MAX_CONCURRENT_FLUSHES")
                 .unwrap_or_else(|_| "10".to_string())
                 .parse()
