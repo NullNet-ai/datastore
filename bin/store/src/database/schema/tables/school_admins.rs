@@ -47,7 +47,7 @@ define_table_schema! {
             type: "btree"
         },
         // Unique index for active records (partial unique index)
-        idx_school_admins_unique_active: {
+        idx_school_admins_school_id_school_admin_id: {
             columns: ["school_id", "school_admin_id"],
             unique: true,
             type: "btree",
