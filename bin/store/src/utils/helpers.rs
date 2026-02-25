@@ -1,9 +1,6 @@
 use crate::config::core::EnvConfig;
 use crate::controllers::store_controller::ApiError;
-use crate::database::db;
 use crate::database::schema::verify::field_type_in_table;
-use crate::generated::models::counter_model::CounterModel;
-use crate::generated::schema::counters;
 use crate::generated::table_enum::Table as TableEnum;
 use crate::structs::core::CommandArgs;
 use actix_web::http;
@@ -25,62 +22,9 @@ pub fn table_exists(table_name: &str) -> Result<TableEnum, ApiError> {
     })
 }
 
+/// Generate next unique code for the entity via counter-service.
 pub async fn generate_code(entity: &str) -> Result<Option<String>, DieselError> {
-    let mut conn = db::get_async_connection().await;
-
-    // Create a new counter with default values
-    let new_counter = CounterModel {
-        entity: entity.to_string(),
-        counter: 1,
-        prefix: "".to_string(),
-        default_code: 0,
-        digits_number: 0,
-    };
-
-    // Insert or update the counter
-    let result = diesel::insert_into(counters::table)
-        .values(&new_counter)
-        .on_conflict(counters::entity)
-        .do_update()
-        .set(counters::counter.eq(counters::counter + 1))
-        .returning((
-            counters::prefix,
-            counters::default_code,
-            counters::counter,
-            counters::digits_number,
-        ))
-        .get_result::<(String, i32, i32, i32)>(&mut conn)
-        .await
-        .map_err(|e| {
-            log::error!("Error generating code: {}", e);
-            e
-        })?;
-
-    // Format the code based on the returned values
-    let (prefix, default_code, counter, digits_number) = result;
-
-    // Format the code according to the digits_number
-    let code = if digits_number > 0 {
-        // Calculate how many digits the counter has
-        let counter_digits = counter.to_string().len() as i32;
-
-        // Calculate how many leading zeros to add
-        let zero_digits = digits_number - counter_digits;
-
-        if zero_digits > 0 {
-            // Add leading zeros
-            let zeros = "0".repeat(zero_digits as usize);
-            format!("{}{}{}", prefix, zeros, counter)
-        } else {
-            // No leading zeros needed
-            format!("{}{}", prefix, counter)
-        }
-    } else {
-        // Use default_code + counter
-        format!("{}{}", prefix, default_code + counter)
-    };
-
-    Ok(Some(code))
+    crate::utils::code_generator::generate_code_optional(entity).await
 }
 
 pub fn time_string_to_ms(time_str: &str) -> Result<u64, Box<dyn std::error::Error>> {

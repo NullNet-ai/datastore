@@ -29,9 +29,6 @@ use diesel::result::Error as DieselError;
 use diesel_async::AsyncPgConnection;
 use diesel_async::RunQueryDsl;
 use serde_json::{Map, Value};
-use crate::database::db;
-use crate::generated::models::counter_model::CounterModel;
-
 #[derive(Debug)]
 pub enum Table {
     UserRoles,
@@ -176,42 +173,11 @@ impl Table {
         )
     }
 }
+/// Generate next unique code for the table via counter-service.
 pub async fn generate_code(
     table: &str,
     prefix_param: &str,
     default_code_param: i32,
 ) -> Result<String, DieselError> {
-
-    let mut conn = db::get_async_connection().await;
-
-    let new_counter = CounterModel {
-        entity: table.to_string(),
-        counter: 1,
-        prefix: prefix_param.to_string(),
-        default_code: default_code_param,
-        digits_number: 1,
-    };
-    
-    // Attempt the insert with conflict handling
-    let result = diesel::insert_into(schema::counters::dsl::counters::table())
-    .values(&new_counter)
-        .on_conflict(schema::counters::entity)
-        .do_update()
-        .set(schema::counters::counter.eq(schema::counters::counter + 1))
-        .returning((schema::counters::prefix, schema::counters::default_code, schema::counters::counter))
-        .get_result::<(String, i32, i32)>(&mut conn).await
-        .map_err(|e| {
-            log::error!("Error generating code: {}", e);
-            e
-        })?;
-    
-    // Format the code
-    let (prefix_val, default_code_val, counter_val) = result;
-    let code = format!(
-        "{}{}",
-        prefix_val,
-        default_code_val + counter_val
-    );
-    
-    Ok(code)
+    crate::utils::code_generator::generate_code(table, prefix_param, default_code_param).await
 }

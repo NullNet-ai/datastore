@@ -1,0 +1,11 @@
+# Counter service: gRPC + Redis for unique code generation.
+# Copy to .env and adjust. Used by `make counter-service` and `make redis-flush` when run from repo root.
+
+# Redis connection (used by deadpool-redis; also for make redis-flush)
+REDIS_URL=redis://127.0.0.1:6379
+
+# gRPC listen address (host:port)
+CODE_SERVICE_GRPC_LISTEN=0.0.0.0:50051
+
+# Log level (e.g. info, debug)
+RUST_LOG=info

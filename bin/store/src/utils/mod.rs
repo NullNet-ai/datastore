@@ -1,3 +1,4 @@
+pub mod code_generator;
 pub mod constructor_service;
 pub mod helpers;
 pub mod parse_filters;
