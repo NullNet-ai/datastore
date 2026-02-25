@@ -115,6 +115,7 @@ pub async fn create_messages(
     Ok(messages)
 }
 
+#[allow(dead_code)]
 pub async fn insert_message(
     tx: &mut AsyncPgConnection,
     mut message: CrdtMessageModel, // Changed to mutable

@@ -17,7 +17,7 @@ use futures::Stream;
 use hlc;
 use log::{debug, info};
 use merkle::MerkleTree;
-use serde_json::{json, Value};
+use serde_json::Value;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
