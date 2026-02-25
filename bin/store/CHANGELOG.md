@@ -21,6 +21,11 @@ Kashan
     - Dynamic `CHUNK_LIMIT` from env for chunk requests; total message count in chunk responses; retry for failed chunk fetches; improved logging (first/last record IDs).
   - ***Organization initializers***:
     - Static IDs for super admin and system device personal organizations; `Register` has optional `initial_personal_organization_id`; tests for initial personal organization ID handling.
+  - ***Message ordering (oldest first)***:
+    - Messages are sent and applied in **ascending timestamp order** (oldest first) so that foreign-key dependencies are satisfied (parent rows before child rows).
+    - **Store:** `bin/store/src/providers/operations/sync/message_service.rs` — `get_messages_since` now orders by `crdt_messages::timestamp.asc()` when loading messages to send to the server. Queue path already sent in order via `queue_service.rs` `dequeue_batch` (`order.asc()`).
+    - **Server:** `bin/server/src/sync/crdt/crdt_service.rs` — `get_all_messages_from_timestamp` already uses `order_by(timestamp.asc())`. Chunk API in `bin/server/src/controllers/main_controllers.rs` uses `order(record_id)` (insertion order = timestamp order).
+    - Documented in `bin/store/src/providers/operations/sync/README.md` under “Message ordering (oldest first)”.
 
 ### Changed
   - ***Merkle save interval***:
