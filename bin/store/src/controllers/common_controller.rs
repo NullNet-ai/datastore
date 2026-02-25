@@ -274,7 +274,6 @@ pub async fn process_record_for_insert<T: serde::Serialize>(
     };
     request_body.process_record("create", auth, is_root_account, table_name);
     processed_record = request_body.record;
-
     if field_exists_in_table(table_name, "hypertable_timestamp") {
         if let Some(obj) = processed_record.as_object_mut() {
             if let Some(timestamp) = obj.get("timestamp") {
