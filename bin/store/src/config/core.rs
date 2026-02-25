@@ -16,6 +16,7 @@ pub struct EnvConfig {
 
     // Database Configuration
     pub database_url: String,
+    pub database_pool_size: usize,
     pub postgres_user: String,
     pub postgres_password: String,
     pub postgres_db: String,
@@ -136,6 +137,10 @@ impl Default for EnvConfig {
             // Database Configuration
             database_url: std::env::var("DATABASE_URL")
                 .unwrap_or_else(|_| "postgres://admin:admin@localhost:5432/datastore".to_string()),
+            database_pool_size: std::env::var("DATABASE_POOL_SIZE")
+                .unwrap_or_else(|_| "20".to_string())
+                .parse()
+                .unwrap_or(20),
             postgres_user: std::env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string()),
             postgres_password: std::env::var("POSTGRES_PASSWORD")
                 .unwrap_or_else(|_| "admin".to_string()),
@@ -178,9 +183,9 @@ impl Default for EnvConfig {
                 .parse()
                 .unwrap_or(false),
             sync_timer_ms: std::env::var("SYNC_TIMER_MS")
-                .unwrap_or_else(|_| "60000".to_string())
+                .unwrap_or_else(|_| "30000".to_string())
                 .parse()
-                .unwrap_or(60000),
+                .unwrap_or(30000),
             batch_sync_enabled: std::env::var("BATCH_SYNC_ENABLED")
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
@@ -283,9 +288,9 @@ impl Default for EnvConfig {
                 .parse()
                 .unwrap_or(false),
             merkle_save_interval: std::env::var("MERKLE_SAVE_INTERVAL")
-                .unwrap_or_else(|_| "300".to_string())
+                .unwrap_or_else(|_| "30000".to_string())
                 .parse()
-                .unwrap_or(300),
+                .unwrap_or(30000),
             max_concurrent_flushes: std::env::var("MAX_CONCURRENT_FLUSHES")
                 .unwrap_or_else(|_| "10".to_string())
                 .parse()

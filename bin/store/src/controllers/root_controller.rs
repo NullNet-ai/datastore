@@ -152,3 +152,9 @@ pub async fn root_update_account_password(
 
     root_update_record(auth, update_path_params, update_request, query).await
 }
+
+// Schema verification wrapper
+create_root_wrapper!(root_verify_schema => verify_schema,
+    auth: HttpRequest,
+    request_body: actix_web::web::Json<crate::controllers::store_controller::SchemaVerificationRequest>
+);

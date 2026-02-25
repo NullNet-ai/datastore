@@ -1,15 +1,15 @@
-DATABASE_URL=postgres://admin:admin@localhost:5433/template
+DATABASE_URL=postgres://admin:admin@localhost:5433/connectivo
 GROUP_ID=01JBHKXHYSKPP247HZZWHA3JBT
 JWT_SECRET=Ch@ng3m3Pl3@s3!!
 SYNC_ENABLED=true
-SYNC_TIMER_MS=60000
-RUST_LOG=info
+SYNC_TIMER_MS=30000
+RUST_LOG=debug
 GRPC_PORT=6001
 PORT=3000
 GRPC_URL=0.0.0.0
 POSTGRES_USER=admin
 POSTGRES_PASSWORD=admin
-POSTGRES_DB=template
+POSTGRES_DB=connectivo
 POSTGRES_HOST=localhost
 POSTGRES_PORT=5433
 BATCH_SYNC_ENABLED=true
@@ -20,6 +20,7 @@ GENERATE_GRPC=false
 GENERATE_TABLE_ENUM=false
 CLEANUP_PASSWORD=admin
 EXPERIMENTAL_PERMISSIONS=false
+DATABASE_POOL_SIZE=35
 
 #Organization setup
 DEFAULT_ORGANIZATION_ID=01JBHKXHYSKPP247HZZWHA3JCT
@@ -33,6 +34,7 @@ CACHE_TYPE=redis #inmemory
 
 #message stream
 BUCKET_CAPACITY=20
+MERKLE_SAVE_INTERVAL=30000
 
 #Data initialize
 INITIALIZE_ENTITY_DATA=false
@@ -56,3 +58,9 @@ TZ=UTC
 # This should not recommend to the developers
 TEMPORARY_ALLOWED_COLUMNS="device_details"
 SUPER_ADMIN_ID="01KHQB809JVN7FTK0H9WHCTDTC"
+
+# Bootstrap sync: pull all messages from server first (before normal sync). Used by store-clean-setup so new store gets server state (e.g. 14k messages) instead of overwriting server merkle.
+# When SYNC_BOOTSTRAP_URL is set, store runs one bootstrap sync at startup and does not print "Store is running" until it completes.
+SYNC_BOOTSTRAP_URL=http://localhost:3002
+SYNC_BOOTSTRAP_USERNAME=admin@dnamicro.com
+SYNC_BOOTSTRAP_PASSWORD=ch@ng3m3Pl3@s3!!

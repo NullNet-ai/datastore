@@ -2667,3 +2667,57 @@ async fn write_query_to_debug_log(
 
     Ok(())
 }
+/// Schema verification endpoint
+/// Verifies that a table exists and optionally checks if specified fields exist in the table
+#[derive(Deserialize)]
+pub struct SchemaVerificationRequest {
+    pub entity: String,
+    pub fields: Option<Vec<String>>,
+}
+
+#[derive(Serialize)]
+pub struct SchemaVerificationResponse {
+    pub exists: bool,
+    pub available_fields: Vec<String>,
+    pub missing_fields: Vec<String>,
+}
+
+pub async fn verify_schema(
+    _auth: HttpRequest,
+    request_body: web::Json<SchemaVerificationRequest>,
+) -> impl Responder {
+    use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
+
+    let request = request_body.into_inner();
+    let table_name = request.entity;
+
+    // Check if table exists by trying to get its fields
+    let available_fields = match get_table_fields(&table_name) {
+        Some(fields) => fields,
+        None => {
+            // Table doesn't exist
+            return HttpResponse::Ok().json(SchemaVerificationResponse {
+                exists: false,
+                available_fields: vec![],
+                missing_fields: request.fields.unwrap_or_default(),
+            });
+        }
+    };
+
+    // Table exists, now check requested fields if provided
+    let mut missing_fields = Vec::new();
+
+    if let Some(fields_to_check) = request.fields {
+        for field in &fields_to_check {
+            if !field_exists_in_table(&table_name, field) {
+                missing_fields.push(field.clone());
+            }
+        }
+    }
+
+    HttpResponse::Ok().json(SchemaVerificationResponse {
+        exists: true,
+        available_fields,
+        missing_fields,
+    })
+}

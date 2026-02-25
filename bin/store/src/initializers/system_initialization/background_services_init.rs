@@ -88,11 +88,11 @@ impl BackgroundServicesInitializer {
         merkle_manager.load_trees_from_db().await;
         log::info!("Merkle trees loaded from database successfully");
 
-        // Save to database every 5 minutes (300000 milliseconds) or use environment variable
+        // Save to database every 30 seconds (30000 ms) or use environment variable
         let save_interval = std::env::var("MERKLE_SAVE_INTERVAL")
             .ok()
             .and_then(|s| s.parse::<u64>().ok())
-            .unwrap_or(300000); // Default to 5 minutes in milliseconds
+            .unwrap_or(30000); // Default to 30 seconds in milliseconds
 
         log::info!(
             "Merkle tree save interval set to {} milliseconds",

@@ -124,12 +124,6 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
                             _ => processed_type.to_lowercase(),
                         };
 
-                        log::debug!("type_str: {}", type_str);
-                        log::debug!("processed_type: {}", processed_type);
-                        log::debug!("is_array: {}", is_array);
-                        log::debug!("is_nullable: {}", is_nullable);
-                        log::debug!("simplified_type: {}", simplified_type);
-
                         return Some(FieldTypeInfo {
                             is_array,
                             field_type: simplified_type,

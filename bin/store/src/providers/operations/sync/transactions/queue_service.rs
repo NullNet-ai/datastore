@@ -50,30 +50,30 @@ impl QueueService {
         }
     }
 
+    /// Enqueue one item. Uses UPDATE ... RETURNING to get next order in one step (shorter critical section than SELECT for_update + insert + update).
     pub async fn enqueue(
         conn: &mut AsyncPgConnection,
         item: Value,
         queue_name: &str,
     ) -> Result<i32, DieselError> {
+        use diesel::ExpressionMethods;
         conn.transaction::<_, DieselError, _>(|conn| {
             Box::pin(async move {
-                let queue = queues::table
+                let (queue_id, new_order): (String, i32) = diesel::update(queues::table)
+                    .set(queues::size.eq(queues::size + 1))
                     .filter(queues::name.eq(queue_name))
-                    .first::<QueueModel>(conn)
+                    .returning((queues::id, queues::size))
+                    .get_result(conn)
                     .await
-                    .optional()?;
-
-                let queue = match queue {
-                    Some(q) => q,
-                    None => return Err(DieselError::NotFound),
-                };
-
-                let new_order = queue.size + 1;
+                    .map_err(|e| {
+                        log::error!("Failed to increment queue size: {}", e);
+                        e
+                    })?;
 
                 let queue_item = QueueItemModel {
                     id: Ulid::new().to_string(),
                     order: new_order,
-                    queue_id: queue.id.clone(),
+                    queue_id,
                     value: serde_json::to_string(&item).unwrap_or_else(|_| "{}".to_string()),
                 };
 
@@ -86,19 +86,7 @@ impl QueueService {
                         e
                     })?;
 
-                diesel::update(queues::table)
-                    .filter(queues::id.eq(&queue.id))
-                    .set(queues::size.eq(new_order))
-                    .execute(conn)
-                    .await
-                    .map_err(|e| {
-                        log::error!("Failed to update queue size: {}", e);
-                        e
-                    })?;
-
                 Ok(new_order)
-
-                // ... existing code ...
             })
         })
         .await
@@ -158,6 +146,78 @@ impl QueueService {
                 let rows = diesel::update(queues::table)
                     .filter(queues::name.eq(queue_name))
                     .set(queues::count.eq(queues::count + 1))
+                    .execute(conn)
+                    .await?;
+                if rows == 0 {
+                    Err(DieselError::NotFound)
+                } else {
+                    Ok(())
+                }
+            })
+        })
+        .await
+    }
+
+    /// Dequeue up to `limit` items (by order) without acking. Call ack_batch after sync.
+    pub async fn dequeue_batch(
+        conn: &mut AsyncPgConnection,
+        queue_name: &str,
+        limit: i32,
+    ) -> Result<Vec<Value>, DieselError> {
+        use diesel::ExpressionMethods;
+        if limit <= 0 {
+            return Ok(vec![]);
+        }
+        let items: Vec<Value> = conn
+            .transaction::<_, DieselError, _>(|conn| {
+                Box::pin(async move {
+                    let queue = queues::table
+                        .filter(queues::name.eq(queue_name))
+                        .first::<QueueModel>(conn)
+                        .await
+                        .optional()?;
+                    let queue = match queue {
+                        Some(q) => q,
+                        None => return Ok(vec![]),
+                    };
+                    if queue.count == queue.size {
+                        return Ok(vec![]);
+                    }
+                    let max_order = (queue.count + limit).min(queue.size);
+                    let queue_items_result = queue_items::table
+                        .filter(queue_items::queue_id.eq(&queue.id))
+                        .filter(queue_items::order.ge(queue.count + 1))
+                        .filter(queue_items::order.le(max_order))
+                        .order(queue_items::order.asc())
+                        .load::<QueueItemModel>(conn)
+                        .await?;
+                    let mut out = Vec::with_capacity(queue_items_result.len());
+                    for item in queue_items_result {
+                        if let Ok(v) = serde_json::from_str(&item.value) {
+                            out.push(v);
+                        }
+                    }
+                    Ok(out)
+                })
+            })
+            .await?;
+        Ok(items)
+    }
+
+    /// Ack the last N items (advance count by n).
+    pub async fn ack_batch(
+        conn: &mut AsyncPgConnection,
+        queue_name: &str,
+        n: i32,
+    ) -> Result<(), DieselError> {
+        if n <= 0 {
+            return Ok(());
+        }
+        conn.transaction::<_, DieselError, _>(|conn| {
+            Box::pin(async move {
+                let rows = diesel::update(queues::table)
+                    .filter(queues::name.eq(queue_name))
+                    .set(queues::count.eq(queues::count + n))
                     .execute(conn)
                     .await?;
                 if rows == 0 {

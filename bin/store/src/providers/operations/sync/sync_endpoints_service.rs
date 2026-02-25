@@ -27,7 +27,7 @@ pub async fn create_endpoint(
     endpoint: &SyncEndpointModel,
 ) -> Result<serde_json::Value, DieselError> {
     // Log the endpoint data (similar to console.log in the TypeScript version)
-    log::info!("@schema.sync_endpoints {:?}", endpoint);
+    log::debug!("@schema.sync_endpoints {:?}", endpoint);
 
     diesel::insert_into(sync_endpoints::table)
         .values(endpoint)
