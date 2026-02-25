@@ -7,6 +7,8 @@ use diesel::upsert::excluded;
 use diesel_async::AsyncPgConnection;
 use diesel_async::RunQueryDsl;
 use serde_json::Value;
+use std::collections::HashSet;
+use std::hash::{Hash, Hasher};
 
 pub async fn create_messages(
     mut tx: &mut AsyncPgConnection,
@@ -115,6 +117,7 @@ pub async fn create_messages(
     Ok(messages)
 }
 
+#[allow(dead_code)]
 pub async fn insert_message(
     tx: &mut AsyncPgConnection,
     mut message: CrdtMessageModel, // Changed to mutable
@@ -125,6 +128,78 @@ pub async fn insert_message(
 
     diesel::insert_into(crdt_messages::table)
         .values(&message)
+        .on_conflict((
+            crdt_messages::timestamp,
+            crdt_messages::group_id,
+            crdt_messages::row,
+            crdt_messages::column,
+        ))
+        .do_update()
+        .set((
+            crdt_messages::database.eq(excluded(crdt_messages::database)),
+            crdt_messages::dataset.eq(excluded(crdt_messages::dataset)),
+            crdt_messages::client_id.eq(excluded(crdt_messages::client_id)),
+            crdt_messages::value.eq(excluded(crdt_messages::value)),
+            crdt_messages::operation.eq(excluded(crdt_messages::operation)),
+            crdt_messages::hypertable_timestamp.eq(excluded(crdt_messages::hypertable_timestamp)),
+        ))
+        .execute(tx)
+        .await
+}
+
+/// Wrapper so we can deduplicate by ON CONFLICT key (timestamp, group_id, row, column) using a set.
+#[derive(Clone)]
+struct ByConflictKey(CrdtMessageModel);
+
+impl Hash for ByConflictKey {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.0.timestamp.hash(state);
+        self.0.group_id.hash(state);
+        self.0.row.hash(state);
+        self.0.column.hash(state);
+    }
+}
+
+impl PartialEq for ByConflictKey {
+    fn eq(&self, other: &Self) -> bool {
+        self.0.timestamp == other.0.timestamp
+            && self.0.group_id == other.0.group_id
+            && self.0.row == other.0.row
+            && self.0.column == other.0.column
+    }
+}
+
+impl Eq for ByConflictKey {}
+
+/// Insert multiple messages in one statement. Messages are cleaned (row/value trim) before insert.
+/// Batches are deduplicated by (timestamp, group_id, row, column) via a set so that ON CONFLICT
+/// DO UPDATE never affects the same row twice (PostgreSQL error otherwise).
+pub async fn insert_messages_batch(
+    tx: &mut AsyncPgConnection,
+    messages: &[CrdtMessageModel],
+) -> Result<usize, DieselError> {
+    if messages.is_empty() {
+        return Ok(0);
+    }
+    let deduped: Vec<CrdtMessageModel> = messages
+        .iter()
+        .map(|m| ByConflictKey(m.clone()))
+        .collect::<HashSet<_>>()
+        .into_iter()
+        .map(|k| k.0)
+        .collect();
+
+    let cleaned: Vec<CrdtMessageModel> = deduped
+        .iter()
+        .map(|m| CrdtMessageModel {
+            row: m.row.trim_matches('"').to_string(),
+            value: m.value.trim_matches('"').to_string(),
+            ..m.clone()
+        })
+        .collect();
+
+    diesel::insert_into(crdt_messages::table)
+        .values(&cleaned)
         .on_conflict((
             crdt_messages::timestamp,
             crdt_messages::group_id,
@@ -211,6 +286,7 @@ pub async fn get_messages_since(
 
     let results = crdt_messages::table
         .filter(crdt_messages::timestamp.gt(timestamp_str))
+        .order(crdt_messages::timestamp.asc())
         .load::<CrdtMessageModel>(conn)
         .await?;
 

@@ -150,9 +150,16 @@ pub fn deserialize_value(value: &str) -> Result<serde_json::Value, String> {
             }
             let num_str = &value[2..];
             match num_str.parse::<f64>() {
-                Ok(num) => Ok(serde_json::Value::Number(
-                    serde_json::Number::from_f64(num).unwrap_or(serde_json::Number::from(0)),
-                )),
+                Ok(num) => {
+                    // Emit JSON integer for whole numbers (e.g. 0, 1) so clients get 0 not 0.0 (tombstone, etc.)
+                    let n =
+                        if num.fract() == 0.0 && num >= i64::MIN as f64 && num <= i64::MAX as f64 {
+                            serde_json::Number::from(num as i64)
+                        } else {
+                            serde_json::Number::from_f64(num).unwrap_or(serde_json::Number::from(0))
+                        };
+                    Ok(serde_json::Value::Number(n))
+                }
                 Err(_) => Err(format!("Failed to parse number: {}", num_str)),
             }
         }

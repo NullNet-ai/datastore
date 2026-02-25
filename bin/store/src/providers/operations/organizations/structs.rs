@@ -32,6 +32,9 @@ pub struct Register {
     pub device_categories: Option<Vec<String>>,
 
     pub responsible_account_organization_id: Option<String>,
+
+    /// When set (e.g. by initializers), the personal organization is created with this ID instead of a new ULID. Used only for initial super admin and system device personal orgs.
+    pub initial_personal_organization_id: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]

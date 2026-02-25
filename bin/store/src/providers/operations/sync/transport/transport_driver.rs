@@ -327,6 +327,7 @@ impl HttpTransportDriver {
             }
         };
 
+        log::debug!("Sync POST response status: {}", response.status());
         if response.status() != StatusCode::OK {
             return Err(Box::new(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -354,13 +355,29 @@ impl HttpTransportDriver {
             }
         };
 
-        // Check if incomplete and chunks are needed
-        if result
+        let msg_count = result
+            .get("messages")
+            .and_then(|m| m.as_array())
+            .map(|a| a.len())
+            .unwrap_or(0);
+        log::debug!(
+            "Sync POST response: messages={}, has merkle={}",
+            msg_count,
+            result.get("merkle").is_some()
+        );
+
+        // Check if incomplete and chunks are needed (server sends incomplete as 0/1 number, not bool)
+        let is_incomplete = result
             .get("incomplete")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false)
-        {
+            .map(|v| {
+                v.as_bool().unwrap_or(false)
+                    || v.as_u64().map(|n| n != 0).unwrap_or(false)
+                    || v.as_i64().map(|n| n != 0).unwrap_or(false)
+            })
+            .unwrap_or(false);
+        if is_incomplete {
             log::debug!("Chunk transfer requested");
+            log::debug!("Incomplete: {}", is_incomplete);
 
             let client_id = data
                 .get("client_id")
@@ -374,82 +391,120 @@ impl HttpTransportDriver {
                 .cloned()
                 .unwrap_or_default();
 
+            let chunk_limit: usize = std::env::var("CHUNK_LIMIT")
+                .unwrap_or_else(|_| "100".to_string())
+                .parse()
+                .unwrap_or(100);
+
+            const CHUNK_FETCH_MAX_RETRIES: u32 = 10;
+
             let mut start = 0;
             let mut items = 0;
 
             loop {
-                // Fetch a chunk
-                let chunk_response = match client
-                    .get(&format!("{}/app/sync/chunk", sync_endpoint))
-                    .basic_auth(username, Some(password))
-                    .query(&[("client_id", &client_id), ("start", &start.to_string())])
-                    .send()
-                    .await
-                {
-                    Ok(resp) => resp,
-                    Err(e) => {
-                        return Err(Box::new(e));
-                    }
-                };
+                // Fetch one chunk; retry on failure (same start). Only advance or delete on success.
+                let chunk_messages = 'fetch: loop {
+                    for attempt in 1..=CHUNK_FETCH_MAX_RETRIES {
+                        let chunk_response = match client
+                            .get(&format!("{}/app/sync/chunk", sync_endpoint))
+                            .basic_auth(username, Some(password))
+                            .query(&[
+                                ("client_id", client_id.as_str()),
+                                ("start", &start.to_string()),
+                                ("limit", &chunk_limit.to_string()),
+                            ])
+                            .send()
+                            .await
+                        {
+                            Ok(resp) => resp,
+                            Err(e) => {
+                                log::warn!(
+                                    "Chunk fetch failed (start={}, attempt {}): {}",
+                                    start,
+                                    attempt,
+                                    e
+                                );
+                                if attempt == CHUNK_FETCH_MAX_RETRIES {
+                                    return Err(Box::new(e));
+                                }
+                                continue;
+                            }
+                        };
+                        log::debug!("Chunk response: {:?}", chunk_response);
 
-                if chunk_response.status() != StatusCode::OK {
-                    return Err(Box::new(std::io::Error::new(
-                        std::io::ErrorKind::Other,
-                        format!("API error: {}", chunk_response.status()),
-                    )));
-                }
-
-                let chunk_data = match chunk_response.text().await {
-                    Ok(text) => match serde_json::from_str::<Value>(&text) {
-                        Ok(data) => data,
-                        Err(e) => {
-                            return Err(Box::new(e));
+                        if chunk_response.status() != StatusCode::OK {
+                            log::warn!(
+                                "Chunk API error start={} attempt {}: {}",
+                                start,
+                                attempt,
+                                chunk_response.status()
+                            );
+                            if attempt == CHUNK_FETCH_MAX_RETRIES {
+                                return Err(Box::new(std::io::Error::new(
+                                    std::io::ErrorKind::Other,
+                                    format!("API error: {}", chunk_response.status()),
+                                )));
+                            }
+                            continue;
                         }
-                    },
-                    Err(e) => {
-                        return Err(Box::new(e));
+
+                        let chunk_data = match chunk_response.text().await {
+                            Ok(text) => match serde_json::from_str::<Value>(&text) {
+                                Ok(data) => data,
+                                Err(e) => {
+                                    log::warn!(
+                                        "Chunk parse failed start={} attempt {}: {}",
+                                        start,
+                                        attempt,
+                                        e
+                                    );
+                                    if attempt == CHUNK_FETCH_MAX_RETRIES {
+                                        return Err(Box::new(e));
+                                    }
+                                    continue;
+                                }
+                            },
+                            Err(e) => {
+                                log::warn!(
+                                    "Chunk body read failed start={} attempt {}: {}",
+                                    start,
+                                    attempt,
+                                    e
+                                );
+                                if attempt == CHUNK_FETCH_MAX_RETRIES {
+                                    return Err(Box::new(e));
+                                }
+                                continue;
+                            }
+                        };
+
+                        let msgs = chunk_data
+                            .get("data")
+                            .and_then(|d| d.get("messages"))
+                            .and_then(|m| m.as_array())
+                            .cloned()
+                            .unwrap_or_default();
+
+                        break 'fetch msgs;
                     }
+                    unreachable!("retry loop exits via break or return");
                 };
-
-                let chunk_messages = chunk_data
-                    .get("data")
-                    .and_then(|d| d.get("messages"))
-                    .and_then(|m| m.as_array())
-                    .cloned()
-                    .unwrap_or_default();
-
-                let size = chunk_data
-                    .get("data")
-                    .and_then(|d| d.get("size"))
-                    .and_then(|s| s.as_u64())
-                    .unwrap_or(0);
 
                 items += chunk_messages.len();
 
                 log::debug!(
-                    "Got Chunk of client_id{} size:{}/{}",
+                    "Got Chunk of client_id{} items so far:{}, this chunk:{}",
                     client_id,
                     items,
-                    size
+                    chunk_messages.len()
                 );
 
                 if chunk_messages.is_empty() {
-                    log::debug!("Got all chunks of client_id{} - deleting", client_id);
-
-                    // Delete the chunks
-                    let _ = client
-                        .delete(&format!("{}/app/sync/chunk", sync_endpoint))
-                        .basic_auth(username, Some(password))
-                        .query(&[("client_id", &client_id)])
-                        .send()
-                        .await;
-
-                    log::debug!("Got all chunks of client_id{} - deleted", client_id);
-
+                    // No more chunks; exit loop and delete once outside
                     break;
                 }
 
-                // Transform chunk messages
+                // Consumed this chunk: append and advance
                 let transformed_messages: Vec<Value> = chunk_messages
                     .iter()
                     .filter_map(|m| m.get("message").cloned())
@@ -460,7 +515,17 @@ impl HttpTransportDriver {
                 start += chunk_messages.len();
             }
 
-            log::debug!("Chunk transfer done");
+            // All chunks consumed — delete server-side buffer once (outside loop)
+            log::debug!(
+                "Chunk transfer done; deleting client_id{} buffer",
+                client_id
+            );
+            let _ = client
+                .delete(&format!("{}/app/sync/chunk", sync_endpoint))
+                .basic_auth(username, Some(password))
+                .query(&[("client_id", &client_id)])
+                .send()
+                .await;
 
             // Update the messages in the result
             result["messages"] = json!(messages);

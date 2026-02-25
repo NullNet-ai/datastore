@@ -5,7 +5,7 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.33
+## 0.2.35
 ### Author
 Bert
 
@@ -15,6 +15,53 @@ Bert
     - Added `/api/store/root/verify_schema` POST route to verify schema for root account tokens.
     - Implemented schema verification logic in `verify_schema` controller function.
 
+## 0.2.34
+
+### Author
+Kashan
+
+### Fixed
+  - ***CRDT message batch insert: duplicate conflict key***:
+    - `insert_messages_batch` now deduplicates by the ON CONFLICT key `(timestamp, group_id, row, column)` using a set before running the upsert, so PostgreSQL no longer errors with "ON CONFLICT DO UPDATE command cannot affect row a second time" when a batch contains duplicate keys (e.g. from sync). Implemented in `bin/store/src/providers/operations/sync/message_service.rs`.
+
+---
+## 0.2.33
+
+### Author
+Kashan
+
+### Added
+  - ***Bootstrap sync (pull from server first)***:
+    - When a new store starts with `SYNC_BOOTSTRAP_URL` set, it runs one bootstrap sync at the first `bg_sync` cycle: sends empty merkle and no messages so the server returns all messages (e.g. 14k). The store applies them and updates its merkle from the server, so the server’s existing state is not overwritten by the client’s empty/small merkle.
+    - Env: `SYNC_BOOTSTRAP_URL`, `SYNC_BOOTSTRAP_USERNAME`, `SYNC_BOOTSTRAP_PASSWORD` (see `.env` and sync README).
+    - Server: when client merkle is empty or `{}`, server treats as bootstrap and returns all messages for the group (via `get_all_messages_from_timestamp(..., "")`); chunking/incomplete flow unchanged.
+  - ***Database pool size***:
+    - Configurable `DATABASE_POOL_SIZE` (default 35) for connection handling under load.
+  - ***Chunk fetching (sync)***:
+    - Dynamic `CHUNK_LIMIT` from env for chunk requests; total message count in chunk responses; retry for failed chunk fetches; improved logging (first/last record IDs).
+  - ***Organization initializers***:
+    - Static IDs for super admin and system device personal organizations; `Register` has optional `initial_personal_organization_id`; tests for initial personal organization ID handling.
+  - ***Message ordering (oldest first)***:
+    - Messages are sent and applied in **ascending timestamp order** (oldest first) so that foreign-key dependencies are satisfied (parent rows before child rows).
+    - **Store:** `bin/store/src/providers/operations/sync/message_service.rs` — `get_messages_since` now orders by `crdt_messages::timestamp.asc()` when loading messages to send to the server. Queue path already sent in order via `queue_service.rs` `dequeue_batch` (`order.asc()`).
+    - **Server:** `bin/server/src/sync/crdt/crdt_service.rs` — `get_all_messages_from_timestamp` already uses `order_by(timestamp.asc())`. Chunk API in `bin/server/src/controllers/main_controllers.rs` uses `order(record_id)` (insertion order = timestamp order).
+    - Documented in `bin/store/src/providers/operations/sync/README.md` under “Message ordering (oldest first)”.
+
+### Changed
+  - ***Merkle save interval***:
+    - Default Merkle tree save interval reduced from 5 minutes to 5 seconds (`MERKLE_SAVE_INTERVAL`).
+  - ***Message processing (sync)***:
+    - Batch flush timeout and more efficient batch handling; `insert_messages_batch` for bulk DB inserts; improved error handling and logging. (Note: HLC/clock locking was later removed to allow sync and CRDT insertion to run in parallel; MerkleManager uses async RwLock internally.)
+  - ***store-clean-setup timeouts***:
+    - Expect timeout increased from 80s to 600s; fallback `timeout` from 30s to 600s so long bootstrap sync or DB init can complete before the script kills the process.
+
+### Fixed
+  - Server/client sync behavior when server already has many messages: new clients now bootstrap from server first instead of pushing an empty merkle and replacing server state.
+  - ***Duplicate messages after merkle parsing***:
+    - **Server merkle in response**: Sync response merkle is parsed correctly whether the server sends it as a JSON string or a JSON object (client normalizes to string then `MerkleTree::deserialize`), so diff computation no longer misbehaves and triggers unnecessary retries.
+    - **No recursive sync on timeline lag**: When the client detects a diff (timeline lag) between server and client merkle, it no longer recurses into another sync to “catch up”. That recursive sync was refetching and resending the same or overlapping messages and caused duplicate sends (e.g. 149 messages becoming 270/297). Catch-up is now left to the next `bg_sync` cycle or to the messages already returned in the current response.
+
+---
 ## 0.2.32
 ### Author
 Bert

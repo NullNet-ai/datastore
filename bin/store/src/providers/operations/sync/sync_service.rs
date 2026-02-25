@@ -18,10 +18,111 @@ use hlc;
 use log::{debug, info};
 use merkle::MerkleTree;
 use serde_json::Value;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Duration;
 use tokio::time::sleep;
 
+/// True after bootstrap_sync_once has been run once this process (when SYNC_BOOTSTRAP_URL is set).
+static BOOTSTRAP_DONE: AtomicBool = AtomicBool::new(false);
+
 use super::transport::transport_driver::PostOpts;
+
+/// Returns bootstrap sync endpoint from env (SYNC_BOOTSTRAP_URL, SYNC_BOOTSTRAP_USERNAME, SYNC_BOOTSTRAP_PASSWORD).
+/// When set, the store will pull all messages from this server first before doing normal sync.
+pub fn get_bootstrap_opts_from_env() -> Option<PostOpts> {
+    let url = std::env::var("SYNC_BOOTSTRAP_URL").ok()?;
+    let url = url.trim();
+    if url.is_empty() {
+        return None;
+    }
+    let username = std::env::var("SYNC_BOOTSTRAP_USERNAME").unwrap_or_else(|_| String::new());
+    let password = std::env::var("SYNC_BOOTSTRAP_PASSWORD").unwrap_or_else(|_| String::new());
+    Some(PostOpts {
+        url: url.to_string(),
+        username,
+        password,
+    })
+}
+
+/// One-time bootstrap sync: send empty merkle and no messages so server returns all messages (and optionally chunks).
+/// Applies received messages and updates local merkle from server response. Call before starting normal bg_sync when SYNC_BOOTSTRAP_URL is set.
+pub async fn bootstrap_sync_once(
+    conn: &mut AsyncPgConnection,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let opts = match get_bootstrap_opts_from_env() {
+        Some(o) => o,
+        None => return Ok(()),
+    };
+    let group_id =
+        std::env::var("GROUP_ID").unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JBT".to_string());
+    let clock = HlcService::get_clock(conn).await?;
+    let empty_merkle =
+        serde_json::to_string(&MerkleTree::new()).unwrap_or_else(|_| "{}".to_string());
+    log::debug!(
+        "Bootstrap sync: pulling all messages from {} (group_id={})",
+        opts.url,
+        group_id
+    );
+    let result = HttpTransportDriver
+        .post(
+            serde_json::json!({
+                "group_id": group_id,
+                "client_id": clock.timestamp.node_id,
+                "messages": [],
+                "merkle": empty_merkle,
+            }),
+            &opts,
+        )
+        .await
+        .map_err(|e| {
+            log::error!("Bootstrap sync network error: {}", e);
+            e
+        })?;
+    if result.get("error").is_some() {
+        log::error!("Bootstrap sync: server returned error");
+        return Err("Bootstrap sync server error".into());
+    }
+    if let Some(received_messages) = result.get("messages").and_then(|m| m.as_array()) {
+        if !received_messages.is_empty() {
+            log::debug!(
+                "Bootstrap sync: applying {} messages from server",
+                received_messages.len()
+            );
+            receive_messages(conn, received_messages.clone()).await?;
+        }
+    }
+    if let Some(merkle_val) = result.get("merkle") {
+        let merkle_str = if let Some(s) = merkle_val.as_str() {
+            s.to_string()
+        } else {
+            serde_json::to_string(merkle_val).unwrap_or_default()
+        };
+        if !merkle_str.is_empty() && merkle_str != "{}" {
+            if let Ok(tree) = MerkleTree::deserialize(&merkle_str) {
+                HlcService::commit_tree(conn, &tree).await?;
+                log::debug!("Bootstrap sync: merkle updated from server");
+            }
+        }
+    }
+    log::debug!("Bootstrap sync complete");
+    Ok(())
+}
+
+/// Consumes the error (so it is not held across an await) and returns its message for use in a Send future.
+fn network_error_message(e: Box<dyn std::error::Error>) -> String {
+    log::error!("Network Failure - {}", e);
+    e.to_string()
+}
+
+/// Consumes the error and returns its message so the future stays Send.
+fn error_to_message(e: Box<dyn std::error::Error>) -> String {
+    e.to_string()
+}
+
+/// Consumes an error by value so it is not held across an await (keeps future Send).
+fn consume_error<E: std::fmt::Display>(e: E) {
+    log::error!("{}", e);
+}
 
 pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
     let operation = "Insert".to_string();
@@ -119,7 +220,7 @@ pub async fn send_messages(
     mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessageModel>,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    apply_messages(&mut tx, messages.clone()).await?;
+    apply_messages(&mut tx, messages.clone(), true).await?;
     let messages_value: Vec<Value> = messages
         .iter()
         .map(|msg| {
@@ -161,38 +262,54 @@ pub async fn send_messages(
 
     Ok(())
 }
+/// Apply messages to the dataset table and to crdt_messages (channel).
+/// - When `from_local_insert` is true: apply all and send all (no compare). Fast path.
+/// - When false (from server): compare first, only apply/send when we're the winner.
 async fn apply_messages(
     mut tx: &mut AsyncPgConnection,
     messages: Vec<CrdtMessageModel>,
+    from_local_insert: bool,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
+    let mut to_send: Vec<CrdtMessageModel> = Vec::new();
 
+    if from_local_insert {
+        for msg in &messages {
+            apply(&mut tx, msg).await?;
+            let inserted_timestamp: Clock =
+                HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
+            let mut updated_msg = msg.clone();
+            updated_msg.group_id =
+                std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
+            updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
+            to_send.push(updated_msg);
+        }
+    } else {
+        let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
+        for (msg, existing_msg) in &existing_messages {
+            let should_apply = match existing_msg {
+                None => true,
+                Some(existing) => existing.timestamp < msg.timestamp,
+            };
+            if should_apply {
+                apply(&mut tx, msg).await?;
+                let inserted_timestamp: Clock =
+                    HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
+                let mut updated_msg = msg.clone();
+                updated_msg.group_id =
+                    std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
+                updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
+                to_send.push(updated_msg);
+            }
+        }
+    }
+
+    // Phase 2: only after all applies succeeded, send to channel (crdt_messages).
     let sender = get_sender().cloned().ok_or_else(|| {
         log::error!("Failed to send message: sender not available");
         std::io::Error::new(std::io::ErrorKind::Other, "sender not available")
     })?;
-
-    for (msg, existing_msg) in existing_messages {
-        let should_apply = match &existing_msg {
-            None => true,
-            Some(existing) => existing.timestamp < msg.timestamp,
-        };
-
-        if should_apply {
-            apply(&mut tx, &msg).await?;
-        }
-
-        if existing_msg.is_none() || existing_msg.as_ref().unwrap().timestamp != msg.timestamp {
-            let inserted_timestamp: Clock =
-                HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
-
-            let mut updated_msg = msg;
-            updated_msg.group_id =
-                std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
-            updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
-
-            sender.send(updated_msg)?;
-        }
+    for msg in to_send {
+        sender.send(msg)?;
     }
 
     Ok(())
@@ -274,64 +391,64 @@ pub async fn iterate_queue<'a>(endpoints: Vec<PostOpts>) -> impl Stream<Item = V
     }
 }
 
+/// Max queue items to batch into one sync request (reduces round-trips).
+const SYNC_QUEUE_BATCH_SIZE: i32 = 20;
+
 pub async fn process_queue(
     endpoints: Vec<PostOpts>,
     mut conn: &mut AsyncPgConnection,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let sync_timer_ms = 20000;
-
-    // Create a file to store benchmark data
-
-    // Write CSV header
+    let batch_size = std::env::var("SYNC_QUEUE_BATCH_SIZE")
+        .ok()
+        .and_then(|s| s.parse::<i32>().ok())
+        .unwrap_or(SYNC_QUEUE_BATCH_SIZE)
+        .max(1);
 
     loop {
-        // ! default param passed as test
         let size = match QueueService::size("test").await {
             Ok(s) => s,
-            Err(_) => {
-                continue;
-            }
+            Err(_) => continue,
         };
-
         if size == 0 {
             break;
         }
 
-        // ! default param passed as test
-        let pack = match QueueService::dequeue(&mut conn, "test").await {
-            Ok(Some(value)) => value,
-            Ok(None) => {
-                log::debug!("Queue dequeue returned None, no items available");
+        let packs = match QueueService::dequeue_batch(&mut conn, "test", batch_size.min(size)).await
+        {
+            Ok(p) if p.is_empty() => {
                 sleep(Duration::from_millis(100)).await;
                 continue;
             }
+            Ok(p) => p,
             Err(e) => {
-                log::error!("Error dequeuing from queue: {}", e);
+                log::error!("Error dequeuing batch from queue: {}", e);
                 sleep(Duration::from_millis(sync_timer_ms)).await;
                 continue;
             }
         };
-        // println!(
-        //     "pack {}",
-        //     serde_json::to_string_pretty(&pack).unwrap_or_default()
-        // );
 
-        let messages = pack
-            .get("messages")
-            .and_then(|m| m.as_array())
-            .cloned()
-            .unwrap_or_default();
-
-        let since = pack
-            .get("since")
-            .and_then(|s| s.as_str())
-            .map(|s_str| hlc::Timestamp::parse(s_str.to_string()))
-            .map(|t| t.clone());
-
-        let transaction_id = pack
-            .get("transaction_id")
-            .and_then(|t| t.as_str())
-            .map(ToString::to_string);
+        let mut messages: Vec<Value> = Vec::new();
+        let mut since: Option<hlc::Timestamp> = None;
+        let mut transaction_id: Option<String> = None;
+        for (i, pack) in packs.iter().enumerate() {
+            let pack_messages = pack
+                .get("messages")
+                .and_then(|m| m.as_array())
+                .cloned()
+                .unwrap_or_default();
+            messages.extend(pack_messages);
+            if i == 0 {
+                since = pack
+                    .get("since")
+                    .and_then(|s| s.as_str())
+                    .map(|s_str| hlc::Timestamp::parse(s_str.to_string()));
+                transaction_id = pack
+                    .get("transaction_id")
+                    .and_then(|t| t.as_str())
+                    .map(ToString::to_string);
+            }
+        }
 
         let mut all_success = true;
         for endpoint in &endpoints {
@@ -353,11 +470,15 @@ pub async fn process_queue(
         }
 
         if all_success {
-            log::debug!("All endpoints succeeded");
-            if let Err(e) = QueueService::ack(&mut conn, "test").await {
-                log::error!("Failed to acknowledge queue message: {}", e);
+            let n = packs.len() as i32;
+            log::debug!(
+                "Synced batch of {} queue items ({} messages) to all endpoints",
+                n,
+                messages.len()
+            );
+            if let Err(e) = QueueService::ack_batch(&mut conn, "test", n).await {
+                log::error!("Failed to ack batch: {}", e);
             }
-            // Check if we've reached a benchmark interval for queue item
         } else {
             sleep(Duration::from_millis(sync_timer_ms)).await;
         }
@@ -389,6 +510,15 @@ where
     }
     log::debug!("Sync Service Initialized");
 
+    // When SYNC_BOOTSTRAP_URL is set, run bootstrap sync once per process (pull all messages from server first).
+    if get_bootstrap_opts_from_env().is_some() && !BOOTSTRAP_DONE.load(Ordering::Relaxed) {
+        if let Err(e) = bootstrap_sync_once(&mut conn).await {
+            log::error!("Bootstrap sync failed: {}", e);
+        } else {
+            BOOTSTRAP_DONE.store(true, Ordering::Relaxed);
+        }
+    }
+
     // Get endpoints from sync_endpoints_service
     let endpoints = match sync_endpoints_service::get_sync_endpoints(&mut conn).await {
         Ok(endpoints) => endpoints,
@@ -403,6 +533,7 @@ where
         serde_json::to_string_pretty(&endpoints).unwrap_or_default()
     );
 
+    let mut queue_size_after = 0i32;
     if !endpoints.is_empty() {
         let queue_size = QueueService::size("test").await.unwrap_or(0);
 
@@ -424,14 +555,33 @@ where
                 log::error!("Error processing queue: {}", e);
             }
         }
+        queue_size_after = QueueService::size("test").await.unwrap_or(0);
     }
 
+    // When queue still has work, schedule next run soon so we keep draining (no 60s wait).
+    // When queue is empty, use the normal idle interval.
     let sync_timer_ms = std::env::var("SYNC_TIMER_MS")
         .ok()
         .and_then(|timer| timer.parse::<u64>().ok())
         .unwrap_or(60000);
+    let sync_busy_interval_ms = std::env::var("SYNC_BUSY_INTERVAL_MS")
+        .ok()
+        .and_then(|t| t.parse::<u64>().ok())
+        .unwrap_or(2000);
 
-    schedule_next_sync(sync_timer_ms);
+    let delay_ms = if queue_size_after > 0 {
+        sync_busy_interval_ms
+    } else {
+        sync_timer_ms
+    };
+    if queue_size_after > 0 {
+        log::debug!(
+            "Queue still has {} items, scheduling next sync in {} ms",
+            queue_size_after,
+            delay_ms
+        );
+    }
+    schedule_next_sync(delay_ms);
 
     Ok(())
 }
@@ -507,15 +657,21 @@ async fn sync(
             },
         )
         .await
+        .map_err(network_error_message)
     {
         Ok(response) => response,
-        Err(e) => {
-            log::error!("Network Failure - {}", e);
+        Err(err_msg) => {
+            if let Err(stop_err) = TransactionService::stop_transaction(conn, &transaction_id).await
+            {
+                log::warn!(
+                    "Failed to stop transaction after network error: {}",
+                    stop_err
+                );
+            }
             return Err(Box::new(std::io::Error::new(
                 std::io::ErrorKind::Other,
-                format!("Network failure during sync: {}", e),
+                format!("Network failure during sync: {}", err_msg),
             )));
-            //return error here
         }
     };
 
@@ -531,8 +687,24 @@ async fn sync(
     if let Some(received_messages) = result.get("messages").and_then(|m| m.as_array()) {
         if !received_messages.is_empty() {
             log::debug!("{} updates received.", received_messages.len());
-            receive_messages(conn, received_messages.clone()).await?;
-            log::info!(
+            let receive_result = receive_messages(conn, received_messages.clone())
+                .await
+                .map_err(error_to_message);
+            if let Err(err_msg) = receive_result {
+                if let Err(stop_err) =
+                    TransactionService::stop_transaction(conn, &transaction_id).await
+                {
+                    log::warn!(
+                        "Failed to stop transaction after receive_messages error: {}",
+                        stop_err
+                    );
+                }
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    err_msg,
+                )));
+            }
+            log::debug!(
                 "Synced {} at {}",
                 received_messages.len(),
                 chrono::Utc::now().to_rfc3339()
@@ -543,25 +715,57 @@ async fn sync(
     } else {
         log::debug!("No new remote updates");
     }
+    log::debug!("Result: {:?}", result);
+
     let result_merkle = result
         .get("merkle")
-        .and_then(|m| m.as_str())
-        .unwrap_or("")
-        .to_string();
+        .map(|m| {
+            if let Some(s) = m.as_str() {
+                s.to_string()
+            } else {
+                serde_json::to_string(m).unwrap_or_default()
+            }
+        })
+        .unwrap_or_default();
     if result_merkle.is_empty() {
         log::debug!("No Merkle tree found in the response");
     }
-    let clock = HlcService::get_clock(conn).await?;
+    let clock = match HlcService::get_clock(conn).await.map_err(error_to_message) {
+        Ok(c) => c,
+        Err(err_msg) => {
+            if let Err(stop_err) = TransactionService::stop_transaction(conn, &transaction_id).await
+            {
+                log::warn!(
+                    "Failed to stop transaction after get_clock error: {}",
+                    stop_err
+                );
+            }
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                err_msg,
+            )));
+        }
+    };
     let merkle_str = serde_json::to_string(&clock.merkle)?;
     let clock_merkle = MerkleTree::deserialize(&merkle_str).unwrap();
     let parsed_merkle = if result_merkle.is_empty() {
         // Create an empty merkle tree if the string is empty
         MerkleTree::new()
     } else {
-        match MerkleTree::deserialize(&result_merkle) {
+        match MerkleTree::deserialize(&result_merkle).map_err(|e| {
+            consume_error(e);
+            "Failed to deserialize merkle tree".to_string()
+        }) {
             Ok(tree) => tree,
-            Err(e) => {
-                log::error!("Failed to deserialize merkle tree: {}", e);
+            Err(_) => {
+                if let Err(stop_err) =
+                    TransactionService::stop_transaction(conn, &transaction_id).await
+                {
+                    log::warn!(
+                        "Failed to stop transaction after merkle deserialize error: {}",
+                        stop_err
+                    );
+                }
                 return Err(Box::new(std::io::Error::new(
                     std::io::ErrorKind::Other,
                     "Failed to deserialize merkle tree",
@@ -593,20 +797,26 @@ async fn sync(
                 HlcService::commit_tree(conn, &parsed_merkle).await?;
             }
         }
-        let parsed_timestamp = hlc::Timestamp::parse(min_timestamp_str.to_string());
 
-        Box::pin(sync(
-            Vec::new(),
-            Some(&parsed_timestamp),
-            Some(transaction_id),
-            options,
-            conn,
-        ))
-        .await?;
+        // Do NOT recurse on timeline lag: it repeatedly caused duplicate sends (149 → 270/297)
+        // because the recursive sync would refetch and resend the same or overlapping messages.
+        // Catch-up is handled by the next bg_sync cycle or by the server's response messages.
+        log::debug!(
+            "sync_lag_retry: diff present but skipping recursive sync to prevent duplicates (sent {} messages this request)",
+            messages.len()
+        );
     }
-    log::info!("Sync done - transaction_id:{}", transaction_id_clone);
+    log::debug!("Sync done - transaction_id:{}", transaction_id_clone);
     TransactionService::stop_transaction(conn, &transaction_id_clone).await?;
     Ok(())
+}
+
+/// Normalize a message from either server format (flat: { timestamp, dataset, ... })
+/// or wrapped format ({ "message": { timestamp, ... } }) into the inner message value and timestamp.
+fn extract_message_and_timestamp(message: &Value) -> Option<(&Value, &str)> {
+    let inner = message.get("message").unwrap_or(message);
+    let timestamp = inner.get("timestamp").and_then(|t| t.as_str())?;
+    Some((inner, timestamp))
 }
 
 async fn receive_messages(
@@ -620,24 +830,15 @@ async fn receive_messages(
                 let mut processed_messages = Vec::new();
 
                 for message in messages {
-                    // Error handling with context and better error messages
-                    let timestamp = message
-                        .get("message")
-                        .and_then(|m| m.get("timestamp"))
-                        .and_then(|t| t.as_str())
+                    let (inner_message, timestamp_str) = extract_message_and_timestamp(&message)
                         .ok_or_else(|| DieselError::RollbackTransaction)?;
 
-                    // Async operation within transaction
-                    HlcService::recv(conn, timestamp.to_string())
+                    HlcService::recv(conn, timestamp_str.to_string())
                         .await
                         .map_err(|e| {
                             log::error!("Failed to receive HLC: {}", e);
                             DieselError::RollbackTransaction
                         })?;
-
-                    let inner_message = message
-                        .get("message")
-                        .ok_or_else(|| DieselError::RollbackTransaction)?;
 
                     let crdt_message: CrdtMessageModel =
                         serde_json::from_value(inner_message.clone())
@@ -651,6 +852,6 @@ async fn receive_messages(
         })
         .await?; // Critical: Must await the transaction
 
-    apply_messages(conn, inner_messages).await?;
+    apply_messages(conn, inner_messages, false).await?;
     Ok(())
 }
