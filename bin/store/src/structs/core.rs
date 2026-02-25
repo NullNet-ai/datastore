@@ -171,7 +171,10 @@ impl RequestBody {
                 self.record["updated_time"] = json!(time_str);
                 self.record["version"] = json!(1);
                 self.record["tombstone"] = json!(0);
-                self.record["organization_id"] = json!(auth.organization_id);
+                // Only set organization_id if it doesn't already exist in the record
+                if !self.record.get("organization_id").is_some_and(|v| !v.is_null()) {
+                    self.record["organization_id"] = json!(auth.organization_id);
+                }
                 self.record["created_by"] = json!(auth.responsible_account);
             }
             "update" => {

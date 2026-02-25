@@ -33,11 +33,8 @@ pub fn configure_store_routes(cfg: &mut ServiceConfig, app_state: AppState) {
             .route("/{table}/filter", web::post().to(get_by_filter))
             .route("/{table}/count", web::post().to(count_by_filter))
             .route("/{table}/{id}", web::get().to(get_by_id))
-            .route("/{table}/{id}/", web::get().to(get_by_id))
             .route("/{table}/{id}", web::patch().to(update_record))
-            .route("/{table}/{id}/", web::patch().to(update_record))
             .route("/{table}/{id}", web::delete().to(delete_record))
-            .route("/{table}/{id}/", web::delete().to(delete_record))
             .route("/batch/{table}", web::post().to(batch_insert_records))
             .route("/switch_account", web::post().to(switch_account))
             .route(
