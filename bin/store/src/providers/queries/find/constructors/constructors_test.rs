@@ -203,9 +203,11 @@ mod tests {
             "Query should contain a LATERAL join to ensure joins-present path. Got: {}",
             query
         );
+        let expected_group_by_query = format!("GROUP BY \"{}\".\"id\"", table);
         assert!(
-            !query.contains("GROUP BY"),
-            "Query should not contain GROUP BY when group_by is missing and joins are present. Got: {}",
+            query.contains(&expected_group_by_query),
+            "Query should contain default GROUP BY main table id when group_by is missing, even with joins. Expected: '{}'. Got: {}",
+            expected_group_by_query,
             query
         );
     }
