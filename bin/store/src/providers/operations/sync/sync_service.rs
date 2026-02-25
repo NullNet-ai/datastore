@@ -56,7 +56,8 @@ pub async fn bootstrap_sync_once(
     let group_id =
         std::env::var("GROUP_ID").unwrap_or_else(|_| "01JBHKXHYSKPP247HZZWHA3JBT".to_string());
     let clock = HlcService::get_clock(conn).await?;
-    let empty_merkle = serde_json::to_string(&MerkleTree::new()).unwrap_or_else(|_| "{}".to_string());
+    let empty_merkle =
+        serde_json::to_string(&MerkleTree::new()).unwrap_or_else(|_| "{}".to_string());
     log::info!(
         "Bootstrap sync: pulling all messages from {} (group_id={})",
         opts.url,
@@ -83,7 +84,10 @@ pub async fn bootstrap_sync_once(
     }
     if let Some(received_messages) = result.get("messages").and_then(|m| m.as_array()) {
         if !received_messages.is_empty() {
-            log::info!("Bootstrap sync: applying {} messages from server", received_messages.len());
+            log::info!(
+                "Bootstrap sync: applying {} messages from server",
+                received_messages.len()
+            );
             receive_messages(conn, received_messages.clone()).await?;
         }
     }
@@ -410,7 +414,8 @@ pub async fn process_queue(
             break;
         }
 
-        let packs = match QueueService::dequeue_batch(&mut conn, "test", batch_size.min(size)).await {
+        let packs = match QueueService::dequeue_batch(&mut conn, "test", batch_size.min(size)).await
+        {
             Ok(p) if p.is_empty() => {
                 sleep(Duration::from_millis(100)).await;
                 continue;
@@ -466,7 +471,11 @@ pub async fn process_queue(
 
         if all_success {
             let n = packs.len() as i32;
-            log::debug!("Synced batch of {} queue items ({} messages) to all endpoints", n, messages.len());
+            log::debug!(
+                "Synced batch of {} queue items ({} messages) to all endpoints",
+                n,
+                messages.len()
+            );
             if let Err(e) = QueueService::ack_batch(&mut conn, "test", n).await {
                 log::error!("Failed to ack batch: {}", e);
             }
@@ -652,8 +661,12 @@ async fn sync(
     {
         Ok(response) => response,
         Err(err_msg) => {
-            if let Err(stop_err) = TransactionService::stop_transaction(conn, &transaction_id).await {
-                log::warn!("Failed to stop transaction after network error: {}", stop_err);
+            if let Err(stop_err) = TransactionService::stop_transaction(conn, &transaction_id).await
+            {
+                log::warn!(
+                    "Failed to stop transaction after network error: {}",
+                    stop_err
+                );
             }
             return Err(Box::new(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -678,8 +691,13 @@ async fn sync(
                 .await
                 .map_err(error_to_message);
             if let Err(err_msg) = receive_result {
-                if let Err(stop_err) = TransactionService::stop_transaction(conn, &transaction_id).await {
-                    log::warn!("Failed to stop transaction after receive_messages error: {}", stop_err);
+                if let Err(stop_err) =
+                    TransactionService::stop_transaction(conn, &transaction_id).await
+                {
+                    log::warn!(
+                        "Failed to stop transaction after receive_messages error: {}",
+                        stop_err
+                    );
                 }
                 return Err(Box::new(std::io::Error::new(
                     std::io::ErrorKind::Other,
@@ -698,7 +716,7 @@ async fn sync(
         log::debug!("No new remote updates");
     }
     log::debug!("Result: {:?}", result);
-    
+
     let result_merkle = result
         .get("merkle")
         .map(|m| {
@@ -715,8 +733,12 @@ async fn sync(
     let clock = match HlcService::get_clock(conn).await.map_err(error_to_message) {
         Ok(c) => c,
         Err(err_msg) => {
-            if let Err(stop_err) = TransactionService::stop_transaction(conn, &transaction_id).await {
-                log::warn!("Failed to stop transaction after get_clock error: {}", stop_err);
+            if let Err(stop_err) = TransactionService::stop_transaction(conn, &transaction_id).await
+            {
+                log::warn!(
+                    "Failed to stop transaction after get_clock error: {}",
+                    stop_err
+                );
             }
             return Err(Box::new(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -736,8 +758,13 @@ async fn sync(
         }) {
             Ok(tree) => tree,
             Err(_) => {
-                if let Err(stop_err) = TransactionService::stop_transaction(conn, &transaction_id).await {
-                    log::warn!("Failed to stop transaction after merkle deserialize error: {}", stop_err);
+                if let Err(stop_err) =
+                    TransactionService::stop_transaction(conn, &transaction_id).await
+                {
+                    log::warn!(
+                        "Failed to stop transaction after merkle deserialize error: {}",
+                        stop_err
+                    );
                 }
                 return Err(Box::new(std::io::Error::new(
                     std::io::ErrorKind::Other,
@@ -803,9 +830,8 @@ async fn receive_messages(
                 let mut processed_messages = Vec::new();
 
                 for message in messages {
-                    let (inner_message, timestamp_str) =
-                        extract_message_and_timestamp(&message)
-                            .ok_or_else(|| DieselError::RollbackTransaction)?;
+                    let (inner_message, timestamp_str) = extract_message_and_timestamp(&message)
+                        .ok_or_else(|| DieselError::RollbackTransaction)?;
 
                     HlcService::recv(conn, timestamp_str.to_string())
                         .await

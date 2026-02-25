@@ -250,6 +250,7 @@ pub async fn get_messages_since(
 
     let results = crdt_messages::table
         .filter(crdt_messages::timestamp.gt(timestamp_str))
+        .order(crdt_messages::timestamp.asc())
         .load::<CrdtMessageModel>(conn)
         .await?;
 

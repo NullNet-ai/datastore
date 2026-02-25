@@ -53,7 +53,9 @@ impl SystemDeviceInitializer {
             account_organization_id: None,
             device_categories: Some(vec!["Device".to_string()]),
             responsible_account_organization_id: None,
-            initial_personal_organization_id: Some(SYSTEM_DEVICE_PERSONAL_ORGANIZATION_ID.to_string()),
+            initial_personal_organization_id: Some(
+                SYSTEM_DEVICE_PERSONAL_ORGANIZATION_ID.to_string(),
+            ),
         };
 
         // Call the existing initialize function with our device setup

@@ -88,7 +88,10 @@ impl MessageManager {
                         log::debug!("Batch of {} messages stored in crdt_messages", n);
                     }
                     Err(e) => {
-                        log::error!("Failed to store message batch: {} (batch queued for retry)", e);
+                        log::error!(
+                            "Failed to store message batch: {} (batch queued for retry)",
+                            e
+                        );
                     }
                 }
                 let prev = QUEUE_SIZE.fetch_sub(n, Ordering::SeqCst);
@@ -244,7 +247,11 @@ pub async fn save_pending_messages() -> Result<(), String> {
                     log::debug!("Shutdown flush: batch of {} messages stored", n);
                 }
                 Err(e) => {
-                    log::warn!("Shutdown flush: batch of {} messages failed: {} (will requeue)", n, e);
+                    log::warn!(
+                        "Shutdown flush: batch of {} messages failed: {} (will requeue)",
+                        n,
+                        e
+                    );
                     requeue.push(batch);
                 }
             }
@@ -294,7 +301,11 @@ async fn run_failed_batch_retry_loop() {
                     log::info!("Retry succeeded for batch of {} messages", n);
                 }
                 Err(e) => {
-                    log::warn!("Retry failed for batch of {} messages: {} (will requeue)", n, e);
+                    log::warn!(
+                        "Retry failed for batch of {} messages: {} (will requeue)",
+                        n,
+                        e
+                    );
                     requeue.push(batch);
                 }
             }

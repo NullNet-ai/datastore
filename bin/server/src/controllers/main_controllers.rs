@@ -3,8 +3,8 @@ use crate::db;
 use crate::models::crdt_client_message::*;
 use crate::models::crdt_messages::CrdtMessage;
 use crate::schema::core::crdt_client_messages::client_id;
-use crate::schema::core::crdt_client_messages::record_id;
 use crate::schema::core::crdt_client_messages::dsl::crdt_client_messages;
+use crate::schema::core::crdt_client_messages::record_id;
 use diesel::dsl::count;
 
 use crate::structs::core::{QueryParams, SyncRequestBody};
@@ -314,12 +314,7 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
             "[NEW_CLIENT_CATCHUP] Step 2b: Path BOOTSTRAP (client merkle empty) client_id={}",
             req_client_id
         );
-        match get_all_messages_from_timestamp(
-            &mut conn,
-            "",
-            &req_group_id,
-            &req_client_id,
-        ) {
+        match get_all_messages_from_timestamp(&mut conn, "", &req_group_id, &req_client_id) {
             Ok(messages) => {
                 log::info!(
                     "Bootstrap: sending {} messages to client_id={}",
@@ -367,8 +362,16 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
             };
 
             // Log both trees and the diff for debugging
-            let server_root = trie.root.as_ref().map(|n| format!("hash={} value={}", n.hash, n.value)).unwrap_or_else(|| "None".to_string());
-            let client_root = parsed_client_merkle.root.as_ref().map(|n| format!("hash={} value={}", n.hash, n.value)).unwrap_or_else(|| "None".to_string());
+            let server_root = trie
+                .root
+                .as_ref()
+                .map(|n| format!("hash={} value={}", n.hash, n.value))
+                .unwrap_or_else(|| "None".to_string());
+            let client_root = parsed_client_merkle
+                .root
+                .as_ref()
+                .map(|n| format!("hash={} value={}", n.hash, n.value))
+                .unwrap_or_else(|| "None".to_string());
             log::info!(
                 "[MERKLE_TREES] client_id={} server_root=[{}] client_root=[{}]",
                 req_client_id,

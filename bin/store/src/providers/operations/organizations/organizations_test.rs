@@ -556,7 +556,8 @@ mod tests {
     #[tokio::test]
     async fn initial_personal_organization_id_when_set_is_preserved() {
         let mut register = create_default_register();
-        register.initial_personal_organization_id = Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID.to_string());
+        register.initial_personal_organization_id =
+            Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID.to_string());
         assert_eq!(
             register.initial_personal_organization_id.as_deref(),
             Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID)
@@ -592,7 +593,9 @@ mod tests {
             account_organization_id: None,
             device_categories: None,
             responsible_account_organization_id: None,
-            initial_personal_organization_id: Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID.to_string()),
+            initial_personal_organization_id: Some(
+                EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID.to_string(),
+            ),
         };
         assert_eq!(
             register.initial_personal_organization_id.as_deref(),
@@ -629,7 +632,9 @@ mod tests {
             account_organization_id: None,
             device_categories: Some(vec!["Device".to_string()]),
             responsible_account_organization_id: None,
-            initial_personal_organization_id: Some(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID.to_string()),
+            initial_personal_organization_id: Some(
+                EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID.to_string(),
+            ),
         };
         assert_eq!(
             register.initial_personal_organization_id.as_deref(),
@@ -650,7 +655,10 @@ mod tests {
     #[tokio::test]
     async fn static_ids_are_valid_ulid_format() {
         fn valid_ulid_like(s: &str) -> bool {
-            s.len() == 26 && s.chars().all(|c| c.is_ascii_alphanumeric() && c != 'i' && c != 'l' && c != 'o' && c != 'u')
+            s.len() == 26
+                && s.chars().all(|c| {
+                    c.is_ascii_alphanumeric() && c != 'i' && c != 'l' && c != 'o' && c != 'u'
+                })
         }
         assert!(valid_ulid_like(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID));
         assert!(valid_ulid_like(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID));
@@ -661,7 +669,10 @@ mod tests {
     async fn initial_personal_organization_id_empty_string_is_still_some() {
         let mut register = Register::default();
         register.initial_personal_organization_id = Some(String::new());
-        assert_eq!(register.initial_personal_organization_id, Some("".to_string()));
+        assert_eq!(
+            register.initial_personal_organization_id,
+            Some("".to_string())
+        );
     }
 
     /// Serde: deserializing JSON without initial_personal_organization_id yields None (no static ID for API requests).
@@ -676,18 +687,26 @@ mod tests {
     #[tokio::test]
     async fn serde_roundtrip_preserves_initial_personal_organization_id() {
         let mut register = create_default_register();
-        register.initial_personal_organization_id = Some(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID.to_string());
+        register.initial_personal_organization_id =
+            Some(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID.to_string());
         let json = serde_json::to_string(&register).unwrap();
         let back: Register = serde_json::from_str(&json).unwrap();
-        assert_eq!(back.initial_personal_organization_id.as_deref(), Some(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID));
+        assert_eq!(
+            back.initial_personal_organization_id.as_deref(),
+            Some(EXPECTED_SYSTEM_DEVICE_PERSONAL_ORG_ID)
+        );
     }
 
     /// Clone preserves initial_personal_organization_id.
     #[tokio::test]
     async fn clone_preserves_initial_personal_organization_id() {
         let mut register = create_default_register();
-        register.initial_personal_organization_id = Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID.to_string());
+        register.initial_personal_organization_id =
+            Some(EXPECTED_SUPER_ADMIN_PERSONAL_ORG_ID.to_string());
         let cloned = register.clone();
-        assert_eq!(cloned.initial_personal_organization_id, register.initial_personal_organization_id);
+        assert_eq!(
+            cloned.initial_personal_organization_id,
+            register.initial_personal_organization_id
+        );
     }
 }

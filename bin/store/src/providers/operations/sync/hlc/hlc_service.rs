@@ -87,9 +87,7 @@ impl HlcService {
 
         let tree_result = merkle_manager.get_tree(&group_id).await;
         match tree_result {
-            Some((merkle, timestamp)) => {
-                Ok(Self::make_clock(Timestamp::parse(timestamp), merkle))
-            }
+            Some((merkle, timestamp)) => Ok(Self::make_clock(Timestamp::parse(timestamp), merkle)),
             None => {
                 let tree_result = merkle_manager.get_tree(&group_id).await;
                 if let Some((merkle, timestamp)) = tree_result {

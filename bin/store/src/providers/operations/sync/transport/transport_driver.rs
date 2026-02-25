@@ -355,15 +355,26 @@ impl HttpTransportDriver {
             }
         };
 
-        let msg_count = result.get("messages").and_then(|m| m.as_array()).map(|a| a.len()).unwrap_or(0);
-        log::debug!("Sync POST response: messages={}, has merkle={}", msg_count, result.get("merkle").is_some());
+        let msg_count = result
+            .get("messages")
+            .and_then(|m| m.as_array())
+            .map(|a| a.len())
+            .unwrap_or(0);
+        log::debug!(
+            "Sync POST response: messages={}, has merkle={}",
+            msg_count,
+            result.get("merkle").is_some()
+        );
 
         // Check if incomplete and chunks are needed (server sends incomplete as 0/1 number, not bool)
-        let is_incomplete = result.get("incomplete").map(|v| {
-            v.as_bool().unwrap_or(false)
-                || v.as_u64().map(|n| n != 0).unwrap_or(false)
-                || v.as_i64().map(|n| n != 0).unwrap_or(false)
-        }).unwrap_or(false);
+        let is_incomplete = result
+            .get("incomplete")
+            .map(|v| {
+                v.as_bool().unwrap_or(false)
+                    || v.as_u64().map(|n| n != 0).unwrap_or(false)
+                    || v.as_i64().map(|n| n != 0).unwrap_or(false)
+            })
+            .unwrap_or(false);
         if is_incomplete {
             log::debug!("Chunk transfer requested");
             log::debug!("Incomplete: {}", is_incomplete);
@@ -505,7 +516,10 @@ impl HttpTransportDriver {
             }
 
             // All chunks consumed — delete server-side buffer once (outside loop)
-            log::debug!("Chunk transfer done; deleting client_id{} buffer", client_id);
+            log::debug!(
+                "Chunk transfer done; deleting client_id{} buffer",
+                client_id
+            );
             let _ = client
                 .delete(&format!("{}/app/sync/chunk", sync_endpoint))
                 .basic_auth(username, Some(password))

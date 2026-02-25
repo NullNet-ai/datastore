@@ -13,12 +13,13 @@ This module syncs CRDT messages between the **store** (client) and the **server*
 5. [How the sync queue works (outgoing messages to server)](#how-sync-queue-works)
 6. [How Merkle is saved](#how-merkle-saved)
 7. [How chunking works](#how-chunking-works)
-8. [Sync endpoints: what to insert](#sync-endpoints-insert)
-9. [Env vars](#env-vars)
-10. [Main modules](#main-modules)
-11. [Server side (bin/server)](#server-side)
-12. [store-clean-setup](#store-clean-setup)
-13. [Related](#related)
+8. [Message ordering (oldest first)](#message-ordering)
+9. [Sync endpoints: what to insert](#sync-endpoints-insert)
+10. [Env vars](#env-vars)
+11. [Main modules](#main-modules)
+12. [Server side (bin/server)](#server-side)
+13. [store-clean-setup](#store-clean-setup)
+14. [Related](#related)
 
 ---
 
@@ -164,6 +165,23 @@ When the server has **many** messages to send (e.g. catch-up or bootstrap), it d
    - Chunk fetches are **retried** up to 10 times per chunk on failure.
 
 So **chunking** = server stores the large reply in `crdt_client_messages`, returns `incomplete=1`, and the client pulls pages via `GET /app/sync/chunk` and then deletes the buffer.
+
+---
+
+<a id="message-ordering"></a>
+## Message ordering (oldest first)
+
+Messages are sent and applied **oldest first** (ascending timestamp) so that foreign-key dependencies are satisfied: parent rows (earlier timestamps) are applied before child rows that reference them.
+
+- **Store → server (outgoing)**  
+  - **Queue path**: Packs are dequeued by `queue_items.order.asc()`, and each pack contains messages in creation order (timestamp order). So we send **oldest first**.  
+  - **get_messages_since path**: When loading messages from `crdt_messages` for a “since” sync, the query uses `order(timestamp.asc())`, so we send **oldest first**.
+
+- **Server → client (incoming)**  
+  - **Direct response**: Messages come from `get_all_messages_from_timestamp`, which uses `.order_by(timestamp.asc())` — **oldest first**.  
+  - **Chunk API**: Chunks are returned in `record_id` order (ULID, which reflects insertion order). The server inserts into `crdt_client_messages` in the same order as `get_all_messages_from_timestamp`, so chunk order is **oldest first** as well.
+
+**Code:** Store: [message_service.rs](message_service.rs) (`get_messages_since` — `timestamp.asc()`), [queue_service.rs](transactions/queue_service.rs) (`dequeue_batch` — `order.asc()`). Server: `bin/server/src/sync/crdt/crdt_service.rs` (`get_all_messages_from_timestamp` — `timestamp.asc()`), `bin/server/src/controllers/main_controllers.rs` (get_chunk — `order(record_id)`).
 
 ---
 

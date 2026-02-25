@@ -53,7 +53,9 @@ impl GlobalOrganizationInitializer {
             account_organization_id: None,
             device_categories: None,
             responsible_account_organization_id: None,
-            initial_personal_organization_id: Some(SUPER_ADMIN_PERSONAL_ORGANIZATION_ID.to_string()),
+            initial_personal_organization_id: Some(
+                SUPER_ADMIN_PERSONAL_ORGANIZATION_ID.to_string(),
+            ),
         };
 
         // Call the existing initialize function with our custom setup
