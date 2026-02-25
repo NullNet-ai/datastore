@@ -422,7 +422,7 @@ store-clean-setup:
 	@cd bin/store && export PATH="$$HOME/.cargo/bin:$$PATH" && { \
 		if command -v expect >/dev/null 2>&1; then \
 			expect -c ' \
-				set timeout 80; \
+				set timeout 600; \
 				spawn cargo make clean-setup; \
 				expect "Enter password for database cleanup:"; \
 				send "admin\r"; \
@@ -438,13 +438,13 @@ store-clean-setup:
 						exit 0 \
 					} \
 					timeout { \
-						puts "\n=== Timeout - killing process ==="; \
+						puts "\n=== Timeout (600s) - killing process ==="; \
 						kill [exp_pid]; \
 						exit 1 \
 					} \
 				}'; \
 		else \
-			printf "admin\n" | timeout 30 cargo make clean-setup || true; \
+			printf "admin\n" | timeout 600 cargo make clean-setup || true; \
 		fi; \
 	}
 

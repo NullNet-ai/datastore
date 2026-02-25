@@ -27,7 +27,7 @@ pub fn establish_async_pool() -> AsyncDbPool {
     let config =
         AsyncDieselConnectionManager::<AsyncPgConnection>::new(config_env.database_url.clone());
     PoolAsync::builder(config)
-        .max_size(20)
+        .max_size(config_env.database_pool_size)
         .build()
         .unwrap_or_else(|e| {
             log::error!(

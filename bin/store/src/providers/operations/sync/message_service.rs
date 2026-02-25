@@ -115,6 +115,7 @@ pub async fn create_messages(
     Ok(messages)
 }
 
+#[allow(dead_code)]
 pub async fn insert_message(
     tx: &mut AsyncPgConnection,
     mut message: CrdtMessageModel, // Changed to mutable
@@ -125,6 +126,44 @@ pub async fn insert_message(
 
     diesel::insert_into(crdt_messages::table)
         .values(&message)
+        .on_conflict((
+            crdt_messages::timestamp,
+            crdt_messages::group_id,
+            crdt_messages::row,
+            crdt_messages::column,
+        ))
+        .do_update()
+        .set((
+            crdt_messages::database.eq(excluded(crdt_messages::database)),
+            crdt_messages::dataset.eq(excluded(crdt_messages::dataset)),
+            crdt_messages::client_id.eq(excluded(crdt_messages::client_id)),
+            crdt_messages::value.eq(excluded(crdt_messages::value)),
+            crdt_messages::operation.eq(excluded(crdt_messages::operation)),
+            crdt_messages::hypertable_timestamp.eq(excluded(crdt_messages::hypertable_timestamp)),
+        ))
+        .execute(tx)
+        .await
+}
+
+/// Insert multiple messages in one statement. Messages are cleaned (row/value trim) before insert.
+pub async fn insert_messages_batch(
+    tx: &mut AsyncPgConnection,
+    messages: &[CrdtMessageModel],
+) -> Result<usize, DieselError> {
+    if messages.is_empty() {
+        return Ok(0);
+    }
+    let cleaned: Vec<CrdtMessageModel> = messages
+        .iter()
+        .map(|m| CrdtMessageModel {
+            row: m.row.trim_matches('"').to_string(),
+            value: m.value.trim_matches('"').to_string(),
+            ..m.clone()
+        })
+        .collect();
+
+    diesel::insert_into(crdt_messages::table)
+        .values(&cleaned)
         .on_conflict((
             crdt_messages::timestamp,
             crdt_messages::group_id,
@@ -211,6 +250,7 @@ pub async fn get_messages_since(
 
     let results = crdt_messages::table
         .filter(crdt_messages::timestamp.gt(timestamp_str))
+        .order(crdt_messages::timestamp.asc())
         .load::<CrdtMessageModel>(conn)
         .await?;
 

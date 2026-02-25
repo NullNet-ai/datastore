@@ -4,6 +4,8 @@ use crate::models::crdt_client_message::*;
 use crate::models::crdt_messages::CrdtMessage;
 use crate::schema::core::crdt_client_messages::client_id;
 use crate::schema::core::crdt_client_messages::dsl::crdt_client_messages;
+use crate::schema::core::crdt_client_messages::record_id;
+use diesel::dsl::count;
 
 use crate::structs::core::{QueryParams, SyncRequestBody};
 use crate::sync::crdt::crdt_service::{self, deserialize_value, get_all_messages_from_timestamp};
@@ -118,23 +120,55 @@ pub async fn get_chunk(
     let pool = pool.clone();
     let client_id_param = query.client_id.clone();
     let start = query.start;
-    let limit = query.limit;
+    // Use requested limit, or default when 0 (client often omits it)
+    let limit = if query.limit == 0 {
+        std::env::var("CHUNK_LIMIT")
+            .unwrap_or_else(|_| "100".to_string())
+            .parse::<usize>()
+            .unwrap_or(100)
+    } else {
+        query.limit
+    };
     let result = web::block(move || {
         let mut conn = pool.get().map_err(|e| ApiError {
             status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
             message: format!("Failed to get DB connection: {}", e),
         })?;
-        let all_messages = crdt_client_messages
-            .filter(client_id.eq(client_id_param))
+
+        // Total count for this client (for size in response)
+        let total_size: i64 = crdt_client_messages
+            .filter(client_id.eq(&client_id_param))
+            .select(count(record_id))
+            .first(&mut conn)
+            .map_err(ApiError::from)?;
+
+        // Fetch only the requested slice (start..start+limit), not all messages
+        let chunk_rows = crdt_client_messages
+            .filter(client_id.eq(&client_id_param))
+            .order(record_id)
+            .offset(start as i64)
+            .limit(limit as i64)
             .load::<CrdtClientMessage>(&mut conn)?;
 
-        let total_size = all_messages.len();
-        let parsed_messages: Vec<serde_json::Value> = all_messages
+        // Debug: chunk slice vs total (DEBUG to avoid flooding when client fetches many chunks)
+        let first_record_id = chunk_rows.first().map(|r| r.record_id.as_str()).unwrap_or("(none)");
+        let last_record_id = chunk_rows.last().map(|r| r.record_id.as_str()).unwrap_or("(none)");
+        log::debug!(
+            "[GET_CHUNK] client_id={} start={} limit={} total_size={} chunk_len={} first_record_id={} last_record_id={}",
+            client_id_param,
+            start,
+            limit,
+            total_size,
+            chunk_rows.len(),
+            first_record_id,
+            last_record_id
+        );
+
+        let parsed_messages: Vec<serde_json::Value> = chunk_rows
             .into_iter()
             .filter_map(|msg| {
                 match serde_json::from_str::<serde_json::Value>(&msg.message) {
                     Ok(parsed_json) => {
-                        // Create a new object with parsed message
                         let result = serde_json::json!({
                             "record_id": msg.record_id,
                             "client_id": msg.client_id,
@@ -143,22 +177,35 @@ pub async fn get_chunk(
                         Some(result)
                     }
                     Err(err) => {
-                        // Log error and skip this message
                         eprintln!("Error parsing message: {}", err);
                         None
                     }
                 }
             })
-            .skip(start)
-            .take(limit)
             .collect();
 
-        Ok::<_, ApiError>((parsed_messages, total_size))
+        Ok::<_, ApiError>((parsed_messages, total_size as usize))
     })
     .await;
 
     match result {
         Ok(Ok((messages, size))) => {
+            let is_last_chunk = messages.len() < limit as usize || messages.is_empty();
+            if is_last_chunk {
+                log::info!(
+                    "Chunk catch-up done: client_id={} returned {} in final chunk (total buffered: {})",
+                    query.client_id,
+                    messages.len(),
+                    size
+                );
+            } else {
+                log::debug!(
+                    "Chunk response: client_id={} returning {} messages in this chunk (total buffered: {})",
+                    query.client_id,
+                    messages.len(),
+                    size
+                );
+            }
             let response = serde_json::json!({
                 "status": "ok",
                 "data": {
@@ -217,6 +264,16 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
         .parse::<usize>()
         .unwrap_or(1);
 
+    log::info!(
+        "[NEW_CLIENT_CATCHUP] Step 0: Sync request received group_id={} client_id={} outgoing_messages={} has_merkle={} merkle_empty_or_placeholder={} outgoing_limit={}",
+        req_group_id,
+        req_client_id,
+        req_messages.len(),
+        req_client_merkle.is_some(),
+        req_client_merkle.as_ref().map(|m| m.trim().is_empty() || m.trim() == "{}").unwrap_or(true),
+        outgoing_limit
+    );
+
     // Log sync attempt
     log::info!(
         "Sync Attempt from {} - {} - {}",
@@ -243,11 +300,43 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
             return actix_web::HttpResponse::InternalServerError().json(response);
         }
     };
+    log::info!("[NEW_CLIENT_CATCHUP] Step 1: Server merkle updated (add_messages done)");
     // ! check for release the connection to the pool afterwards
     let mut incomplete = 0;
     let mut new_messages: Vec<CrdtMessage> = vec![];
-    if let Some(merkle) = req_client_merkle.clone() {
+    let client_merkle_empty_or_missing = req_client_merkle
+        .as_ref()
+        .map(|m| m.trim().is_empty() || m.trim() == "{}")
+        .unwrap_or(true);
+    if client_merkle_empty_or_missing {
+        // Bootstrap: client has no / empty merkle — send all messages from server so client can catch up
+        log::info!(
+            "[NEW_CLIENT_CATCHUP] Step 2b: Path BOOTSTRAP (client merkle empty) client_id={}",
+            req_client_id
+        );
+        match get_all_messages_from_timestamp(&mut conn, "", &req_group_id, &req_client_id) {
+            Ok(messages) => {
+                log::info!(
+                    "Bootstrap: sending {} messages to client_id={}",
+                    messages.len(),
+                    req_client_id
+                );
+                new_messages = messages;
+            }
+            Err(err) => {
+                log::error!("Bootstrap: error retrieving messages: {:?}", err);
+            }
+        }
+    } else if let Some(merkle) = req_client_merkle.clone() {
         if !merkle.trim().is_empty() && merkle.trim() != "{}" {
+            log::info!(
+                "[NEW_CLIENT_CATCHUP] Step 2a: Path MERKLE_DIFF (client has non-empty merkle) client_id={}",
+                req_client_id
+            );
+            log::info!(
+                "Sync catch-up: client_id={} has non-empty merkle, computing diff",
+                req_client_id
+            );
             let client_merkle = match req_client_merkle {
                 Some(merkle) => merkle,
                 None => {
@@ -271,9 +360,42 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
                     return actix_web::HttpResponse::BadRequest().json(response);
                 }
             };
-            let diff_time = trie.find_differences(&parsed_client_merkle);
 
-            // ! check later manually if first index has the smallest timestamp
+            // Log both trees and the diff for debugging
+            let server_root = trie
+                .root
+                .as_ref()
+                .map(|n| format!("hash={} value={}", n.hash, n.value))
+                .unwrap_or_else(|| "None".to_string());
+            let client_root = parsed_client_merkle
+                .root
+                .as_ref()
+                .map(|n| format!("hash={} value={}", n.hash, n.value))
+                .unwrap_or_else(|| "None".to_string());
+            log::info!(
+                "[MERKLE_TREES] client_id={} server_root=[{}] client_root=[{}]",
+                req_client_id,
+                server_root,
+                client_root
+            );
+            let diff_time = trie.find_differences(&parsed_client_merkle);
+            for (idx, (path, server_node, client_node)) in diff_time.iter().enumerate() {
+                log::info!(
+                    "[MERKLE_DIFF] client_id={} diff[{}] path={} server_value={} client_value={} server_hash={} client_hash={}",
+                    req_client_id,
+                    idx,
+                    path,
+                    server_node.value,
+                    client_node.value,
+                    server_node.hash,
+                    client_node.hash
+                );
+            }
+            log::info!(
+                "Sync catch-up: client_id={} merkle diff size={}",
+                req_client_id,
+                diff_time.len()
+            );
 
             if !diff_time.is_empty() {
                 let (_, server_node, client_node) = &diff_time[0];
@@ -316,14 +438,32 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
                     client_node.value,
                     min_timestamp_str
                 );
-
-                // Continue with the min_timestamp
             }
         }
     }
 
+    log::info!(
+        "[NEW_CLIENT_CATCHUP] Step 3: Decision new_messages.len()={} outgoing_limit={} will_store_and_return_incomplete={}",
+        new_messages.len(),
+        outgoing_limit,
+        new_messages.len() >= outgoing_limit
+    );
+
     if new_messages.len() >= outgoing_limit {
-        // Store messages in the database instead of sending them
+        log::info!(
+            "[NEW_CLIENT_CATCHUP] Step 4: Storing {} messages in crdt_client_messages for client_id={} (then returning incomplete=1)",
+            new_messages.len(),
+            req_client_id
+        );
+        log::info!(
+            "Sync response: client_id={} has {} messages (outgoing_limit={}), storing in crdt_client_messages and returning incomplete=1",
+            req_client_id,
+            new_messages.len(),
+            outgoing_limit
+        );
+        // Store messages in the database instead of sending them.
+        // Deserialize value on the server (using existing deserialize_value) so the client
+        // receives clean JSON (e.g. value: 0, value: "2026-02-22") instead of serialized form.
         for message in &new_messages {
             //remove double quotes from the message
             let mut message_json: serde_json::Value =
@@ -346,6 +486,7 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
                     // Keep the original value
                 }
             };
+
             let client_message = CrdtClientMessage {
                 record_id: Ulid::new().to_string(),
                 client_id: req_client_id.clone(),
@@ -376,6 +517,10 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
 
         // Set incomplete flag and clear messages to avoid sending them
         incomplete = 1;
+        log::info!(
+            "Sync response: client_id={} returning incomplete=1, messages=[] (client should fetch via /chunk)",
+            req_client_id
+        );
         let response = serde_json::json!({
             "status": "ok",
             "data": {
@@ -388,6 +533,12 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
         return actix_web::HttpResponse::Ok().json(response);
     }
 
+    log::info!(
+        "Sync response: client_id={} returning {} messages in body (below outgoing_limit), incomplete={}",
+        req_client_id,
+        new_messages.len(),
+        incomplete
+    );
     if !req_messages.is_empty() {
         gateway::broadcast_notification(serde_json::json!({
             "type": "notice",
