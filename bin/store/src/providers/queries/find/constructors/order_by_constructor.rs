@@ -87,8 +87,9 @@ where
                             && g.fields.iter().any(|group_field| {
                                 let group_parts: Vec<&str> =
                                     group_field.trim().split('.').collect();
-                                let group_table_name =
-                                    Self::dequote_ident(&self.normalize_entity_name(group_parts[0]));
+                                let group_table_name = Self::dequote_ident(
+                                    &self.normalize_entity_name(group_parts[0]),
+                                );
                                 let table_alias = Self::dequote_ident(&table_alias);
                                 if group_parts.len() > 1 {
                                     let g_field = Self::dequote_ident(group_parts[1]);

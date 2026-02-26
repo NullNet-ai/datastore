@@ -223,9 +223,9 @@ mod tests {
         let sql = constructor.construct().unwrap();
 
         println!("  ✓ Verifying SQL structure");
-        assert!(sql.contains("SELECT \"contacts\".\"id\" FROM contacts"));
+        assert!(sql.contains("SELECT \"contacts\".\"id\" FROM \"contacts\" \"contacts\""));
         assert!(sql.contains("LIMIT 10"));
-        assert!(sql.contains("WHERE (contacts.tombstone = 0)"));
+        assert!(sql.contains("(\"contacts\".\"tombstone\" = 0)"));
 
         println!("Generated SQL: {}", sql);
         println!("Basic SQL construction tests completed successfully!");
@@ -755,7 +755,7 @@ mod tests {
             sql
         );
         assert!(
-            sql.contains("FROM samples"),
+            sql.contains("FROM \"samples\""),
             "SQL should contain FROM samples. Got: {}",
             sql
         );
@@ -869,7 +869,7 @@ mod tests {
             sql
         );
         assert!(
-            sql.contains("FROM samples"),
+            sql.contains("FROM \"samples\""),
             "SQL should have main table. Got: {}",
             sql
         );
@@ -1018,6 +1018,7 @@ mod tests {
                 "id".to_string(),
                 "first_name".to_string(),
                 "last_name".to_string(),
+                "full_name".to_string(),
             ],
         );
         pluck_object.insert(
@@ -1030,6 +1031,7 @@ mod tests {
                 "id".to_string(),
                 "first_name".to_string(),
                 "last_name".to_string(),
+                "full_name".to_string(),
             ],
         );
         pluck_object.insert(
@@ -1430,7 +1432,7 @@ mod tests {
 
                 // Verify key components
                 assert!(
-                    sql.contains("FROM organizations"),
+                    sql.contains("FROM \"organizations\""),
                     "Should contain main table"
                 );
                 assert!(
@@ -1627,7 +1629,12 @@ mod tests {
         );
         pluck_object.insert(
             "created_by".to_string(),
-            vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()],
+            vec![
+                "id".to_string(),
+                "first_name".to_string(),
+                "last_name".to_string(),
+                "full_name".to_string(),
+            ],
         );
         pluck_object.insert(
             "updated_by_account_organizations".to_string(),
@@ -1635,7 +1642,12 @@ mod tests {
         );
         pluck_object.insert(
             "updated_by".to_string(),
-            vec!["id".to_string(), "first_name".to_string(), "last_name".to_string()],
+            vec![
+                "id".to_string(),
+                "first_name".to_string(),
+                "last_name".to_string(),
+                "full_name".to_string(),
+            ],
         );
         pluck_object.insert(
             "district_orgs".to_string(),
@@ -2020,37 +2032,36 @@ mod tests {
         ));
 
         assert!(sql.contains("FROM \"organizations\" \"district_orgs\""));
+        assert!(sql.contains("\"organizations\".\"district_id\" = \"district_orgs\".\"id\""));
+        assert!(sql.contains("LEFT JOIN LATERAL (SELECT \"joined_district_superintendent\""));
+        assert!(sql.contains("FROM \"contacts\" \"joined_district_superintendent\""));
         assert!(sql.contains(
-            "\"organizations\".\"district_id\" = \"district_orgs\".\"id\""
-        ));
-        assert!(sql.contains(
-            "FROM \"organizations\" \"district_orgs\" LEFT JOIN \"contacts\" \"district_superintendent\""
-        ));
-        assert!(sql.contains(
-            "\"district_superintendent\".\"id\" = \"district_orgs\".\"superintendent_id\""
+            "\"joined_district_superintendent\".\"id\" = \"district_orgs\".\"superintendent_id\""
         ));
 
-        assert!(sql.contains("FROM \"contacts\" \"superintendent\""));
+        assert!(sql.contains("LEFT JOIN LATERAL (SELECT \"joined_superintendent\""));
+        assert!(sql.contains("FROM \"contacts\" \"joined_superintendent\""));
         assert!(sql.contains(
-            "\"organizations\".\"superintendent_id\" = \"superintendent\".\"id\""
+            "\"joined_superintendent\".\"id\" = \"organizations\".\"superintendent_id\""
         ));
-        assert!(sql.contains("FROM \"contacts\" \"principal\""));
-        assert!(sql.contains(
-            "\"organizations\".\"principal_id\" = \"principal\".\"id\""
-        ));
+        assert!(sql.contains("LEFT JOIN LATERAL (SELECT \"joined_principal\""));
+        assert!(sql.contains("FROM \"contacts\" \"joined_principal\""));
+        assert!(sql.contains("\"joined_principal\".\"id\" = \"organizations\".\"principal_id\""));
 
         assert!(sql.contains("WHERE ("));
         assert!(sql.contains("\"organizations\".\"tombstone\" = 0"));
         assert!(sql.contains("\"organizations\".\"organization_id\" IS NOT NULL"));
-        assert!(sql.contains(
-            "\"organizations\".\"organization_id\" = '01K3SKCH4R3Z9KYSKKSVEKYCHV'"
-        ));
+        assert!(
+            sql.contains("\"organizations\".\"organization_id\" = '01K3SKCH4R3Z9KYSKKSVEKYCHV'")
+        );
         assert!(sql.to_lowercase().contains("status"));
         assert!(sql.to_lowercase().contains("categories"));
 
         assert!(sql.contains("GROUP BY \"organizations\".\"id\""));
         assert!(sql.contains("ORDER BY"));
-        assert!(sql.to_lowercase().contains("lower(\"organizations\".\"name\")"));
+        assert!(sql
+            .to_lowercase()
+            .contains("lower(\"organizations\".\"name\")"));
         assert!(sql.to_uppercase().contains(" ASC"));
         assert!(sql.contains("LIMIT 100"));
     }

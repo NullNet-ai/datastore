@@ -1163,7 +1163,7 @@ mod tests {
                             count_sql
                         );
                         assert!(
-                            count_sql.contains("FROM samples"),
+                            count_sql.contains("FROM \"samples\""),
                             "Count SQL should have FROM samples. Got: {}",
                             count_sql
                         );

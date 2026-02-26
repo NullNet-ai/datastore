@@ -512,7 +512,8 @@ impl SelectionsConstructor {
             where_conditions.push(standard_where);
             where_conditions.push(join_condition.to_string());
             if !join.field_relation.to.filters.is_empty() {
-                if let Ok(filter_expression) = build_infix_expression(&join.field_relation.to.filters)
+                if let Ok(filter_expression) =
+                    build_infix_expression(&join.field_relation.to.filters)
                 {
                     if !filter_expression.is_empty() {
                         where_conditions.push(filter_expression);
@@ -581,15 +582,13 @@ impl SelectionsConstructor {
 
             let on_condition = format!(
                 "\"{}\".\"{}\" = \"{}\".\"{}\"",
-                to_alias,
-                join.field_relation.to.field,
-                prev_alias,
-                join.field_relation.from.field
+                to_alias, join.field_relation.to.field, prev_alias, join.field_relation.from.field
             );
 
             let mut where_conditions = vec![child_where, parent_where, main_to_parent_correlation];
             if !join.field_relation.to.filters.is_empty() {
-                if let Ok(filter_expression) = build_infix_expression(&join.field_relation.to.filters)
+                if let Ok(filter_expression) =
+                    build_infix_expression(&join.field_relation.to.filters)
                 {
                     if !filter_expression.is_empty() {
                         where_conditions.push(filter_expression);
@@ -731,8 +730,6 @@ impl SelectionsConstructor {
             from_table_ref, from_field, alias, to_field
         )
     }
-
-    
 
     /// Constructs JOIN selections for related entities when pluck_object is provided
     fn construct_join_selections<T: QueryFilter>(
