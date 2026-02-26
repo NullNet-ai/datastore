@@ -127,7 +127,7 @@ impl<'a, 'b> Validation<'a, 'b> {
             data: vec![],
         }
     }
-
+    #[allow(dead_code)]
     pub fn validate_pluck(&self) -> ApiResponse {
         if self.request_body.pluck.is_empty() {
             return ApiResponse {
