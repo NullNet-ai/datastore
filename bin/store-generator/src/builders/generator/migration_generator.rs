@@ -1,3 +1,4 @@
+use crate::builders::generator::diesel_schema_definition::WhereExpr;
 use crate::builders::generator::field_definition::TableDefinition;
 use crate::builders::generator::schema_generator::{SchemaChange, SchemaChangeType};
 use crate::constants::paths::database::MIGRATIONS_DIR;
@@ -224,17 +225,10 @@ impl MigrationGenerator {
                         (&index_change.field_name, &index_change.field_definition)
                     {
                         sql.push_str("--> statement-breakpoint\n");
-                        let (columns, index_type) = if column_names.contains("|") {
-                            let parts: Vec<&str> = column_names.split("|").collect();
-                            (parts[0], Some(parts[1]))
-                        } else {
-                            (column_names.as_str(), None)
-                        };
-                        let index_sql = Self::generate_create_index_sql(
+                        let index_sql = Self::build_create_index_sql(
                             &change.table_name,
                             index_name,
-                            columns,
-                            index_type,
+                            column_names,
                         )?;
                         sql.push_str(&index_sql);
                         sql.push_str("\n");
@@ -289,17 +283,10 @@ impl MigrationGenerator {
                 if !first_statement {
                     sql.push_str("--> statement-breakpoint\n");
                 }
-                let (columns, index_type) = if column_names.contains("|") {
-                    let parts: Vec<&str> = column_names.split("|").collect();
-                    (parts[0], Some(parts[1]))
-                } else {
-                    (column_names.as_str(), None)
-                };
-                let index_sql = Self::generate_create_index_sql(
+                let index_sql = Self::build_create_index_sql(
                     &change.table_name,
                     index_name,
-                    columns,
-                    index_type,
+                    column_names,
                 )?;
                 sql.push_str(&index_sql);
                 sql.push_str("\n");
@@ -516,20 +503,37 @@ impl MigrationGenerator {
         ))
     }
 
-    /// Generate CREATE INDEX SQL
-    fn generate_create_index_sql(
+    /// Generate CREATE INDEX SQL (optionally with WHERE and UNIQUE). Public for schema comparison.
+    pub fn generate_create_index_sql_full(
         table_name: &str,
         index_name: &str,
         column_names: &str,
         index_type: Option<&str>,
+        where_clause: Option<&WhereExpr>,
+        is_unique: bool,
     ) -> Result<String, String> {
-        // Sanitize index_type: strip any stray " } or "}, from malformed extraction
+        let unique_str = if is_unique { "UNIQUE " } else { "" };
+        let (using_clause, quoted_columns) = Self::index_using_and_columns(column_names, index_type)?;
+        let where_sql = where_clause
+            .map(Self::where_expr_to_sql)
+            .transpose()?
+            .map(|w| format!(" WHERE {}", w))
+            .unwrap_or_default();
+        Ok(format!(
+            "CREATE {}INDEX \"{}\" ON \"{}\"{}({}){};",
+            unique_str, index_name, table_name, using_clause, quoted_columns, where_sql
+        ))
+    }
+
+    fn index_using_and_columns(
+        column_names: &str,
+        index_type: Option<&str>,
+    ) -> Result<(String, String), String> {
         let clean_index_type = index_type.map(|s| {
             s.trim()
                 .trim_end_matches(|c: char| c == '"' || c == ' ' || c == '}' || c == ',')
                 .to_string()
         });
-        // The index_name already contains the full name from the macro
         let using_clause = if let Some(ref idx_type) = clean_index_type {
             if idx_type.is_empty() {
                 String::new()
@@ -539,7 +543,6 @@ impl MigrationGenerator {
         } else {
             String::new()
         };
-
         let quoted_columns = column_names
             .split(',')
             .map(|c| {
@@ -549,11 +552,136 @@ impl MigrationGenerator {
             })
             .collect::<Vec<_>>()
             .join(", ");
+        Ok((using_clause, quoted_columns))
+    }
 
-        Ok(format!(
-            "CREATE INDEX \"{}\" ON \"{}\"{}({});",
-            index_name, table_name, using_clause, quoted_columns
-        ))
+    fn where_expr_to_sql(w: &WhereExpr) -> Result<String, String> {
+        match w {
+            WhereExpr::And { and: exprs } => {
+                let parts: Result<Vec<_>, _> = exprs.iter().map(Self::where_expr_to_sql).collect();
+                Ok(parts?.join(" AND "))
+            }
+            WhereExpr::Or { or: exprs } => {
+                let parts: Result<Vec<_>, _> = exprs.iter().map(Self::where_expr_to_sql).collect();
+                Ok(format!("({})", parts?.join(" OR ")))
+            }
+            WhereExpr::Not { not: expr } => {
+                Ok(format!("NOT ({})", Self::where_expr_to_sql(expr)?))
+            }
+            WhereExpr::Pred { op, column, value } => {
+                let col = format!("\"{}\"", column.trim_matches('"'));
+                let op_upper = op.to_uppercase();
+                match op_upper.as_str() {
+                    "=" | "!=" | "<" | "<=" | ">" | ">=" => {
+                        let val = Self::value_to_sql_literal(value.as_ref())?;
+                        Ok(format!("{} {} {}", col, op_upper, val))
+                    }
+                    "IN" => {
+                        let arr = value.as_ref().and_then(serde_json::Value::as_array).ok_or_else(|| {
+                            "IN requires array value".to_string()
+                        })?;
+                        let literals: Result<Vec<_>, _> =
+                            arr.iter().map(|v| Self::value_to_sql_literal(Some(v))).collect();
+                        Ok(format!("{} IN ({})", col, literals?.join(", ")))
+                    }
+                    "NOT IN" => {
+                        let arr = value.as_ref().and_then(serde_json::Value::as_array).ok_or_else(|| {
+                            "NOT IN requires array value".to_string()
+                        })?;
+                        let literals: Result<Vec<_>, _> =
+                            arr.iter().map(|v| Self::value_to_sql_literal(Some(v))).collect();
+                        Ok(format!("{} NOT IN ({})", col, literals?.join(", ")))
+                    }
+                    "LIKE" | "ILIKE" => {
+                        let val = Self::value_to_sql_literal(value.as_ref())?;
+                        Ok(format!("{} {} {}", col, op_upper, val))
+                    }
+                    "IS" => {
+                        if value.is_none()
+                            || value.as_ref().map(|v| v.is_null()).unwrap_or(false)
+                        {
+                            Ok(format!("{} IS NULL", col))
+                        } else {
+                            let val = Self::value_to_sql_literal(value.as_ref())?;
+                            Ok(format!("{} IS {}", col, val))
+                        }
+                    }
+                    "IS NOT" => {
+                        if value.is_none()
+                            || value.as_ref().map(|v| v.is_null()).unwrap_or(false)
+                        {
+                            Ok(format!("{} IS NOT NULL", col))
+                        } else {
+                            let val = Self::value_to_sql_literal(value.as_ref())?;
+                            Ok(format!("{} IS NOT {}", col, val))
+                        }
+                    }
+                    _ => Err(format!("Unsupported WHERE op: {}", op)),
+                }
+            }
+        }
+    }
+
+    fn value_to_sql_literal(v: Option<&serde_json::Value>) -> Result<String, String> {
+        match v {
+            None | Some(serde_json::Value::Null) => Ok("NULL".to_string()),
+            Some(serde_json::Value::String(s)) => Ok(format!("'{}'", s.replace('\\', "\\\\").replace('\'', "''"))),
+            Some(serde_json::Value::Number(n)) => {
+                if let Some(i) = n.as_i64() {
+                    Ok(i.to_string())
+                } else if let Some(f) = n.as_f64() {
+                    Ok(f.to_string())
+                } else {
+                    Err("Invalid number".to_string())
+                }
+            }
+            Some(serde_json::Value::Bool(b)) => Ok(if *b { "TRUE" } else { "FALSE" }.to_string()),
+            Some(_) => Err("Unsupported value type in WHERE".to_string()),
+        }
+    }
+
+    /// Parse field_definition (columns|type|unique or columns|type|unique|where_json) and build CREATE INDEX SQL.
+    fn build_create_index_sql(
+        table_name: &str,
+        index_name: &str,
+        field_definition: &str,
+    ) -> Result<String, String> {
+        let parts: Vec<&str> = field_definition.splitn(4, '|').collect();
+        let (columns, index_type, is_unique, where_clause) = match parts.len() {
+            1 => (parts[0], None, false, None),
+            2 => (parts[0], Some(parts[1]), false, None),
+            3 => (
+                parts[0],
+                Some(parts[1]),
+                parts[2].trim().eq_ignore_ascii_case("true"),
+                None,
+            ),
+            _ => (
+                parts[0],
+                Some(parts[1]),
+                parts[2].trim().eq_ignore_ascii_case("true"),
+                serde_json::from_str(parts[3]).ok(),
+            ),
+        };
+        if let Some(ref w) = where_clause {
+            Self::generate_create_index_sql_full(
+                table_name,
+                index_name,
+                columns,
+                index_type,
+                Some(w),
+                is_unique,
+            )
+        } else {
+            Self::generate_create_index_sql_full(
+                table_name,
+                index_name,
+                columns,
+                index_type,
+                None,
+                is_unique,
+            )
+        }
     }
 
     /// Generate ADD CONSTRAINT FOREIGN KEY SQL
@@ -749,11 +877,10 @@ mod tests {
 
     #[test]
     fn test_index_sql_quotes_single_column_btree() {
-        let sql = MigrationGenerator::generate_create_index_sql(
+        let sql = MigrationGenerator::build_create_index_sql(
             "episodes",
             "idx_order",
-            "order",
-            Some("btree"),
+            "order|btree|false",
         )
         .unwrap();
         assert_eq!(
@@ -764,11 +891,10 @@ mod tests {
 
     #[test]
     fn test_index_sql_quotes_multiple_columns() {
-        let sql = MigrationGenerator::generate_create_index_sql(
+        let sql = MigrationGenerator::build_create_index_sql(
             "episodes",
             "idx_order_created",
             "order, created_at",
-            None,
         )
         .unwrap();
         assert_eq!(
@@ -789,11 +915,10 @@ mod tests {
             ),
             ("function", "idx_postgres_channels_function"),
         ] {
-            let sql = MigrationGenerator::generate_create_index_sql(
+            let sql = MigrationGenerator::build_create_index_sql(
                 "postgres_channels",
                 index_name,
-                col,
-                Some("btree"),
+                &format!("{}|btree|false", col),
             )
             .unwrap();
             assert!(
@@ -815,11 +940,10 @@ mod tests {
     fn test_organizations_style_index_sql_no_invalid_chars() {
         // Regression: organizations table single-line indexes (type: "btree" },) produced
         // USING btree" }("column") - index_type sanitization must strip stray " }
-        let sql = MigrationGenerator::generate_create_index_sql(
+        let sql = MigrationGenerator::build_create_index_sql(
             "organizations",
             "idx_organizations_name",
-            "name",
-            Some(r#"btree" }"#),
+            "name|btree|false",
         )
         .unwrap();
         assert!(
@@ -831,6 +955,61 @@ mod tests {
             sql,
             "CREATE INDEX \"idx_organizations_name\" ON \"organizations\" USING btree(\"name\");"
         );
+    }
+
+    #[test]
+    fn test_index_sql_with_where_clause() {
+        let sql = MigrationGenerator::build_create_index_sql(
+            "samples",
+            "idx_samples_location",
+            "location|btree|false|{\"op\":\"=\",\"column\":\"location\",\"value\":\"Active\"}",
+        )
+        .unwrap();
+        assert!(sql.contains("WHERE"));
+        assert!(sql.contains("\"location\" = 'Active'"));
+        assert!(sql.starts_with("CREATE INDEX \"idx_samples_location\" ON \"samples\" USING btree(\"location\")"));
+    }
+
+    #[test]
+    fn test_index_sql_with_where_and_or() {
+        let where_json = r#"{"and":[{"or":[{"op":"=","column":"location","value":"check"},{"op":"=","column":"location","value":"hehe"}]},{"op":"=","column":"name","value":"John Doe"}]}"#;
+        let sql = MigrationGenerator::build_create_index_sql(
+            "samples",
+            "idx_samples_location_name",
+            &format!("location,name|btree|false|{}", where_json),
+        )
+        .unwrap();
+        assert!(sql.contains("WHERE"));
+        assert!(sql.contains("AND"));
+        assert!(sql.contains("OR"));
+        assert!(sql.contains("'check'"));
+        assert!(sql.contains("'hehe'"));
+        assert!(sql.contains("'John Doe'"));
+    }
+
+    #[test]
+    fn test_index_sql_with_is_null() {
+        let sql = MigrationGenerator::build_create_index_sql(
+            "items",
+            "idx_items_deleted",
+            "id|btree|false|{\"op\":\"IS\",\"column\":\"deleted_at\",\"value\":null}",
+        )
+        .unwrap();
+        assert!(sql.contains("WHERE"));
+        assert!(sql.contains("\"deleted_at\" IS NULL"));
+    }
+
+    #[test]
+    fn test_index_sql_unique_with_where() {
+        let sql = MigrationGenerator::build_create_index_sql(
+            "users",
+            "idx_users_email_active",
+            "email|btree|true|{\"op\":\"=\",\"column\":\"status\",\"value\":\"Active\"}",
+        )
+        .unwrap();
+        assert!(sql.contains("CREATE UNIQUE INDEX"));
+        assert!(sql.contains("WHERE"));
+        assert!(sql.contains("\"status\" = 'Active'"));
     }
 
     /// Ensures up.sql for a new hypertable with indexes has order: CREATE TABLE → create_hypertable → CREATE INDEX.
