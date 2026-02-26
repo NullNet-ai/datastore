@@ -1196,13 +1196,7 @@ impl GeneratorService {
                         if let Some(index) = current_index.take() {
                             let block_str = index_block_lines.join("\n");
                             let where_clause = Self::parse_where_from_index_block(&block_str);
-                            indexes.push((
-                                index.0,
-                                index.1,
-                                index.2,
-                                index.3,
-                                where_clause,
-                            ));
+                            indexes.push((index.0, index.1, index.2, index.3, where_clause));
                         }
                         index_block_lines.clear();
 
@@ -1267,13 +1261,7 @@ impl GeneratorService {
                 if let Some(index) = current_index {
                     let block_str = index_block_lines.join("\n");
                     let where_clause = Self::parse_where_from_index_block(&block_str);
-                    indexes.push((
-                        index.0,
-                        index.1,
-                        index.2,
-                        index.3,
-                        where_clause,
-                    ));
+                    indexes.push((index.0, index.1, index.2, index.3, where_clause));
                 }
             }
         }
@@ -2190,7 +2178,12 @@ indexes: {
         assert_eq!(indexes[0].0, "idx_samples_location");
         assert_eq!(indexes[0].1, vec!["location"]);
         assert!(indexes[0].4.is_some());
-        if let Some(crate::builders::generator::diesel_schema_definition::WhereExpr::Pred { op, column, value }) = &indexes[0].4 {
+        if let Some(crate::builders::generator::diesel_schema_definition::WhereExpr::Pred {
+            op,
+            column,
+            value,
+        }) = &indexes[0].4
+        {
             assert_eq!(op, "=");
             assert_eq!(column, "location");
             assert_eq!(value.as_ref().and_then(|v| v.as_str()), Some("Active"));
@@ -2248,9 +2241,24 @@ indexes: {
         assert_eq!(indexes[0].0, "idx_foo_location_name");
         assert_eq!(indexes[0].1, vec!["location", "name"]);
         assert!(indexes[0].4.is_some());
-        if let Some(crate::builders::generator::diesel_schema_definition::WhereExpr::And { and: and_exprs }) = &indexes[0].4 {
+        if let Some(crate::builders::generator::diesel_schema_definition::WhereExpr::And {
+            and: and_exprs,
+        }) = &indexes[0].4
+        {
             assert_eq!(and_exprs.len(), 2);
-            if let (WhereExpr::Pred { op: o1, column: c1, value: v1 }, WhereExpr::Pred { op: o2, column: c2, value: v2 }) = (&and_exprs[0], &and_exprs[1]) {
+            if let (
+                WhereExpr::Pred {
+                    op: o1,
+                    column: c1,
+                    value: v1,
+                },
+                WhereExpr::Pred {
+                    op: o2,
+                    column: c2,
+                    value: v2,
+                },
+            ) = (&and_exprs[0], &and_exprs[1])
+            {
                 assert_eq!(o1, "=");
                 assert_eq!(c1, "location");
                 assert_eq!(v1.as_ref().and_then(|x| x.as_str()), Some("Active"));

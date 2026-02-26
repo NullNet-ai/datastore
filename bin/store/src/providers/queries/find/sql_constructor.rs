@@ -425,7 +425,10 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                     );
                     let on_condition = format!(
                         "\"{}\".\"{}\" = \"{}\".\"{}\"",
-                        to_alias, join.field_relation.to.field, prev_alias, join.field_relation.from.field
+                        to_alias,
+                        join.field_relation.to.field,
+                        prev_alias,
+                        join.field_relation.from.field
                     );
                     let mut where_conditions =
                         vec![child_where, parent_where, main_to_parent_correlation];
@@ -450,8 +453,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                         Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
                     };
                     where_conditions.push(standard_where);
-                    let join_condition =
-                        self.build_join_condition_for_alias(to_alias, join, None);
+                    let join_condition = self.build_join_condition_for_alias(to_alias, join, None);
                     where_conditions.push(join_condition);
                     let combined_where = where_conditions.join(" AND ");
                     format!(

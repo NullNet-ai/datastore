@@ -16,9 +16,15 @@ pub enum IndexWhereScalar {
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub enum WhereExpr {
-    And { and: Vec<WhereExpr> },
-    Or { or: Vec<WhereExpr> },
-    Not { not: Box<WhereExpr> },
+    And {
+        and: Vec<WhereExpr>,
+    },
+    Or {
+        or: Vec<WhereExpr>,
+    },
+    Not {
+        not: Box<WhereExpr>,
+    },
     Pred {
         op: String,
         column: String,

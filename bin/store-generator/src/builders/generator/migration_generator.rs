@@ -283,11 +283,8 @@ impl MigrationGenerator {
                 if !first_statement {
                     sql.push_str("--> statement-breakpoint\n");
                 }
-                let index_sql = Self::build_create_index_sql(
-                    &change.table_name,
-                    index_name,
-                    column_names,
-                )?;
+                let index_sql =
+                    Self::build_create_index_sql(&change.table_name, index_name, column_names)?;
                 sql.push_str(&index_sql);
                 sql.push_str("\n");
                 first_statement = false;
@@ -513,7 +510,8 @@ impl MigrationGenerator {
         is_unique: bool,
     ) -> Result<String, String> {
         let unique_str = if is_unique { "UNIQUE " } else { "" };
-        let (using_clause, quoted_columns) = Self::index_using_and_columns(column_names, index_type)?;
+        let (using_clause, quoted_columns) =
+            Self::index_using_and_columns(column_names, index_type)?;
         let where_sql = where_clause
             .map(Self::where_expr_to_sql)
             .transpose()?
@@ -565,9 +563,7 @@ impl MigrationGenerator {
                 let parts: Result<Vec<_>, _> = exprs.iter().map(Self::where_expr_to_sql).collect();
                 Ok(format!("({})", parts?.join(" OR ")))
             }
-            WhereExpr::Not { not: expr } => {
-                Ok(format!("NOT ({})", Self::where_expr_to_sql(expr)?))
-            }
+            WhereExpr::Not { not: expr } => Ok(format!("NOT ({})", Self::where_expr_to_sql(expr)?)),
             WhereExpr::Pred { op, column, value } => {
                 let col = format!("\"{}\"", column.trim_matches('"'));
                 let op_upper = op.to_uppercase();
@@ -577,19 +573,25 @@ impl MigrationGenerator {
                         Ok(format!("{} {} {}", col, op_upper, val))
                     }
                     "IN" => {
-                        let arr = value.as_ref().and_then(serde_json::Value::as_array).ok_or_else(|| {
-                            "IN requires array value".to_string()
-                        })?;
-                        let literals: Result<Vec<_>, _> =
-                            arr.iter().map(|v| Self::value_to_sql_literal(Some(v))).collect();
+                        let arr = value
+                            .as_ref()
+                            .and_then(serde_json::Value::as_array)
+                            .ok_or_else(|| "IN requires array value".to_string())?;
+                        let literals: Result<Vec<_>, _> = arr
+                            .iter()
+                            .map(|v| Self::value_to_sql_literal(Some(v)))
+                            .collect();
                         Ok(format!("{} IN ({})", col, literals?.join(", ")))
                     }
                     "NOT IN" => {
-                        let arr = value.as_ref().and_then(serde_json::Value::as_array).ok_or_else(|| {
-                            "NOT IN requires array value".to_string()
-                        })?;
-                        let literals: Result<Vec<_>, _> =
-                            arr.iter().map(|v| Self::value_to_sql_literal(Some(v))).collect();
+                        let arr = value
+                            .as_ref()
+                            .and_then(serde_json::Value::as_array)
+                            .ok_or_else(|| "NOT IN requires array value".to_string())?;
+                        let literals: Result<Vec<_>, _> = arr
+                            .iter()
+                            .map(|v| Self::value_to_sql_literal(Some(v)))
+                            .collect();
                         Ok(format!("{} NOT IN ({})", col, literals?.join(", ")))
                     }
                     "LIKE" | "ILIKE" => {
@@ -597,9 +599,7 @@ impl MigrationGenerator {
                         Ok(format!("{} {} {}", col, op_upper, val))
                     }
                     "IS" => {
-                        if value.is_none()
-                            || value.as_ref().map(|v| v.is_null()).unwrap_or(false)
-                        {
+                        if value.is_none() || value.as_ref().map(|v| v.is_null()).unwrap_or(false) {
                             Ok(format!("{} IS NULL", col))
                         } else {
                             let val = Self::value_to_sql_literal(value.as_ref())?;
@@ -607,9 +607,7 @@ impl MigrationGenerator {
                         }
                     }
                     "IS NOT" => {
-                        if value.is_none()
-                            || value.as_ref().map(|v| v.is_null()).unwrap_or(false)
-                        {
+                        if value.is_none() || value.as_ref().map(|v| v.is_null()).unwrap_or(false) {
                             Ok(format!("{} IS NOT NULL", col))
                         } else {
                             let val = Self::value_to_sql_literal(value.as_ref())?;
@@ -625,7 +623,9 @@ impl MigrationGenerator {
     fn value_to_sql_literal(v: Option<&serde_json::Value>) -> Result<String, String> {
         match v {
             None | Some(serde_json::Value::Null) => Ok("NULL".to_string()),
-            Some(serde_json::Value::String(s)) => Ok(format!("'{}'", s.replace('\\', "\\\\").replace('\'', "''"))),
+            Some(serde_json::Value::String(s)) => {
+                Ok(format!("'{}'", s.replace('\\', "\\\\").replace('\'', "''")))
+            }
             Some(serde_json::Value::Number(n)) => {
                 if let Some(i) = n.as_i64() {
                     Ok(i.to_string())
@@ -674,12 +674,7 @@ impl MigrationGenerator {
             )
         } else {
             Self::generate_create_index_sql_full(
-                table_name,
-                index_name,
-                columns,
-                index_type,
-                None,
-                is_unique,
+                table_name, index_name, columns, index_type, None, is_unique,
             )
         }
     }
@@ -967,7 +962,9 @@ mod tests {
         .unwrap();
         assert!(sql.contains("WHERE"));
         assert!(sql.contains("\"location\" = 'Active'"));
-        assert!(sql.starts_with("CREATE INDEX \"idx_samples_location\" ON \"samples\" USING btree(\"location\")"));
+        assert!(sql.starts_with(
+            "CREATE INDEX \"idx_samples_location\" ON \"samples\" USING btree(\"location\")"
+        ));
     }
 
     #[test]

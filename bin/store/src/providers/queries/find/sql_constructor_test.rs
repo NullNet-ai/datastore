@@ -69,8 +69,7 @@ mod tests {
             nested: false,
         }];
 
-        let mut constructor =
-            SQLConstructor::new(mock_filter, "courses".to_string(), true, None);
+        let mut constructor = SQLConstructor::new(mock_filter, "courses".to_string(), true, None);
         let sql = constructor.construct().expect("SQL should be constructed");
 
         assert!(
