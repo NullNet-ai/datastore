@@ -72,11 +72,31 @@ mod tests {
         let mut constructor = SQLConstructor::new(mock_filter, "courses".to_string(), true, None);
         let sql = constructor.construct().expect("SQL should be constructed");
 
-        assert!(sql.contains("SELECT \"courses\".\"id\""), "Expected default id when pluck is empty. Got: {}", sql);
-        assert!(sql.contains("AS \"stories_ids\""), "Expected stories_ids selection. Got: {}", sql);
-        assert!(sql.contains("AS \"stories_course_ids\""), "Expected stories_course_ids selection. Got: {}", sql);
-        assert!(sql.contains("FROM \"stories\" \"stories\""), "Expected stories source table. Got: {}", sql);
-        assert!(sql.contains("\"courses\".\"id\" = \"stories\".\"course_id\""), "Expected correlation condition. Got: {}", sql);
+        assert!(
+            sql.contains("SELECT \"courses\".\"id\""),
+            "Expected default id when pluck is empty. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("AS \"stories_ids\""),
+            "Expected stories_ids selection. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("AS \"stories_course_ids\""),
+            "Expected stories_course_ids selection. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("FROM \"stories\" \"stories\""),
+            "Expected stories source table. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("\"courses\".\"id\" = \"stories\".\"course_id\""),
+            "Expected correlation condition. Got: {}",
+            sql
+        );
     }
 
     #[test]
@@ -117,13 +137,24 @@ mod tests {
             nested: false,
         }];
 
-        let mut constructor =
-            SQLConstructor::new(mock_filter, "courses".to_string(), true, None);
+        let mut constructor = SQLConstructor::new(mock_filter, "courses".to_string(), true, None);
         let sql = constructor.construct().expect("SQL should be constructed");
 
-        assert!(sql.contains("AS \"stories_ids\""), "Expected stories_ids selection. Got: {}", sql);
-        assert!(sql.contains("AS \"stories_course_ids\""), "Expected stories_course_ids selection. Got: {}", sql);
-        assert!(!sql.contains("AS \"stories_items\""), "Did not expect stories_items selection. Got: {}", sql);
+        assert!(
+            sql.contains("AS \"stories_ids\""),
+            "Expected stories_ids selection. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("AS \"stories_course_ids\""),
+            "Expected stories_course_ids selection. Got: {}",
+            sql
+        );
+        assert!(
+            !sql.contains("AS \"stories_items\""),
+            "Did not expect stories_items selection. Got: {}",
+            sql
+        );
     }
 
     impl Default for MockQueryFilter {

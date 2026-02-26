@@ -450,7 +450,10 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                         );
                         let on_condition = format!(
                             "\"{}\".\"{}\" = \"{}\".\"{}\"",
-                            to_alias, join.field_relation.to.field, prev_alias, join.field_relation.from.field
+                            to_alias,
+                            join.field_relation.to.field,
+                            prev_alias,
+                            join.field_relation.from.field
                         );
                         let mut where_conditions =
                             vec![child_where, parent_where, main_to_parent_correlation];
