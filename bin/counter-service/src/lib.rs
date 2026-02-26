@@ -9,4 +9,6 @@ pub mod generated {
 }
 
 pub use generated::code_service_client::CodeServiceClient;
-pub use generated::{GetCodeRequest, GetCodeResponse, InitCountersRequest, InitCountersResponse, CounterConfig};
+pub use generated::{
+    CounterConfig, GetCodeRequest, GetCodeResponse, InitCountersRequest, InitCountersResponse,
+};

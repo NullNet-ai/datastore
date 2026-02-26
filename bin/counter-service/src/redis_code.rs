@@ -34,11 +34,7 @@ pub struct EntityConfig {
 }
 
 /// Get the next code for (database, entity). Atomic: INCR then format using stored config.
-pub async fn get_next_code(
-    pool: &Pool,
-    database: &str,
-    entity: &str,
-) -> Result<String, CodeError> {
+pub async fn get_next_code(pool: &Pool, database: &str, entity: &str) -> Result<String, CodeError> {
     let mut conn = pool.get().await?;
     let ck = counter_key(database, entity);
     let count: i64 = conn.incr(&ck, 1).await?;
@@ -101,7 +97,10 @@ pub async fn init_counters(
             .await?;
         // If counter key does not exist, set to 0 so first INCR gives 1
         let counter_k = counter_key(database, entity);
-        let exists: bool = redis::cmd("EXISTS").arg(&counter_k).query_async(&mut conn).await?;
+        let exists: bool = redis::cmd("EXISTS")
+            .arg(&counter_k)
+            .query_async(&mut conn)
+            .await?;
         if !exists {
             let _: () = redis::cmd("SET")
                 .arg(&counter_k)

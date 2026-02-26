@@ -31,9 +31,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let svc = CodeServiceImpl::new(pool).into_service();
 
     tracing::info!("Counter service gRPC listening on {}", addr);
-    Server::builder()
-        .add_service(svc)
-        .serve(addr)
-        .await?;
+    Server::builder().add_service(svc).serve(addr).await?;
     Ok(())
 }

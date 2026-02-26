@@ -1,7 +1,9 @@
 //! gRPC server implementation for CodeService.
 
 use crate::generated::code_service_server::{CodeService, CodeServiceServer};
-use crate::generated::{GetCodeRequest, GetCodeResponse, InitCountersRequest, InitCountersResponse};
+use crate::generated::{
+    GetCodeRequest, GetCodeResponse, InitCountersRequest, InitCountersResponse,
+};
 use crate::redis_code;
 use deadpool_redis::Pool;
 use tonic::{Request, Response, Status};
@@ -38,9 +40,12 @@ impl CodeService for CodeServiceImpl {
         }
         match redis_code::get_next_code(&self.pool, database, table).await {
             Ok(code) => Ok(Response::new(GetCodeResponse { code })),
-            Err(redis_code::CodeError::ConfigMissing { .. }) => Err(Status::failed_precondition(
-                format!("Config missing for {}:{}. Run InitCounters first.", database, table),
-            )),
+            Err(redis_code::CodeError::ConfigMissing { .. }) => {
+                Err(Status::failed_precondition(format!(
+                    "Config missing for {}:{}. Run InitCounters first.",
+                    database, table
+                )))
+            }
             Err(redis_code::CodeError::Redis(e)) => {
                 log::error!("Redis error in get_code: {}", e);
                 Err(Status::internal("Redis error"))
@@ -65,14 +70,7 @@ impl CodeService for CodeServiceImpl {
         let entities: Vec<(String, String, i32, i32)> = req
             .counters
             .into_iter()
-            .map(|c| {
-                (
-                    c.entity,
-                    c.prefix,
-                    c.default_code,
-                    c.digits_number,
-                )
-            })
+            .map(|c| (c.entity, c.prefix, c.default_code, c.digits_number))
             .collect();
         if entities.is_empty() {
             return Ok(Response::new(InitCountersResponse {
