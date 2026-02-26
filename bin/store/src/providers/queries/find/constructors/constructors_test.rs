@@ -125,7 +125,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
 
         let expected_query = format!(
-            "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails",
+            "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (\"contact_emails\".\"tombstone\" = 0 AND \"contact_emails\".\"organization_id\" IS NOT NULL AND \"contact_emails\".\"organization_id\" = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails",
             &env_config.default_organization_id
         );
 
@@ -295,7 +295,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
 
         // Group-by selections use aliases: "column" AS column
-        let expected_selections = format!("SELECT \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
+        let expected_selections = format!("SELECT \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM \"contacts\" \"contacts\" LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (\"joined_contact_emails\".\"tombstone\" = 0 AND \"joined_contact_emails\".\"organization_id\" IS NOT NULL AND \"joined_contact_emails\".\"organization_id\" = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (\"contacts\".\"tombstone\" = 0 AND \"contacts\".\"organization_id\" IS NOT NULL AND \"contacts\".\"organization_id\" = '{}')",
             &env_config.default_organization_id, &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
@@ -430,7 +430,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
 
         // Group-by selections use aliases: "column" AS column
-        let expected_selections = format!("SELECT COUNT(*) AS count, \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
+        let expected_selections = format!("SELECT COUNT(*) AS count, \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM \"contacts\" \"contacts\" LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (\"joined_contact_emails\".\"tombstone\" = 0 AND \"joined_contact_emails\".\"organization_id\" IS NOT NULL AND \"joined_contact_emails\".\"organization_id\" = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (\"contacts\".\"tombstone\" = 0 AND \"contacts\".\"organization_id\" IS NOT NULL AND \"contacts\".\"organization_id\" = '{}')",
             &env_config.default_organization_id, &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
@@ -588,7 +588,7 @@ mod tests {
         ]);
 
         let payload = serde_json::json!({
-            "pluck": ["id", "first_name", "last_name"],
+            "pluck": ["id", "full_name"],
             "concatenate_fields": expected_concatenated_fields
         });
 
@@ -614,7 +614,7 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name FROM contacts WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(contacts.id) ASC NULLS FIRST LIMIT 10",
+        let expected_selections = format!("SELECT \"contacts\".\"id\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name FROM \"contacts\" \"contacts\" WHERE (\"contacts\".\"tombstone\" = 0 AND \"contacts\".\"organization_id\" IS NOT NULL AND \"contacts\".\"organization_id\" = '{}') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(\"contacts\".\"id\") ASC NULLS FIRST LIMIT 10",
             &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(

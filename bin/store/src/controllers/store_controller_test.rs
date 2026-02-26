@@ -1162,11 +1162,7 @@ mod tests {
                             "Count SQL should contain COUNT(DISTINCT id). Got: {}",
                             count_sql
                         );
-                        assert!(
-                            count_sql.contains("FROM samples"),
-                            "Count SQL should have FROM samples. Got: {}",
-                            count_sql
-                        );
+                        assert!(count_sql.contains("FROM \"samples\""), "Count SQL should have FROM samples. Got: {}", count_sql);
                         assert!(
                             count_sql.contains("WHERE") || count_sql.contains("where"),
                             "Count SQL should have WHERE. Got: {}",
