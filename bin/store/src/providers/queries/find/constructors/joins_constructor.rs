@@ -160,7 +160,7 @@ impl JoinsConstructor {
 
         // Same as LEFT: build where conditions (used in ON for RIGHT instead of WHERE)
         let mut where_conditions = vec![build_system_where_clause(lateral_alias)
-            .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias))];
+            .unwrap_or_else(|_| format!("(\"{}\".\"tombstone\" = 0)", lateral_alias))];
 
         if !join.field_relation.to.filters.is_empty() {
             match build_infix_expression(&join.field_relation.to.filters) {
@@ -304,7 +304,7 @@ impl JoinsConstructor {
         };
 
         let mut where_conditions = vec![build_system_where_clause(&lateral_alias)
-            .unwrap_or_else(|_| format!("({}.tombstone = 0)", lateral_alias))];
+            .unwrap_or_else(|_| format!("(\"{}\".\"tombstone\" = 0)", lateral_alias))];
 
         // Add filters from the 'to' RelationEndpoint if they exist
         if !join.field_relation.to.filters.is_empty() {

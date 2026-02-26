@@ -144,7 +144,13 @@ impl SchemaGenerator {
     /// Analyze what changes need to be made to the schema with indexes and foreign keys
     pub fn analyze_changes_with_indexes_and_foreign_keys(
         table_def: &TableDefinition,
-        indexes: &[(String, Vec<String>, bool, Option<String>)],
+        indexes: &[(
+            String,
+            Vec<String>,
+            bool,
+            Option<String>,
+            Option<crate::builders::generator::diesel_schema_definition::WhereExpr>,
+        )],
         foreign_keys: &[crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition],
     ) -> Result<Vec<SchemaChange>, String> {
         // Validate that hypertables don't have foreign key constraints
@@ -162,15 +168,43 @@ impl SchemaGenerator {
 
         let mut changes = Self::analyze_changes(table_def)?;
 
-        // Add index changes - only if they don't already exist
-        for (index_name, columns, _is_unique, index_type) in indexes {
-            // Check if index already exists by looking for it in existing schema
+        // Add index changes - only if they don't already exist, or error if definition changed
+        for (index_name, columns, is_unique, index_type, where_clause) in indexes {
+            if let Some(existing_sql) =
+                Self::get_existing_index_sql_from_migrations(&table_def.name, index_name)
+            {
+                // Index already exists: compare definition; if different, error
+                let expected_sql = crate::builders::generator::migration_generator::MigrationGenerator::generate_create_index_sql_full(
+                    &table_def.name,
+                    index_name,
+                    &columns.join(","),
+                    index_type.as_deref(),
+                    where_clause.as_ref(),
+                    *is_unique,
+                )?;
+                if !Self::normalize_index_sql_for_compare(&existing_sql)
+                    .eq(&Self::normalize_index_sql_for_compare(&expected_sql))
+                {
+                    return Err(format!(
+                        "Index '{}' was already created with a different definition. \
+                         Already created indexes cannot be modified. \
+                         Update your table definition to match the existing index, or use a new index name. \
+                         Existing index SQL:\n  {}",
+                        index_name, existing_sql
+                    ));
+                }
+                continue;
+            }
+
             if !Self::index_exists_in_schema(&table_def.name, index_name) {
-                let field_def = if let Some(idx_type) = index_type {
-                    format!("{}|{}", columns.join(","), idx_type)
-                } else {
-                    columns.join(",")
-                };
+                let type_str = index_type.as_deref().unwrap_or("btree");
+                let mut field_def = format!("{}|{}|{}", columns.join(","), type_str, is_unique);
+                if let Some(ref w) = where_clause {
+                    if let Ok(json) = serde_json::to_string(w) {
+                        field_def.push_str("|");
+                        field_def.push_str(&json);
+                    }
+                }
 
                 changes.push(SchemaChange {
                     table_name: table_def.name.clone(),
@@ -356,6 +390,42 @@ impl SchemaGenerator {
             }
         }
         false
+    }
+
+    /// Return the full CREATE INDEX SQL for an existing index from migrations, if found.
+    fn get_existing_index_sql_from_migrations(
+        table_name: &str,
+        index_name: &str,
+    ) -> Option<String> {
+        let migrations_dir = paths::database::MIGRATIONS_DIR.as_str();
+        let entries = std::fs::read_dir(migrations_dir).ok()?;
+        for entry in entries.flatten() {
+            let up_sql =
+                std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE)).ok()?;
+            // Match full line: CREATE [UNIQUE] INDEX "index_name" ON "table_name" ... ;
+            let on_table = format!("ON \"{}\"", table_name);
+            if !up_sql.contains(&on_table) {
+                continue;
+            }
+            for line in up_sql.lines() {
+                let line = line.trim();
+                if line.starts_with("CREATE ")
+                    && (line.contains("UNIQUE") || line.contains("INDEX"))
+                    && line.contains(&format!("\"{}\"", index_name))
+                    && line.contains(&on_table)
+                {
+                    return Some(line.trim_end_matches(';').to_string());
+                }
+            }
+        }
+        None
+    }
+
+    /// Normalize CREATE INDEX SQL for comparison (lowercase, collapse whitespace, no trailing semicolon).
+    fn normalize_index_sql_for_compare(sql: &str) -> String {
+        let s = sql.trim().trim_end_matches(';');
+        let s = s.to_lowercase();
+        s.split_whitespace().collect::<Vec<_>>().join(" ")
     }
 
     /// For reserved keywords, use a different Rust identifier and #[sql_name] to avoid clashes.

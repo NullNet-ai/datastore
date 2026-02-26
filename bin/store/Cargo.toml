@@ -75,7 +75,7 @@ counter-service = { path = "../counter-service" }
 
 
 [dev-dependencies]
-store-generator = { version = "0.1.9", registry = "dnamicro" }
+store-generator = { version = "0.1.12", registry = "dnamicro" }
 serial_test = "3.0"
 
 

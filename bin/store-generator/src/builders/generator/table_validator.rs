@@ -331,12 +331,19 @@ pub fn validate_no_duplicate_fields(field_names: &[String]) -> Result<(), String
     Ok(())
 }
 
+/// Index type from generator (name, columns, unique, type, where).
+pub type TableFileIndex = (
+    String,
+    Vec<String>,
+    bool,
+    Option<String>,
+    Option<crate::builders::generator::diesel_schema_definition::WhereExpr>,
+);
+
 /// Validate no duplicate index names.
-pub fn validate_no_duplicate_index_names(
-    indexes: &[(String, Vec<String>, bool, Option<String>)],
-) -> Result<(), String> {
+pub fn validate_no_duplicate_index_names(indexes: &[TableFileIndex]) -> Result<(), String> {
     let mut seen = std::collections::HashSet::new();
-    for (name, _, _, _) in indexes {
+    for (name, _, _, _, _) in indexes {
         if !seen.insert(name) {
             return Err(format!(
                 "Duplicate index name '{}'. Remove the duplicate - system_indexes! already defines indexes for system columns.",
@@ -378,7 +385,7 @@ pub fn validate_table_file(
     content: &str,
     table_name: &str,
     field_names: &[String],
-    indexes: &[(String, Vec<String>, bool, Option<String>)],
+    indexes: &[TableFileIndex],
     foreign_keys: &[(String, String)], // (constraint_name, column)
 ) -> Result<(), String> {
     let mut result = ValidationResult::new();
@@ -411,7 +418,7 @@ pub fn validate_table_file(
     }
 
     // 6. Validate index names (format)
-    for (index_name, columns, _, _) in indexes {
+    for (index_name, columns, _, _, _) in indexes {
         if columns.is_empty() {
             result.add_error(format!("Index '{}' has no columns", index_name));
         } else if let Err(e) = validate_index_name(index_name, table_name, columns) {
@@ -663,6 +670,7 @@ mod tests {
             vec!["title".to_string()],
             false,
             Some("btree".to_string()),
+            None,
         )];
         let foreign_keys: Vec<(String, String)> = vec![];
         assert!(validate_table_file(
@@ -680,7 +688,7 @@ mod tests {
     fn test_validate_table_file_plural_fail() {
         let content = r#"system_indexes!("demo_item")"#;
         let field_names: Vec<String> = vec![];
-        let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
+        let indexes: Vec<TableFileIndex> = vec![];
         let foreign_keys: Vec<(String, String)> = vec![];
         let result = validate_table_file(
             "demo_item",
@@ -698,7 +706,7 @@ mod tests {
     fn test_validate_table_file_filename_mismatch() {
         let content = r#"system_indexes!("demo_items")"#;
         let field_names: Vec<String> = vec![];
-        let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
+        let indexes: Vec<TableFileIndex> = vec![];
         let foreign_keys: Vec<(String, String)> = vec![];
         let result = validate_table_file(
             "wrong_name",
@@ -721,6 +729,7 @@ mod tests {
             vec!["title".to_string()],
             false,
             None,
+            None,
         )];
         let foreign_keys: Vec<(String, String)> = vec![];
         let result = validate_table_file(
@@ -739,7 +748,7 @@ mod tests {
     fn test_validate_table_file_fk_name_fail() {
         let content = r#"system_foreign_keys!("samples")"#;
         let field_names = vec!["id".to_string(), "sample_with_reference_id".to_string()];
-        let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
+        let indexes: Vec<TableFileIndex> = vec![];
         let foreign_keys = vec![(
             "wrong_fk_name".to_string(),
             "sample_with_reference_id".to_string(),
@@ -760,7 +769,7 @@ mod tests {
     fn test_validate_table_file_skips_system_fk_columns() {
         let content = r#"system_foreign_keys!("demo_items")"#;
         let field_names = vec!["id".to_string(), "organization_id".to_string()];
-        let indexes: Vec<(String, Vec<String>, bool, Option<String>)> = vec![];
+        let indexes: Vec<TableFileIndex> = vec![];
         // System FK columns use different format - we skip format validation for them
         let foreign_keys = vec![(
             "demo_items_organization_id_organizations_id_fk".to_string(),
@@ -791,13 +800,37 @@ mod tests {
     #[test]
     fn test_validate_no_duplicate_index_names() {
         let indexes = vec![
-            ("idx_t_c1".to_string(), vec!["c1".to_string()], false, None),
-            ("idx_t_c2".to_string(), vec!["c2".to_string()], false, None),
+            (
+                "idx_t_c1".to_string(),
+                vec!["c1".to_string()],
+                false,
+                None,
+                None,
+            ),
+            (
+                "idx_t_c2".to_string(),
+                vec!["c2".to_string()],
+                false,
+                None,
+                None,
+            ),
         ];
         assert!(validate_no_duplicate_index_names(&indexes).is_ok());
         let dup_indexes = vec![
-            ("idx_t_c1".to_string(), vec!["c1".to_string()], false, None),
-            ("idx_t_c1".to_string(), vec!["c1".to_string()], false, None),
+            (
+                "idx_t_c1".to_string(),
+                vec!["c1".to_string()],
+                false,
+                None,
+                None,
+            ),
+            (
+                "idx_t_c1".to_string(),
+                vec!["c1".to_string()],
+                false,
+                None,
+                None,
+            ),
         ];
         let err = validate_no_duplicate_index_names(&dup_indexes).unwrap_err();
         assert!(err.contains("Duplicate index"));

@@ -125,7 +125,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
 
         let expected_query = format!(
-            "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (contact_emails.tombstone = 0 AND contact_emails.organization_id IS NOT NULL AND contact_emails.organization_id = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails",
+            "COALESCE( ( SELECT JSONB_AGG(elem ) FROM (SELECT JSONB_BUILD_OBJECT('id', \"contact_emails\".\"id\", 'email', \"contact_emails\".\"email\") AS elem FROM contact_emails contact_emails WHERE (\"contact_emails\".\"tombstone\" = 0 AND \"contact_emails\".\"organization_id\" IS NOT NULL AND \"contact_emails\".\"organization_id\" = '{}') AND \"contacts\".\"id\" = \"contact_emails\".\"contact_id\") sub ), '[]' ) AS contact_emails",
             &env_config.default_organization_id
         );
 
@@ -142,6 +142,73 @@ mod tests {
             contain_expected_query,
             " {} Query should have contain the pluck object fields from {} with joins.",
             contain_checker, &table
+        );
+    }
+
+    /// Test that when group_by is missing and joins are present, no default GROUP BY is injected
+    #[test]
+    fn should_not_inject_group_by_when_group_by_missing_and_joins_present() {
+        let env_config = EnvConfig::default();
+        let expected_joins = serde_json::json!([
+            {
+                "type": "left",
+                "field_relation": {
+                    "to": {
+                        "entity": "contact_emails",
+                        "field": "contact_id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    },
+                    "from": {
+                        "entity": "contacts",
+                        "field": "id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    }
+                },
+                "nested": false
+            }
+        ]);
+        let payload = serde_json::json!({
+            "pluck": ["id", "first_name"],
+            "joins": expected_joins,
+            "limit": 10
+        });
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "Failed to generate query: {:?}",
+            query_result.err()
+        );
+        let query = query_result.unwrap();
+
+        assert!(
+            query.contains("JOIN LATERAL"),
+            "Query should contain a LATERAL join to ensure joins-present path. Got: {}",
+            query
+        );
+        let expected_group_by_query = format!("GROUP BY \"{}\".\"id\"", table);
+        assert!(
+            query.contains(&expected_group_by_query),
+            "Query should contain default GROUP BY main table id when group_by is missing, even with joins. Expected: '{}'. Got: {}",
+            expected_group_by_query,
+            query
         );
     }
 
@@ -228,7 +295,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
 
         // Group-by selections use aliases: "column" AS column
-        let expected_selections = format!("SELECT \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
+        let expected_selections = format!("SELECT \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM \"contacts\" \"contacts\" LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (\"joined_contact_emails\".\"tombstone\" = 0 AND \"joined_contact_emails\".\"organization_id\" IS NOT NULL AND \"joined_contact_emails\".\"organization_id\" = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (\"contacts\".\"tombstone\" = 0 AND \"contacts\".\"organization_id\" IS NOT NULL AND \"contacts\".\"organization_id\" = '{}')",
             &env_config.default_organization_id, &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
@@ -363,7 +430,7 @@ mod tests {
         println!("  ✓ Generated query: `{}`", query);
 
         // Group-by selections use aliases: "column" AS column
-        let expected_selections = format!("SELECT COUNT(*) AS count, \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM contacts LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (joined_contact_emails.tombstone = 0 AND joined_contact_emails.organization_id IS NOT NULL AND joined_contact_emails.organization_id = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}')",
+        let expected_selections = format!("SELECT COUNT(*) AS count, \"contacts\".\"id\" AS id, \"contacts\".\"first_name\" AS first_name FROM \"contacts\" \"contacts\" LEFT JOIN LATERAL (SELECT \"joined_contact_emails\".\"id\", \"joined_contact_emails\".\"email\" FROM \"contact_emails\" \"joined_contact_emails\" WHERE (\"joined_contact_emails\".\"tombstone\" = 0 AND \"joined_contact_emails\".\"organization_id\" IS NOT NULL AND \"joined_contact_emails\".\"organization_id\" = '{}') AND \"joined_contact_emails\".\"contact_id\" = \"contacts\".\"id\" ) AS \"contact_emails\" ON TRUE WHERE (\"contacts\".\"tombstone\" = 0 AND \"contacts\".\"organization_id\" IS NOT NULL AND \"contacts\".\"organization_id\" = '{}')",
             &env_config.default_organization_id, &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(
@@ -521,7 +588,7 @@ mod tests {
         ]);
 
         let payload = serde_json::json!({
-            "pluck": ["id", "first_name", "last_name"],
+            "pluck": ["id", "full_name"],
             "concatenate_fields": expected_concatenated_fields
         });
 
@@ -547,7 +614,7 @@ mod tests {
         let query = query_result.unwrap();
         println!("  ✓ Generated query: `{}`", query);
 
-        let expected_selections = format!("SELECT \"contacts\".\"id\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name FROM contacts WHERE (contacts.tombstone = 0 AND contacts.organization_id IS NOT NULL AND contacts.organization_id = '{}') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(contacts.id) ASC NULLS FIRST LIMIT 10",
+        let expected_selections = format!("SELECT \"contacts\".\"id\", (COALESCE(\"contacts\".\"first_name\", '') || ' ' || COALESCE(\"contacts\".\"last_name\", '')) AS full_name FROM \"contacts\" \"contacts\" WHERE (\"contacts\".\"tombstone\" = 0 AND \"contacts\".\"organization_id\" IS NOT NULL AND \"contacts\".\"organization_id\" = '{}') GROUP BY \"contacts\".\"id\" ORDER BY LOWER(\"contacts\".\"id\") ASC NULLS FIRST LIMIT 10",
             &env_config.default_organization_id);
         println!("  ✓ Expected selections: `{}`", expected_selections);
         println!(

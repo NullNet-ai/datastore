@@ -5,6 +5,22 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.12
+### Author
+Kashan
+
+### Added
+- **Partial indexes (WHERE clause)**:
+  - Index definitions support an optional `where` clause for PostgreSQL partial indexes. Use the idiomatic block format with unquoted keys (e.g. `where: { and: [ { op: "=", column: "status", value: "Active" }, { op: "=", column: "name", value: "John Doe" } ] }`).
+  - Supported expression shapes: single predicate `{ op, column, value }`, `and: [ ... ]`, `or: [ ... ]`, `not: { ... }`. Supported ops: `=`, `!=`, `<`, `<=`, `>`, `>=`, `IN`, `NOT IN`, `LIKE`, `ILIKE`, `IS`, `IS NOT`. Values can be strings, numbers, booleans, `null`, or arrays for `IN`/`NOT IN`.
+  - Migrations emit `CREATE [UNIQUE] INDEX ... ON table USING type (columns) WHERE <predicate>;` when a where clause is present.
+  - **Existing index check**: If an index already exists in migrations but the table definition (columns, type, unique, where) differs, the generator errors and shows the existing SQL; existing indexes cannot be modified.
+  - Parser accepts both block format and legacy JSON string format (`where: r#"{"op":"=",...}"#` or `where: "..."`). Index block keys `where` and `not` are not treated as new index names; only lines starting with `idx_` begin a new index.
+  - Documentation and full sample table (`index_demos`) with 12 index scenarios in `src/builders/generator/README.md` and reference in root README.
+
+### Fixed
+- **Fields section parsing (schema/migrations only had id)**: The end of the `fields: { ... }` block was found by counting `{` and `}` without skipping braces inside string literals. If any default or value contained `'{}'`, `"}"`, etc., the parser could close the section too early or include the indexes section, leading to missing fields and schema/migrations with only the `id` column. Brace counting in `extract_fields_from_macro` now ignores characters inside single- and double-quoted strings (with escape handling).
+
 ## 0.1.11
 ### Author
 Kashan

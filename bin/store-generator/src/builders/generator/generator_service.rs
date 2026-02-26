@@ -1,4 +1,4 @@
-use crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition;
+use crate::builders::generator::diesel_schema_definition::{ForeignKeyDefinition, WhereExpr};
 use crate::builders::generator::field_definition::{FieldDefinition, ForeignKey, TableDefinition};
 use crate::builders::generator::migration_generator::MigrationGenerator;
 use crate::builders::generator::model_generator::ModelGenerator;
@@ -641,12 +641,51 @@ impl GeneratorService {
         if let Some(fields_start) = content.find("fields: {") {
             let after_fields = &content[fields_start + 9..];
 
-            // Find the end of the fields section by counting braces
+            // Find the end of the fields section by counting braces (skip braces inside string literals)
             let mut brace_count = 1;
             let mut fields_end = 0;
             let chars: Vec<char> = after_fields.chars().collect();
+            let n = chars.len();
+            let mut i = 0;
+            let mut in_double = false;
+            let mut in_single = false;
+            let mut escape = false;
 
-            for (i, &ch) in chars.iter().enumerate() {
+            while i < n {
+                let ch = chars[i];
+                if escape {
+                    escape = false;
+                    i += 1;
+                    continue;
+                }
+                if in_double {
+                    if ch == '\\' {
+                        escape = true;
+                    } else if ch == '"' {
+                        in_double = false;
+                    }
+                    i += 1;
+                    continue;
+                }
+                if in_single {
+                    if ch == '\\' {
+                        escape = true;
+                    } else if ch == '\'' {
+                        in_single = false;
+                    }
+                    i += 1;
+                    continue;
+                }
+                if ch == '"' {
+                    in_double = true;
+                    i += 1;
+                    continue;
+                }
+                if ch == '\'' {
+                    in_single = true;
+                    i += 1;
+                    continue;
+                }
                 match ch {
                     '{' => brace_count += 1,
                     '}' => {
@@ -658,6 +697,7 @@ impl GeneratorService {
                     }
                     _ => {}
                 }
+                i += 1;
             }
 
             if fields_end > 0 {
@@ -908,10 +948,193 @@ impl GeneratorService {
         }
     }
 
-    /// Extract indexes from macro definition
+    /// Convert idiomatic where block to JSON (unquoted keys -> "key":).
+    /// Input is the content after "where:" e.g. `{ and: [ { op: "=", column: "x", value: "y" } ] }`.
+    fn where_block_to_json(block: &str) -> String {
+        let mut out = String::with_capacity(block.len() * 2);
+        let mut i = 0;
+        let chars: Vec<char> = block.chars().collect();
+        let n = chars.len();
+        let mut in_double = false;
+        let mut in_single = false;
+        let mut escape = false;
+
+        while i < n {
+            let c = chars[i];
+            if escape {
+                out.push(c);
+                escape = false;
+                i += 1;
+                continue;
+            }
+            if in_double {
+                if c == '\\' {
+                    escape = true;
+                    out.push(c);
+                    i += 1;
+                    continue;
+                }
+                if c == '"' {
+                    in_double = false;
+                }
+                out.push(c);
+                i += 1;
+                continue;
+            }
+            if in_single {
+                if c == '\\' {
+                    escape = true;
+                    out.push(c);
+                    i += 1;
+                    continue;
+                }
+                if c == '\'' {
+                    in_single = false;
+                }
+                out.push(c);
+                i += 1;
+                continue;
+            }
+            if c == '"' {
+                in_double = true;
+                out.push(c);
+                i += 1;
+                continue;
+            }
+            if c == '\'' {
+                in_single = true;
+                out.push(c);
+                i += 1;
+                continue;
+            }
+            // Outside string: look for identifier followed by ':'
+            if c.is_alphabetic() || c == '_' {
+                let start = i;
+                i += 1;
+                while i < n && (chars[i].is_alphanumeric() || chars[i] == '_') {
+                    i += 1;
+                }
+                let ident: String = chars[start..i].iter().collect();
+                // Skip whitespace
+                while i < n && chars[i].is_whitespace() {
+                    out.push(chars[i]);
+                    i += 1;
+                }
+                if i < n && chars[i] == ':' {
+                    out.push('"');
+                    out.push_str(&ident);
+                    out.push_str("\":");
+                    i += 1;
+                    continue;
+                }
+                out.push_str(&ident);
+                continue;
+            }
+            out.push(c);
+            i += 1;
+        }
+        out
+    }
+
+    /// Parse optional WHERE clause from an index block.
+    /// Supports:
+    /// - Block format: where: { and: [ { op: "=", column: "x", value: "y" } ] }
+    /// - JSON string: where: r#"{"and":[...]}"# or where: "..."
+    fn parse_where_from_index_block(block: &str) -> Option<WhereExpr> {
+        let where_pos = block.find("where:")?;
+        let rest = block[where_pos + 6..].trim_start();
+        let json_str = if rest.starts_with('{') {
+            let mut depth = 0;
+            let mut end = 0;
+            let mut in_double = false;
+            let mut in_single = false;
+            let mut escape = false;
+            let chars: Vec<char> = rest.chars().collect();
+            let n = chars.len();
+            let mut i = 0;
+            while i < n {
+                let c = chars[i];
+                if escape {
+                    escape = false;
+                    i += 1;
+                    continue;
+                }
+                if in_double {
+                    if c == '\\' {
+                        escape = true;
+                    } else if c == '"' {
+                        in_double = false;
+                    }
+                    i += 1;
+                    continue;
+                }
+                if in_single {
+                    if c == '\\' {
+                        escape = true;
+                    } else if c == '\'' {
+                        in_single = false;
+                    }
+                    i += 1;
+                    continue;
+                }
+                if c == '"' {
+                    in_double = true;
+                    i += 1;
+                    continue;
+                }
+                if c == '\'' {
+                    in_single = true;
+                    i += 1;
+                    continue;
+                }
+                match c {
+                    '{' => {
+                        depth += 1;
+                    }
+                    '}' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            end = i + 1;
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+            if end == 0 {
+                return None;
+            }
+            let block_content = &rest[..end];
+            Self::where_block_to_json(block_content)
+        } else if rest.starts_with("r#\"") {
+            let start = 3;
+            let end = rest[start..].find("\"#").map(|i| start + i)?;
+            rest[start..end].to_string()
+        } else if rest.starts_with('"') {
+            let mut i = 1;
+            let chars: Vec<char> = rest.chars().collect();
+            while i < chars.len() {
+                if chars[i] == '\\' && i + 1 < chars.len() {
+                    i += 2;
+                    continue;
+                }
+                if chars[i] == '"' {
+                    break;
+                }
+                i += 1;
+            }
+            rest[1..i].to_string()
+        } else {
+            return None;
+        };
+        serde_json::from_str(json_str.trim()).ok()
+    }
+
+    /// Extract indexes from macro definition. Returns (name, columns, unique, index_type, where_clause).
     pub(crate) fn extract_indexes_from_macro(
         content: &str,
-    ) -> Result<Vec<(String, Vec<String>, bool, Option<String>)>, String> {
+    ) -> Result<Vec<table_validator::TableFileIndex>, String> {
         let mut indexes = Vec::new();
 
         // Look for indexes section in macro
@@ -952,6 +1175,7 @@ impl GeneratorService {
                 // Parse each index definition
                 let mut current_index: Option<(String, Vec<String>, bool, Option<String>)> = None;
                 let mut in_index_def = false;
+                let mut index_block_lines: Vec<String> = Vec::new();
 
                 for line in indexes_content.lines() {
                     let line = line.trim();
@@ -959,12 +1183,22 @@ impl GeneratorService {
                         continue;
                     }
 
-                    // Check for index name
+                    // Check for index name: only "idx_*" starts a new index; "where: {", "not: {", etc. are part of current index block
                     if line.contains(": {") {
-                        // Save previous index if exists
-                        if let Some(index) = current_index.take() {
-                            indexes.push(index);
+                        let possible_name = line.split(':').next().unwrap().trim();
+                        let is_where_block_key = matches!(possible_name, "where" | "not");
+                        let looks_like_index_name = possible_name.starts_with("idx_");
+                        if is_where_block_key || !looks_like_index_name {
+                            index_block_lines.push(line.to_string());
+                            continue;
                         }
+                        // Save previous index if exists (parse where from accumulated block)
+                        if let Some(index) = current_index.take() {
+                            let block_str = index_block_lines.join("\n");
+                            let where_clause = Self::parse_where_from_index_block(&block_str);
+                            indexes.push((index.0, index.1, index.2, index.3, where_clause));
+                        }
+                        index_block_lines.clear();
 
                         let index_name = line.split(':').next().unwrap().trim().to_string();
                         let mut columns = Vec::new();
@@ -990,7 +1224,9 @@ impl GeneratorService {
 
                         current_index = Some((index_name, columns, is_unique, idx_type));
                         in_index_def = true;
+                        index_block_lines.push(line.to_string());
                     } else if in_index_def {
+                        index_block_lines.push(line.to_string());
                         if line.contains("columns:") && !line.contains("foreign_columns:") {
                             let columns =
                                 Self::extract_bracketed_quoted_values(line, Some("columns:"));
@@ -1014,7 +1250,8 @@ impl GeneratorService {
                             if let Some(ref mut index) = current_index {
                                 index.3 = Some(type_val);
                             }
-                        } else if line == "}" {
+                        }
+                        if line == "}" {
                             in_index_def = false;
                         }
                     }
@@ -1022,7 +1259,9 @@ impl GeneratorService {
 
                 // Save last index if exists
                 if let Some(index) = current_index {
-                    indexes.push(index);
+                    let block_str = index_block_lines.join("\n");
+                    let where_clause = Self::parse_where_from_index_block(&block_str);
+                    indexes.push((index.0, index.1, index.2, index.3, where_clause));
                 }
             }
         }
@@ -1658,6 +1897,7 @@ impl GeneratorService {
 #[cfg(test)]
 mod tests {
     use super::GeneratorService;
+    use crate::builders::generator::diesel_schema_definition::WhereExpr;
 
     #[test]
     fn test_extract_indexes_single_line_format_postgres_channels() {
@@ -1676,7 +1916,7 @@ define_table_schema! {
         let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
         assert_eq!(indexes.len(), 3);
 
-        for (name, columns, _unique, idx_type) in &indexes {
+        for (name, columns, _unique, idx_type, _where) in &indexes {
             assert_eq!(columns.len(), 1, "Each index should have one column");
             let ty = idx_type.as_ref().expect("index type should be present");
             assert!(
@@ -1688,17 +1928,17 @@ define_table_schema! {
             assert_eq!(ty, "btree", "Type should be 'btree' for index {}", name);
         }
 
-        let (name1, cols1, _, ty1) = &indexes[0];
+        let (name1, cols1, _, ty1, _) = &indexes[0];
         assert_eq!(name1, "idx_postgres_channels_channel_name");
         assert_eq!(cols1, &["channel_name"]);
         assert_eq!(ty1.as_deref(), Some("btree"));
 
-        let (name2, cols2, _, ty2) = &indexes[1];
+        let (name2, cols2, _, ty2, _) = &indexes[1];
         assert_eq!(name2, "idx_postgres_channels_channel_timestamp");
         assert_eq!(cols2, &["channel_timestamp"]);
         assert_eq!(ty2.as_deref(), Some("btree"));
 
-        let (name3, cols3, _, ty3) = &indexes[2];
+        let (name3, cols3, _, ty3, _) = &indexes[2];
         assert_eq!(name3, "idx_postgres_channels_function");
         assert_eq!(cols3, &["function"]);
         assert_eq!(ty3.as_deref(), Some("btree"));
@@ -1814,7 +2054,7 @@ define_table_schema! {
         let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
         let custom: Vec<_> = indexes
             .iter()
-            .filter(|(name, _, _, _)| {
+            .filter(|(name, _, _, _, _)| {
                 name.contains("organizations_name") || name.contains("organizations_skyll")
             })
             .collect();
@@ -1823,7 +2063,7 @@ define_table_schema! {
             "Should have at least 2 custom indexes, got {}",
             custom.len()
         );
-        for (name, _cols, _u, ty) in custom {
+        for (name, _cols, _u, ty, _) in custom {
             let t = ty.as_deref().unwrap_or("");
             assert!(
                 !t.contains('}') && !t.contains('"'),
@@ -1919,5 +2159,131 @@ define_table_schema! {
             "error should indicate abort: {}",
             err
         );
+    }
+
+    #[test]
+    fn test_extract_indexes_with_where_clause() {
+        let content = r##"
+indexes: {
+    idx_samples_location: {
+        columns: ["location"],
+        unique: false,
+        type: "btree",
+        where: r#"{"op":"=","column":"location","value":"Active"}"#
+    }
+}
+"##;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert_eq!(indexes[0].0, "idx_samples_location");
+        assert_eq!(indexes[0].1, vec!["location"]);
+        assert!(indexes[0].4.is_some());
+        if let Some(crate::builders::generator::diesel_schema_definition::WhereExpr::Pred {
+            op,
+            column,
+            value,
+        }) = &indexes[0].4
+        {
+            assert_eq!(op, "=");
+            assert_eq!(column, "location");
+            assert_eq!(value.as_ref().and_then(|v| v.as_str()), Some("Active"));
+        } else {
+            panic!("expected Pred variant in WhereExpr ");
+        }
+    }
+
+    #[test]
+    fn test_extract_indexes_without_where() {
+        let content = r#"
+indexes: {
+    idx_foo_bar: {
+        columns: ["bar"],
+        unique: false,
+        type: "btree"
+    }
+}
+"#;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert!(indexes[0].4.is_none());
+    }
+
+    #[test]
+    fn test_extract_indexes_with_complex_where_and_or() {
+        let where_json = r#"{"and":[{"op":"=","column":"name","value":"John Doe"}]}"#;
+        let part1 = r###"indexes: { idx_samples_location_name: { columns: ["location", "name"], unique: false, type: "btree", where: r#" "###;
+        let part2 = r###" "# } }"###;
+        let content = format!("{}{}{}", part1, where_json, part2);
+        let indexes = GeneratorService::extract_indexes_from_macro(&content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert!(indexes[0].4.is_some());
+    }
+
+    #[test]
+    fn test_extract_indexes_with_where_block_format() {
+        let content = r##"
+indexes: {
+    idx_foo_location_name: {
+        columns: ["location", "name"],
+        unique: false,
+        type: "btree",
+        where: {
+            and: [
+                { op: "=", column: "location", value: "Active" },
+                { op: "=", column: "name", value: "John Doe" }
+            ]
+        }
+    }
+}
+"##;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert_eq!(indexes[0].0, "idx_foo_location_name");
+        assert_eq!(indexes[0].1, vec!["location", "name"]);
+        assert!(indexes[0].4.is_some());
+        if let Some(crate::builders::generator::diesel_schema_definition::WhereExpr::And {
+            and: and_exprs,
+        }) = &indexes[0].4
+        {
+            assert_eq!(and_exprs.len(), 2);
+            if let (
+                WhereExpr::Pred {
+                    op: o1,
+                    column: c1,
+                    value: v1,
+                },
+                WhereExpr::Pred {
+                    op: o2,
+                    column: c2,
+                    value: v2,
+                },
+            ) = (&and_exprs[0], &and_exprs[1])
+            {
+                assert_eq!(o1, "=");
+                assert_eq!(c1, "location");
+                assert_eq!(v1.as_ref().and_then(|x| x.as_str()), Some("Active"));
+                assert_eq!(o2, "=");
+                assert_eq!(c2, "name");
+                assert_eq!(v2.as_ref().and_then(|x| x.as_str()), Some("John Doe"));
+            } else {
+                panic!("expected two Pred in and");
+            }
+        } else {
+            panic!("expected And variant in WhereExpr");
+        }
+    }
+
+    #[test]
+    fn test_where_block_format_single_pred_parsed() {
+        let block = "idx_x: { columns: [\"a\"], unique: false, type: \"btree\", where: { op: \"=\", column: \"location\", value: \"Active\" } }";
+        let where_expr = GeneratorService::parse_where_from_index_block(block);
+        assert!(where_expr.is_some());
+        if let Some(WhereExpr::Pred { op, column, value }) = where_expr {
+            assert_eq!(op, "=");
+            assert_eq!(column, "location");
+            assert_eq!(value.as_ref().and_then(|v| v.as_str()), Some("Active"));
+        } else {
+            panic!("expected Pred");
+        }
     }
 }
