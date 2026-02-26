@@ -2,6 +2,11 @@
 
 Standalone code generator for store schema, models, migrations, proto, table_enum, and grpc_controller. Can be used as a CLI binary or as a library.
 
+## Table and index definitions
+
+- **Table definition format**, Diesel types, hypertables, and validation: see [builders/generator/README.md](src/builders/generator/README.md).
+- **Indexes and partial indexes (WHERE clauses)**: the same README includes a full reference table (`index_demos`) with all index scenarios—simple, compound, unique, and partial indexes with `where: { and: [...] }`, `or`, `not`, and operators (`=`, `IN`, `IS NULL`, `LIKE`, `>`, etc.). Use it as a template; the live sample lives in the store at `bin/store/src/database/schema/tables/index_demos.rs`.
+
 ## Configuration
 
 Configuration is resolved in order of precedence:

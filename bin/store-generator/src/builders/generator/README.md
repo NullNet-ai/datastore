@@ -161,6 +161,226 @@ impl DieselTableDefinition for ComplexUserProfileTable {
 }
 ```
 
+## Indexes and partial indexes (WHERE)
+
+Indexes are defined in the `indexes: { ... }` block. Each index must be named `idx_{table_name}_{column_names}` (e.g. `idx_index_demos_name_region`). You can define:
+
+- **Simple indexes**: single or multiple columns, `type: "btree"` (or `hash`, `gin`, `gist`, `spgist`, `brin`), `unique: true/false`.
+- **Partial indexes**: add a `where` clause so the index only includes rows matching a predicate (smaller, faster for filtered queries).
+
+### Where clause format (idiomatic block)
+
+Use the **block format** with unquoted keys. The predicate is expressed as a small expression tree:
+
+| Shape | Meaning | Example |
+|-------|--------|--------|
+| `{ op, column, value }` | Single comparison | `{ op: "=", column: "status", value: "Active" }` |
+| `{ and: [ ... ] }` | All conditions true | `{ and: [ { op: "=", column: "status", value: "Active" }, { op: "=", column: "region", value: "US" } ] }` |
+| `{ or: [ ... ] }` | Any condition true | `{ or: [ { op: "=", column: "status", value: "check" }, { op: "=", column: "status", value: "hehe" } ] }` |
+| `{ not: ... }` | Negate one expression | `{ not: { op: "IS NOT", column: "deleted_at", value: null } }` |
+
+**Supported ops**: `=`, `!=`, `<`, `<=`, `>`, `>=`, `IN`, `NOT IN`, `LIKE`, `ILIKE`, `IS`, `IS NOT`.  
+**Values**: strings, numbers, booleans, `null`, or arrays for `IN`/`NOT IN`.
+
+Generated SQL example:
+
+```sql
+CREATE INDEX idx_index_demos_region_name ON index_demos USING btree (region, name)
+WHERE (status = 'check' OR status = 'hehe') AND name = 'John Doe';
+```
+
+### Full example: index_demos table (all scenarios)
+
+This table demonstrates every index scenario in one place. You can use it as a reference or copy the patterns into your own tables.
+
+```rust
+use crate::define_table_schema;
+use crate::generated::schema::generator::diesel_schema_definition::{
+    types::*, DieselTableDefinition,
+};
+use crate::{system_fields, system_foreign_keys, system_indexes};
+
+pub struct IndexDemosTable;
+
+define_table_schema! {
+    hypertable: false,
+    fields: {
+        system_fields!(),
+
+        name: nullable(text()),
+        region: nullable(text()),
+        status: nullable(text()),
+        priority: nullable(integer()),
+        deleted_at: nullable(timestamptz()),
+        category: nullable(text()),
+        score: nullable(integer()),
+    },
+    indexes: {
+        system_indexes!("index_demos"),
+
+        // 1. Simple single-column btree (no where)
+        idx_index_demos_name: {
+            columns: ["name"],
+            unique: false,
+            type: "btree"
+        },
+
+        // 2. Compound (multi-column) btree
+        idx_index_demos_region_status: {
+            columns: ["region", "status"],
+            unique: false,
+            type: "btree"
+        },
+
+        // 3. Unique index (name must be idx_table_col1_col2)
+        idx_index_demos_name_region: {
+            columns: ["name", "region"],
+            unique: true,
+            type: "btree"
+        },
+
+        // 4. Partial index: single predicate (status = 'Active')
+        idx_index_demos_status_region: {
+            columns: ["status", "region"],
+            unique: false,
+            type: "btree",
+            where: {
+                op: "=",
+                column: "status",
+                value: "Active"
+            }
+        },
+
+        // 5. Partial index: OR (status = 'check' OR status = 'hehe')
+        idx_index_demos_status_name: {
+            columns: ["status", "name"],
+            unique: false,
+            type: "btree",
+            where: {
+                or: [
+                    { op: "=", column: "status", value: "check" },
+                    { op: "=", column: "status", value: "hehe" }
+                ]
+            }
+        },
+
+        // 6. Partial index: AND (status = 'Active' AND region = 'US')
+        idx_index_demos_status_region_priority: {
+            columns: ["status", "region", "priority"],
+            unique: false,
+            type: "btree",
+            where: {
+                and: [
+                    { op: "=", column: "status", value: "Active" },
+                    { op: "=", column: "region", value: "US" }
+                ]
+            }
+        },
+
+        // 7. Partial index: (status = 'check' OR status = 'hehe') AND name = 'John Doe'
+        idx_index_demos_region_name: {
+            columns: ["region", "name"],
+            unique: false,
+            type: "btree",
+            where: {
+                and: [
+                    {
+                        or: [
+                            { op: "=", column: "status", value: "check" },
+                            { op: "=", column: "status", value: "hehe" }
+                        ]
+                    },
+                    { op: "=", column: "name", value: "John Doe" }
+                ]
+            }
+        },
+
+        // 8. Partial index: IS NULL (deleted_at IS NULL)
+        idx_index_demos_status_category: {
+            columns: ["status", "category"],
+            unique: false,
+            type: "btree",
+            where: {
+                op: "IS",
+                column: "deleted_at",
+                value: null
+            }
+        },
+
+        // 9. Partial index: IN (status IN ('Active','Pending'))
+        idx_index_demos_status_region_category: {
+            columns: ["status", "region", "category"],
+            unique: false,
+            type: "btree",
+            where: {
+                op: "IN",
+                column: "status",
+                value: ["Active", "Pending"]
+            }
+        },
+
+        // 10. Partial index: NOT (deleted_at IS NOT NULL) = IS NULL
+        idx_index_demos_name_status: {
+            columns: ["name", "status"],
+            unique: false,
+            type: "btree",
+            where: {
+                not: { op: "IS NOT", column: "deleted_at", value: null }
+            }
+        },
+
+        // 11. Partial index: LIKE (name LIKE 'test%')
+        idx_index_demos_name_category: {
+            columns: ["name", "category"],
+            unique: false,
+            type: "btree",
+            where: {
+                op: "LIKE",
+                column: "name",
+                value: "test%"
+            }
+        },
+
+        // 12. Partial index: numeric comparison (priority > 0)
+        idx_index_demos_priority_score: {
+            columns: ["priority", "score"],
+            unique: false,
+            type: "btree",
+            where: {
+                op: ">",
+                column: "priority",
+                value: 0
+            }
+        },
+    },
+    foreign_keys: {}
+}
+
+impl DieselTableDefinition for IndexDemosTable {}
+```
+
+### Index scenario summary
+
+| # | Scenario | Columns | Where | Generated SQL pattern |
+|---|----------|---------|--------|------------------------|
+| 1 | Simple | `["name"]` | — | `CREATE INDEX ... ON t ("name");` |
+| 2 | Compound | `["region", "status"]` | — | `... ON t ("region", "status");` |
+| 3 | Unique | `["name", "region"]` | — | `CREATE UNIQUE INDEX ...` |
+| 4 | Partial, single pred | `["status", "region"]` | `status = 'Active'` | `... WHERE "status" = 'Active';` |
+| 5 | Partial, OR | `["status", "name"]` | `status = 'check' OR status = 'hehe'` | `... WHERE ... OR ...;` |
+| 6 | Partial, AND | `["status", "region", "priority"]` | `status = 'Active' AND region = 'US'` | `... WHERE ... AND ...;` |
+| 7 | Partial, AND of OR | `["region", "name"]` | `(status = 'check' OR 'hehe') AND name = 'John Doe'` | `... WHERE (...) AND ...;` |
+| 8 | Partial, IS NULL | `["status", "category"]` | `deleted_at IS NULL` | `... WHERE "deleted_at" IS NULL;` |
+| 9 | Partial, IN | `["status", "region", "category"]` | `status IN ('Active','Pending')` | `... WHERE "status" IN (...);` |
+| 10 | Partial, NOT | `["name", "status"]` | `NOT (deleted_at IS NOT NULL)` | `... WHERE NOT (...);` |
+| 11 | Partial, LIKE | `["name", "category"]` | `name LIKE 'test%'` | `... WHERE "name" LIKE 'test%';` |
+| 12 | Partial, comparison | `["priority", "score"]` | `priority > 0` | `... WHERE "priority" > 0;` |
+
+### Index naming and modification rules
+
+- **Naming**: Index name must be `idx_{table_name}_{column_names}` (e.g. `idx_index_demos_status_region`). The generator validates this.
+- **Existing indexes**: If an index already exists in a migration, you cannot change its definition (columns, type, unique, where). The generator will error and show the existing SQL; update your table definition to match it or create a new index with a new name.
+
 ## Validation
 
 ```rust
