@@ -145,6 +145,73 @@ mod tests {
         );
     }
 
+    /// Test that when group_by is missing and joins are present, no default GROUP BY is injected
+    #[test]
+    fn should_not_inject_group_by_when_group_by_missing_and_joins_present() {
+        let env_config = EnvConfig::default();
+        let expected_joins = serde_json::json!([
+            {
+                "type": "left",
+                "field_relation": {
+                    "to": {
+                        "entity": "contact_emails",
+                        "field": "contact_id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    },
+                    "from": {
+                        "entity": "contacts",
+                        "field": "id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    }
+                },
+                "nested": false
+            }
+        ]);
+        let payload = serde_json::json!({
+            "pluck": ["id", "first_name"],
+            "joins": expected_joins,
+            "limit": 10
+        });
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "Failed to generate query: {:?}",
+            query_result.err()
+        );
+        let query = query_result.unwrap();
+
+        assert!(
+            query.contains("JOIN LATERAL"),
+            "Query should contain a LATERAL join to ensure joins-present path. Got: {}",
+            query
+        );
+        let expected_group_by_query = format!("GROUP BY \"{}\".\"id\"", table);
+        assert!(
+            query.contains(&expected_group_by_query),
+            "Query should contain default GROUP BY main table id when group_by is missing, even with joins. Expected: '{}'. Got: {}",
+            expected_group_by_query,
+            query
+        );
+    }
+
     /// Test constructing group by without count
     #[test]
     fn should_construct_group_by_without_count() {

@@ -1,3 +1,4 @@
+use crate::config::core::EnvConfig;
 use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
@@ -34,8 +35,11 @@ use serde_json::Value;
 use ulid::Ulid;
 // use std::collections::HashMap;
 // use diesel::prelude::*;
+use chrono::Local;
 use std::collections::BTreeMap;
 use std::fmt;
+use tokio::fs::OpenOptions;
+use tokio::io::AsyncWriteExt;
 // use diesel::sql_types::*;
 // use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
@@ -1288,7 +1292,14 @@ pub async fn get_by_filter(
 
     // Get a connection from the pool
     let mut conn = db::get_async_connection().await;
-    log::info!("QUERY: {:?}", query);
+    // Enhanced debug logging to file
+    if EnvConfig::default().debug {
+        log::debug!("QUERY: {}", query);
+        // Also write to debug log file
+        if let Err(e) = write_query_to_debug_log(&query, &table).await {
+            log::warn!("Failed to write debug query log: {}", e);
+        }
+    }
 
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
 
@@ -1312,8 +1323,6 @@ pub async fn get_by_filter(
         .into_iter()
         .filter_map(|result| result.row_to_json)
         .collect();
-
-    log::info!("DATA: {:?}", data);
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -2615,5 +2624,100 @@ pub async fn search_suggestions(
         ),
         count: data.len() as i32,
         data: if data.len() > 0 { data } else { vec![] },
+    })
+}
+
+/// Helper function to write query debug logs to file
+async fn write_query_to_debug_log(
+    query: &str,
+    table: &str,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    use std::path::Path;
+
+    // Create logs directory if it doesn't exist
+    let logs_dir = Path::new("../../logs");
+    tokio::fs::create_dir_all(logs_dir).await?;
+
+    // Create filename with current date
+    let current_date = Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();
+    let log_file = logs_dir.join(format!("sql_queries_{}.log", current_date));
+
+    // Format the log entry
+    let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
+    let formatted_query = query.replace("\n", " ").trim().to_string();
+
+    let log_entry = format!(
+        "[{}] Table: {}\nQuery: {}\n{}\n",
+        timestamp,
+        table,
+        formatted_query,
+        "-".repeat(80)
+    );
+
+    // Open file in append mode
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(log_file)
+        .await?;
+
+    // Write the log entry
+    file.write_all(log_entry.as_bytes()).await?;
+    file.flush().await?;
+
+    Ok(())
+}
+/// Schema verification endpoint
+/// Verifies that a table exists and optionally checks if specified fields exist in the table
+#[derive(Deserialize)]
+pub struct SchemaVerificationRequest {
+    pub entity: String,
+    pub fields: Option<Vec<String>>,
+}
+
+#[derive(Serialize)]
+pub struct SchemaVerificationResponse {
+    pub exists: bool,
+    pub available_fields: Vec<String>,
+    pub missing_fields: Vec<String>,
+}
+
+pub async fn verify_schema(
+    _auth: HttpRequest,
+    request_body: web::Json<SchemaVerificationRequest>,
+) -> impl Responder {
+    use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
+
+    let request = request_body.into_inner();
+    let table_name = request.entity;
+
+    // Check if table exists by trying to get its fields
+    let available_fields = match get_table_fields(&table_name) {
+        Some(fields) => fields,
+        None => {
+            // Table doesn't exist
+            return HttpResponse::Ok().json(SchemaVerificationResponse {
+                exists: false,
+                available_fields: vec![],
+                missing_fields: request.fields.unwrap_or_default(),
+            });
+        }
+    };
+
+    // Table exists, now check requested fields if provided
+    let mut missing_fields = Vec::new();
+
+    if let Some(fields_to_check) = request.fields {
+        for field in &fields_to_check {
+            if !field_exists_in_table(&table_name, field) {
+                missing_fields.push(field.clone());
+            }
+        }
+    }
+
+    HttpResponse::Ok().json(SchemaVerificationResponse {
+        exists: true,
+        available_fields,
+        missing_fields,
     })
 }

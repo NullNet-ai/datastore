@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.35
+### Author
+Bert
+
+### Added
+  - ***Root verify_schema route***:
+    - Added `/api/store/verify_schema` POST route to verify schema for regular account tokens.
+    - Added `/api/store/root/verify_schema` POST route to verify schema for root account tokens.
+    - Implemented schema verification logic in `verify_schema` controller function.
+
 ## 0.2.34
 
 ### Author
