@@ -4,9 +4,7 @@ use crate::database::schema::verify::field_type_in_table;
 use crate::generated::table_enum::Table as TableEnum;
 use crate::structs::core::CommandArgs;
 use actix_web::http;
-use diesel::prelude::*;
 use diesel::result::Error as DieselError;
-use diesel_async::RunQueryDsl;
 use std::env;
 
 pub fn _token_data_extractor(_token: &str) -> String {
