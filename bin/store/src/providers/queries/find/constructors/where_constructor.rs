@@ -535,13 +535,18 @@ impl<'a> WhereConstructor<'a> {
     ) -> String {
         let (_table_name, field_name, field_with_table) =
                 // Check if field_name contains complex expressions (like COALESCE)
-                if field_name.contains("COALESCE") || field_name.contains("(") {
-                    // This is already a complex expression, use it as-is
+                if field_name.contains("COALESCE") || field_name.contains("(") || field_name.contains("::") {
                     let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
-                        // Extract alias if present (e.g., "COALESCE(...) AS full_name" -> "full_name")
                         field_name[start + 3..].trim().replace("\"", "")
+                    } else if field_name.contains("::") {
+                        let base = field_name.splitn(2, "::").next().unwrap_or(field_name);
+                        base.rsplit('.')
+                            .next()
+                            .unwrap_or(base)
+                            .trim()
+                            .trim_matches('"')
+                            .to_string()
                     } else {
-                        // Try to extract a meaningful name from the expression
                         field_name.replace("\"", "")
                     };
                     (String::new(), extracted_field_name, field_name.to_string())
@@ -553,12 +558,12 @@ impl<'a> WhereConstructor<'a> {
                             // Two parts: table.field
                             let table_name = first_part.replace("\"", "");
                             let field_name = second_part.replace("\"", "");
-                            let field_with_table = format!("{}.{}", table_name, field_name);
+                            let field_with_table = format!("\"{}\".\"{}\"", table_name, field_name);
                             (table_name, field_name, field_with_table)
                         } else {
                             // One part: just field_name
                             let field_name = first_part.replace("\"", "");
-                            let field_with_table = format!("{}.{}", self.table, field_name);
+                            let field_with_table = format!("\"{}\".\"{}\"", self.table, field_name);
                             (self.table.to_string(), field_name, field_with_table)
                         }
                     } else {
@@ -639,7 +644,12 @@ impl<'a> WhereConstructor<'a> {
                         .map(|v| {
                             let clean = v.trim_matches('\'');
                             if is_plural {
-                                format!("{}::text {} '%{}%'", field_with_table, like_op, clean)
+                                let expr = if field_with_table.contains("::text") {
+                                    field_with_table.clone()
+                                } else {
+                                    format!("{}::text", field_with_table)
+                                };
+                                format!("{} {} '%{}%'", expr, like_op, clean)
                             } else {
                                 format!("{} {} '%{}%'", field_with_table, like_op, clean)
                             }
@@ -649,7 +659,12 @@ impl<'a> WhereConstructor<'a> {
                 } else {
                     let clean = values_str[0].trim_matches('\'');
                     if is_plural {
-                        return format!("{}::text {} '%{}%'", field_with_table, like_op, clean);
+                        let expr = if field_with_table.contains("::text") {
+                            field_with_table.clone()
+                        } else {
+                            format!("{}::text", field_with_table)
+                        };
+                        return format!("{} {} '%{}%'", expr, like_op, clean);
                     }
                     format!("{} {} '%{}%'", field_with_table, like_op, clean)
                 }
@@ -667,7 +682,12 @@ impl<'a> WhereConstructor<'a> {
                         .map(|v| {
                             let clean = v.trim_matches('\'');
                             if is_plural {
-                                format!("{}::text {} '%{}%'", field_with_table, like_op, clean)
+                                let expr = if field_with_table.contains("::text") {
+                                    field_with_table.clone()
+                                } else {
+                                    format!("{}::text", field_with_table)
+                                };
+                                format!("{} {} '%{}%'", expr, like_op, clean)
                             } else {
                                 format!("{} {} '%{}%'", field_with_table, like_op, clean)
                             }
@@ -677,7 +697,12 @@ impl<'a> WhereConstructor<'a> {
                 } else {
                     let clean = values_str[0].trim_matches('\'');
                     if is_plural {
-                        return format!("{}::text {} '%{}%'", field_with_table, like_op, clean);
+                        let expr = if field_with_table.contains("::text") {
+                            field_with_table.clone()
+                        } else {
+                            format!("{}::text", field_with_table)
+                        };
+                        return format!("{} {} '%{}%'", expr, like_op, clean);
                     }
                     format!("{} {} '%{}%'", field_with_table, like_op, clean)
                 }
@@ -719,7 +744,12 @@ impl<'a> WhereConstructor<'a> {
                         .iter()
                         .map(|p| {
                             if is_plural {
-                                format!("{}::text {} {}", field_with_table, like_op, p)
+                                let expr = if field_with_table.contains("::text") {
+                                    field_with_table.clone()
+                                } else {
+                                    format!("{}::text", field_with_table)
+                                };
+                                format!("{} {} {}", expr, like_op, p)
                             } else {
                                 format!("{} {} {}", field_with_table, like_op, p)
                             }
@@ -729,7 +759,12 @@ impl<'a> WhereConstructor<'a> {
                 } else {
                     let pattern = self.build_like_pattern(&values_str[0], match_pattern);
                     if is_plural {
-                        return format!("{}::text {} {}", field_with_table, like_op, pattern);
+                        let expr = if field_with_table.contains("::text") {
+                            field_with_table.clone()
+                        } else {
+                            format!("{}::text", field_with_table)
+                        };
+                        return format!("{} {} {}", expr, like_op, pattern);
                     }
                     format!("{} {} {}", field_with_table, like_op, pattern)
                 }
