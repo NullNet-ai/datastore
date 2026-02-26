@@ -245,27 +245,24 @@ impl SelectionsConstructor {
     ) -> Vec<String> {
         let mut selections = Vec::new();
 
-        // Collect concatenated field names and their individual fields for this table to check for conflicts
         let mut concatenated_field_names = std::collections::HashSet::new();
         let mut concatenated_source_fields = std::collections::HashSet::new();
         let mut aliased_entities_for_table = std::collections::HashSet::new();
         let mut all_aliased_entities = std::collections::HashSet::new();
 
         for concat_field in request_body.get_concatenate_fields() {
-            if concat_field
+            let applies_to_table = concat_field
                 .aliased_entity
                 .as_deref()
                 .map(|a| a == table)
                 .unwrap_or(false)
-                || concat_field.entity == table
-            {
-                // Add the concatenated field name itself
+                || concat_field.entity == table;
+            let requested = fields.iter().any(|f| f == &concat_field.field_name);
+            if applies_to_table && requested {
                 concatenated_field_names.insert(concat_field.field_name.clone());
-                // Add all source fields that are part of this concatenation
                 for source_field in &concat_field.fields {
                     concatenated_source_fields.insert(source_field.clone());
                 }
-                // Track aliased entities that should override pluck_object fields
                 if let Some(aliased_entity) = &concat_field.aliased_entity {
                     if concat_field.entity == table {
                         aliased_entities_for_table.insert(aliased_entity.clone());
@@ -273,16 +270,12 @@ impl SelectionsConstructor {
                 }
             }
 
-            // Collect all aliased entities that have concatenated fields
             if let Some(aliased_entity) = &concat_field.aliased_entity {
                 all_aliased_entities.insert(aliased_entity.clone());
             }
         }
 
-        // Handle regular pluck fields - only add if not conflicting with concatenated fields
         for field in fields {
-            // Skip this field if it's being handled by concatenated fields (prioritize concatenated)
-            // Skip both concatenated field names, their source fields, and aliased entities to avoid conflicts
             if concatenated_field_names.contains(field)
                 || concatenated_source_fields.contains(field)
                 || aliased_entities_for_table.contains(field)
@@ -305,15 +298,15 @@ impl SelectionsConstructor {
             selections.push(field_selection);
         }
 
-        // Handle concatenated fields only for main table entity
         for concat_field in request_body.get_concatenate_fields() {
-            if concat_field
+            let applies_to_table = concat_field
                 .aliased_entity
                 .as_deref()
                 .map(|a| a == table)
                 .unwrap_or(false)
-                || concat_field.entity == table
-            {
+                || concat_field.entity == table;
+            let requested = fields.iter().any(|f| f == &concat_field.field_name);
+            if applies_to_table && requested {
                 let concatenated_expression = concat_field
                     .fields
                     .iter()
@@ -447,17 +440,21 @@ impl SelectionsConstructor {
         get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
     ) {
         if !request_body.get_concatenate_fields().is_empty() {
+            let allowed_fields_opt = request_body.get_pluck_object().get(to_alias);
             request_body
                 .get_concatenate_fields()
                 .iter()
                 .filter(|field| {
                     let normalized_entity = normalize_entity_name(&field.entity);
-                    field.aliased_entity.as_deref() == Some(to_alias)
+                    let alias_match = field.aliased_entity.as_deref() == Some(to_alias)
                         || field.entity == to_alias
-                        || normalized_entity == to_alias
+                        || normalized_entity == to_alias;
+                    let name_allowed = allowed_fields_opt
+                        .map(|allowed| allowed.iter().any(|f| f == &field.field_name))
+                        .unwrap_or(false);
+                    alias_match && name_allowed
                 })
                 .for_each(|field| {
-                    // Use normalized entity name when no aliased_entity is present
                     let normalized_entity = normalize_entity_name(&field.entity);
                     let table_name = field
                         .aliased_entity
