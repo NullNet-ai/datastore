@@ -30,6 +30,7 @@ pub struct CoursisModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub image_url: Option<String>,
+    pub name: Option<String>,
     pub title: Option<String>,
     pub order: Option<i32>,
     pub description: Option<String>,

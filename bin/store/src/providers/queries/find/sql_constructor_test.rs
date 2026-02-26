@@ -31,6 +31,64 @@ mod tests {
         time_format: String,
     }
 
+    #[test]
+    fn should_include_ids_selection_for_pluck_group_object() {
+        let mut mock_filter = MockQueryFilter::default();
+        mock_filter.pluck = vec!["id".to_string()];
+        let mut pluck_group_object = HashMap::new();
+        pluck_group_object.insert(
+            "stories".to_string(),
+            vec!["id".to_string(), "course_id".to_string()],
+        );
+        mock_filter.pluck_group_object = pluck_group_object;
+
+        mock_filter.joins = vec![Join {
+            r#type: "left".to_string(),
+            field_relation: FieldRelation {
+                to: RelationEndpoint {
+                    alias: None,
+                    entity: "stories".to_string(),
+                    field: "course_id".to_string(),
+                    filters: vec![],
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                },
+                from: RelationEndpoint {
+                    alias: None,
+                    entity: "courses".to_string(),
+                    field: "id".to_string(),
+                    filters: vec![],
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                },
+            },
+            nested: false,
+        }];
+
+        let mut constructor = SQLConstructor::new(mock_filter, "courses".to_string(), true, None);
+        let sql = constructor.construct().expect("SQL should be constructed");
+
+        assert!(
+            sql.contains("AS \"stories_ids\""),
+            "Expected stories_ids selection. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("FROM \"stories\" \"stories\""),
+            "Expected stories source table. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("\"courses\".\"id\" = \"stories\".\"course_id\""),
+            "Expected correlation condition. Got: {}",
+            sql
+        );
+    }
+
     impl Default for MockQueryFilter {
         fn default() -> Self {
             Self {

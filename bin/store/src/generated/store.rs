@@ -4231,12 +4231,14 @@ pub struct Courses {
     #[prost(string, optional, tag = "22")]
     pub image_url: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(string, optional, tag = "23")]
+    pub name: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(string, optional, tag = "24")]
     pub title: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(int32, optional, tag = "24")]
+    #[prost(int32, optional, tag = "25")]
     pub order: ::core::option::Option<i32>,
-    #[prost(string, optional, tag = "25")]
+    #[prost(string, optional, tag = "26")]
     pub description: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(bool, optional, tag = "26")]
+    #[prost(bool, optional, tag = "27")]
     pub is_show_assistant: ::core::option::Option<bool>,
 }
 /// SmtpPayloads entity definition

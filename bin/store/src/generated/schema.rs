@@ -2299,11 +2299,12 @@ table! {
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
         image_url -> Nullable<Text>,
+        name -> Nullable<Text>,
         title -> Nullable<Text>,
         order -> Nullable<Int4>,
         description -> Nullable<Text>,
         is_show_assistant -> Nullable<Bool>,
-    }
+}
 }
 
 table! {

@@ -16,6 +16,7 @@ define_table_schema! {
         system_fields!(),
 
         // Courses fields
+        name: nullable(text()),
         title: nullable(text()),
         order: nullable(integer()), default: "0",
         description: nullable(text()),

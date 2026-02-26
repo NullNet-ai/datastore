@@ -2133,10 +2133,11 @@ message Courses {
   optional string sync_status = 20;
   optional bool is_batch = 21;
   optional string image_url = 22;
-  optional string title = 23;
-  optional int32 order = 24;
-  optional string description = 25;
-  optional bool is_show_assistant = 26;
+  optional string name = 23;
+  optional string title = 24;
+  optional int32 order = 25;
+  optional string description = 26;
+  optional bool is_show_assistant = 27;
 }
 
 // SmtpPayloads entity definition

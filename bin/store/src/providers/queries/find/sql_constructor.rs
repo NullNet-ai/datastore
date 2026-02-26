@@ -282,6 +282,14 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             |filters| self.build_infix_expression(filters),
         ));
 
+        let ids_selections = self.construct_pluck_group_ids_selections();
+        if !ids_selections.is_empty() {
+            if !sql.ends_with("SELECT ") {
+                sql.push_str(", ");
+            }
+            sql.push_str(&ids_selections.join(", "));
+        }
+
         sql.push_str(&format!(" FROM \"{}\" \"{}\"", self.table, self.table));
 
         sql.push_str(&JoinsConstructor::construct_joins(
@@ -335,6 +343,224 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         let limit_constructor = LimitConstructor::new(self.request_body.clone());
         sql.push_str(&limit_constructor.construct_limit());
         Ok(sql)
+    }
+
+    fn construct_pluck_group_ids_selections(&self) -> Vec<String> {
+        let mut selections = Vec::new();
+        let pluck_group_object = self.request_body.get_pluck_group_object();
+        if pluck_group_object.is_empty() {
+            return selections;
+        }
+        let joins = self.request_body.get_joins();
+        for (alias_key, _fields) in pluck_group_object.iter() {
+            if let Some((idx, join)) = self.find_join_by_alias(alias_key) {
+                let to_alias = join
+                    .field_relation
+                    .to
+                    .alias
+                    .as_deref()
+                    .unwrap_or(&join.field_relation.to.entity);
+                let target_table = &join.field_relation.to.entity;
+                let previous_join = self.find_previous_join(idx, join);
+                let selection = if !join.nested {
+                    let mut where_conditions = Vec::new();
+                    let standard_where = match self.build_system_where_clause(to_alias) {
+                        Ok(clause) => clause,
+                        Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                    };
+                    where_conditions.push(standard_where);
+                    let join_condition =
+                        self.build_join_condition_for_alias(to_alias, join, previous_join);
+                    where_conditions.push(join_condition);
+                    if !join.field_relation.to.filters.is_empty() {
+                        if let Ok(filter_expression) =
+                            self.build_infix_expression(&join.field_relation.to.filters)
+                        {
+                            if !filter_expression.is_empty() {
+                                where_conditions.push(filter_expression);
+                            }
+                        }
+                    }
+                    let combined_where = where_conditions.join(" AND ");
+                    format!(
+                        "COALESCE( ( SELECT JSONB_AGG(\"{}\".\"id\") FROM \"{}\" \"{}\" WHERE {} ), '[]' ) AS \"{}_ids\"",
+                        to_alias, target_table, to_alias, combined_where, to_alias
+                    )
+                } else if let Some(prev_join) = previous_join {
+                    let (prev_alias, prev_table) = if prev_join.r#type == "self" {
+                        (
+                            prev_join
+                                .field_relation
+                                .from
+                                .alias
+                                .as_deref()
+                                .unwrap_or(&prev_join.field_relation.from.entity),
+                            prev_join.field_relation.from.entity.as_str(),
+                        )
+                    } else {
+                        (
+                            prev_join
+                                .field_relation
+                                .to
+                                .alias
+                                .as_deref()
+                                .unwrap_or(&prev_join.field_relation.to.entity),
+                            prev_join.field_relation.to.entity.as_str(),
+                        )
+                    };
+                    let parent_where = match self.build_system_where_clause(prev_alias) {
+                        Ok(clause) => clause,
+                        Err(_) => format!("(\"{}\".\"tombstone\" = 0)", prev_alias),
+                    };
+                    let child_where = match self.build_system_where_clause(to_alias) {
+                        Ok(clause) => clause,
+                        Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                    };
+                    let main_to_parent_correlation = format!(
+                        "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                        self.table,
+                        prev_join.field_relation.from.field,
+                        prev_alias,
+                        prev_join.field_relation.to.field
+                    );
+                    let on_condition = format!(
+                        "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                        to_alias,
+                        join.field_relation.to.field,
+                        prev_alias,
+                        join.field_relation.from.field
+                    );
+                    let mut where_conditions =
+                        vec![child_where, parent_where, main_to_parent_correlation];
+                    if !join.field_relation.to.filters.is_empty() {
+                        if let Ok(filter_expression) =
+                            self.build_infix_expression(&join.field_relation.to.filters)
+                        {
+                            if !filter_expression.is_empty() {
+                                where_conditions.push(filter_expression);
+                            }
+                        }
+                    }
+                    let combined_where = where_conditions.join(" AND ");
+                    format!(
+                        "COALESCE( ( SELECT JSONB_AGG(\"{}\".\"id\") FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} ), '[]' ) AS \"{}_ids\"",
+                        to_alias, prev_table, prev_alias, target_table, to_alias, on_condition, combined_where, to_alias
+                    )
+                } else {
+                    let mut where_conditions = Vec::new();
+                    let standard_where = match self.build_system_where_clause(to_alias) {
+                        Ok(clause) => clause,
+                        Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                    };
+                    where_conditions.push(standard_where);
+                    let join_condition = self.build_join_condition_for_alias(to_alias, join, None);
+                    where_conditions.push(join_condition);
+                    let combined_where = where_conditions.join(" AND ");
+                    format!(
+                        "COALESCE( ( SELECT JSONB_AGG(\"{}\".\"id\") FROM \"{}\" \"{}\" WHERE {} ), '[]' ) AS \"{}_ids\"",
+                        to_alias, target_table, to_alias, combined_where, to_alias
+                    )
+                };
+                selections.push(selection);
+            } else {
+                let _ = joins;
+            }
+        }
+        selections
+    }
+
+    fn find_join_by_alias<'a>(&'a self, alias: &str) -> Option<(usize, &'a Join)> {
+        self.request_body
+            .get_joins()
+            .iter()
+            .enumerate()
+            .find(|(_, j)| {
+                j.field_relation
+                    .to
+                    .alias
+                    .as_deref()
+                    .map(|a| a == alias)
+                    .unwrap_or_else(|| j.field_relation.to.entity.as_str() == alias)
+            })
+    }
+
+    fn find_previous_join<'a>(&'a self, idx: usize, join: &'a Join) -> Option<&'a Join> {
+        if join.nested && idx > 0 {
+            return self.request_body.get_joins().get(idx - 1);
+        }
+        let current_from_ref = join
+            .field_relation
+            .from
+            .alias
+            .as_deref()
+            .unwrap_or(&join.field_relation.from.entity);
+        self.request_body.get_joins().iter().find(|j| {
+            let j_to_ref = j
+                .field_relation
+                .to
+                .alias
+                .as_deref()
+                .unwrap_or(&j.field_relation.to.entity);
+            j_to_ref == current_from_ref
+        })
+    }
+
+    fn build_join_condition_for_alias(
+        &self,
+        alias: &str,
+        join: &Join,
+        previous_join: Option<&Join>,
+    ) -> String {
+        let is_nested = join.nested;
+        let from_field = &join.field_relation.from.field;
+        let to_field = &join.field_relation.to.field;
+        if is_nested {
+            if let Some(prev_join) = previous_join {
+                let prev_to_alias = if prev_join.r#type == "self" {
+                    prev_join
+                        .field_relation
+                        .from
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.to.entity)
+                } else {
+                    prev_join
+                        .field_relation
+                        .to
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.to.entity)
+                };
+                return format!(
+                    "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                    alias, to_field, prev_to_alias, from_field
+                );
+            }
+        }
+        let from_table_ref = if let Some(from_alias) = &join.field_relation.from.alias {
+            from_alias.as_str()
+        } else {
+            let from_entity = &join.field_relation.from.entity;
+            let matching_alias = self.request_body.get_joins().iter().find_map(|j| {
+                if let Some(alias) = &j.field_relation.to.alias {
+                    if alias == from_entity {
+                        return Some(alias.as_str());
+                    }
+                }
+                None
+            });
+            matching_alias.unwrap_or_else(|| {
+                if from_entity == &self.table {
+                    self.table.as_str()
+                } else {
+                    from_entity
+                }
+            })
+        };
+        format!(
+            "\"{}\".\"{}\" = \"{}\".\"{}\"",
+            from_table_ref, from_field, alias, to_field
+        )
     }
 
     /// Builds a COUNT(DISTINCT id) query using the same filter parsing as construct().

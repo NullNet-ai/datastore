@@ -354,6 +354,18 @@ impl SelectionsConstructor {
         ) -> String,
     ) -> String {
         println!("Pluck fields: {:?}", request_body.get_pluck());
+        if request_body.get_pluck().is_empty() {
+            // Default to selecting the main table id when pluck is an empty array
+            // This ensures we always include the primary identifier even if only join/group selections are requested.
+            return get_field(
+                table,
+                "id",
+                request_body.get_date_format(),
+                table,
+                timezone,
+                false,
+            );
+        }
         let pluck_selections = Self::process_fields_with_concatenation(
             request_body.get_pluck(),
             request_body,
