@@ -400,7 +400,8 @@ impl SchemaGenerator {
         let migrations_dir = paths::database::MIGRATIONS_DIR.as_str();
         let entries = std::fs::read_dir(migrations_dir).ok()?;
         for entry in entries.flatten() {
-            let up_sql = std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE)).ok()?;
+            let up_sql =
+                std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE)).ok()?;
             // Match full line: CREATE [UNIQUE] INDEX "index_name" ON "table_name" ... ;
             let on_table = format!("ON \"{}\"", table_name);
             if !up_sql.contains(&on_table) {
