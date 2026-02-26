@@ -876,68 +876,68 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         case_sensitive: Option<bool>,
         match_pattern: Option<&MatchPattern>,
     ) -> String {
-        let (_table_name, field_name, field_with_table) =
-            if field_name.contains("COALESCE")
-                || field_name.contains('(')
-                || field_name.contains("::")
-            {
-                let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
-                    field_name[start + 3..].trim().replace("\"", "")
-                } else if field_name.contains("::") {
-                    let base = field_name.splitn(2, "::").next().unwrap_or(field_name);
-                    let field_part = base
-                        .rsplit('.')
-                        .next()
-                        .unwrap_or(base)
-                        .trim()
-                        .trim_matches('"')
-                        .to_string();
-                    field_part
-                } else {
-                    field_name.replace('"', "")
-                };
-                (String::new(), extracted_field_name, field_name.to_string())
+        let (_table_name, field_name, field_with_table) = if field_name.contains("COALESCE")
+            || field_name.contains('(')
+            || field_name.contains("::")
+        {
+            let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
+                field_name[start + 3..].trim().replace("\"", "")
+            } else if field_name.contains("::") {
+                let base = field_name.splitn(2, "::").next().unwrap_or(field_name);
+                let field_part = base
+                    .rsplit('.')
+                    .next()
+                    .unwrap_or(base)
+                    .trim()
+                    .trim_matches('"')
+                    .to_string();
+                field_part
             } else {
-                // Handle simple field names with or without table prefix
-                let mut parts = field_name.split(".");
-                if let Some(first_part) = parts.next() {
-                    if let Some(second_part) = parts.next() {
-                        // Two parts: table.field
-                        let table_name = first_part.replace('"', "");
-                        let field_name = second_part.replace('"', "");
-                        let field_with_table = format!("\"{}\".\"{}\"", table_name, field_name);
-                        (table_name, field_name, field_with_table)
-                    } else {
-                        // One part: just field_name - check if it's a concatenated field
-                        let field_name = first_part.replace('"', "");
-                        // Check if this is a concatenated field that should be handled specially
-                        let is_concatenated_field = self.request_body.get_concatenate_fields()
-                            .iter()
-                            .any(|concat_field| concat_field.field_name == field_name);
-                        if is_concatenated_field {
-                            // For concatenated fields, generate the full concatenated expression
-                            let field_with_table = self.get_field_with_concatenation(
-                                &self.table,
-                                &field_name,
-                                self.request_body.get_date_format(),
-                                None,
-                                self.timezone.as_deref(),
-                                true,
-                                self.request_body.get_time_format(),
-                            );
-                            (String::new(), field_name, field_with_table)
-                        } else {
-                            // For regular fields without table prefix, assume main table
-                            let field_with_table =
-                                format!("\"{}\".\"{}\"", &self.table, field_name);
-                            (self.table.clone(), field_name, field_with_table)
-                        }
-                    }
-                } else {
-                    // No parts (shouldn't happen, but handle gracefully)
-                    (String::new(), String::new(), String::new())
-                }
+                field_name.replace('"', "")
             };
+            (String::new(), extracted_field_name, field_name.to_string())
+        } else {
+            // Handle simple field names with or without table prefix
+            let mut parts = field_name.split(".");
+            if let Some(first_part) = parts.next() {
+                if let Some(second_part) = parts.next() {
+                    // Two parts: table.field
+                    let table_name = first_part.replace('"', "");
+                    let field_name = second_part.replace('"', "");
+                    let field_with_table = format!("\"{}\".\"{}\"", table_name, field_name);
+                    (table_name, field_name, field_with_table)
+                } else {
+                    // One part: just field_name - check if it's a concatenated field
+                    let field_name = first_part.replace('"', "");
+                    // Check if this is a concatenated field that should be handled specially
+                    let is_concatenated_field = self
+                        .request_body
+                        .get_concatenate_fields()
+                        .iter()
+                        .any(|concat_field| concat_field.field_name == field_name);
+                    if is_concatenated_field {
+                        // For concatenated fields, generate the full concatenated expression
+                        let field_with_table = self.get_field_with_concatenation(
+                            &self.table,
+                            &field_name,
+                            self.request_body.get_date_format(),
+                            None,
+                            self.timezone.as_deref(),
+                            true,
+                            self.request_body.get_time_format(),
+                        );
+                        (String::new(), field_name, field_with_table)
+                    } else {
+                        // For regular fields without table prefix, assume main table
+                        let field_with_table = format!("\"{}\".\"{}\"", &self.table, field_name);
+                        (self.table.clone(), field_name, field_with_table)
+                    }
+                }
+            } else {
+                // No parts (shouldn't happen, but handle gracefully)
+                (String::new(), String::new(), String::new())
+            }
+        };
         let plural_form = pluralizer::pluralize(&field_name, 2, false);
         let is_plural = plural_form == field_name;
         let values_str = values
@@ -992,7 +992,12 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                     } else {
                         format!("{}::text", field_with_table)
                     };
-                    return format!("{} {} '%{}%'", expr, like_op, values_str[0].trim_matches('\''));
+                    return format!(
+                        "{} {} '%{}%'",
+                        expr,
+                        like_op,
+                        values_str[0].trim_matches('\'')
+                    );
                 }
 
                 format!(
@@ -1015,7 +1020,12 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                     } else {
                         format!("{}::text", field_with_table)
                     };
-                    return format!("{} {} '%{}%'", expr, like_op, values_str[0].trim_matches('\''));
+                    return format!(
+                        "{} {} '%{}%'",
+                        expr,
+                        like_op,
+                        values_str[0].trim_matches('\'')
+                    );
                 }
 
                 format!(

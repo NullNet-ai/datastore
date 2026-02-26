@@ -754,7 +754,11 @@ mod tests {
             "SQL should contain COUNT(DISTINCT id). Got: {}",
             sql
         );
-        assert!(sql.contains("FROM \"samples\""), "SQL should contain FROM samples. Got: {}", sql);
+        assert!(
+            sql.contains("FROM \"samples\""),
+            "SQL should contain FROM samples. Got: {}",
+            sql
+        );
         assert!(
             sql.contains("WHERE") || sql.contains("where"),
             "SQL should contain WHERE (system filters). Got: {}",
@@ -864,7 +868,11 @@ mod tests {
             "SQL should contain COUNT. Got: {}",
             sql
         );
-        assert!(sql.contains("FROM \"samples\""), "SQL should have main table. Got: {}", sql);
+        assert!(
+            sql.contains("FROM \"samples\""),
+            "SQL should have main table. Got: {}",
+            sql
+        );
     }
 
     /// Tests construct_count excludes GROUP BY, ORDER BY, LIMIT, OFFSET.
@@ -1423,7 +1431,10 @@ mod tests {
                 println!("{}", sql);
 
                 // Verify key components
-                assert!(sql.contains("FROM \"organizations\""), "Should contain main table");
+                assert!(
+                    sql.contains("FROM \"organizations\""),
+                    "Should contain main table"
+                );
                 assert!(
                     sql.contains("district_orgs"),
                     "Should contain district_orgs alias"
@@ -1622,7 +1633,7 @@ mod tests {
                 "id".to_string(),
                 "first_name".to_string(),
                 "last_name".to_string(),
-                "full_name".to_string()
+                "full_name".to_string(),
             ],
         );
         pluck_object.insert(
@@ -1635,7 +1646,7 @@ mod tests {
                 "id".to_string(),
                 "first_name".to_string(),
                 "last_name".to_string(),
-                "full_name".to_string()
+                "full_name".to_string(),
             ],
         );
         pluck_object.insert(
@@ -2021,9 +2032,7 @@ mod tests {
         ));
 
         assert!(sql.contains("FROM \"organizations\" \"district_orgs\""));
-        assert!(sql.contains(
-            "\"organizations\".\"district_id\" = \"district_orgs\".\"id\""
-        ));
+        assert!(sql.contains("\"organizations\".\"district_id\" = \"district_orgs\".\"id\""));
         assert!(sql.contains("LEFT JOIN LATERAL (SELECT \"joined_district_superintendent\""));
         assert!(sql.contains("FROM \"contacts\" \"joined_district_superintendent\""));
         assert!(sql.contains(
@@ -2032,7 +2041,9 @@ mod tests {
 
         assert!(sql.contains("LEFT JOIN LATERAL (SELECT \"joined_superintendent\""));
         assert!(sql.contains("FROM \"contacts\" \"joined_superintendent\""));
-        assert!(sql.contains("\"joined_superintendent\".\"id\" = \"organizations\".\"superintendent_id\""));
+        assert!(sql.contains(
+            "\"joined_superintendent\".\"id\" = \"organizations\".\"superintendent_id\""
+        ));
         assert!(sql.contains("LEFT JOIN LATERAL (SELECT \"joined_principal\""));
         assert!(sql.contains("FROM \"contacts\" \"joined_principal\""));
         assert!(sql.contains("\"joined_principal\".\"id\" = \"organizations\".\"principal_id\""));
@@ -2040,15 +2051,17 @@ mod tests {
         assert!(sql.contains("WHERE ("));
         assert!(sql.contains("\"organizations\".\"tombstone\" = 0"));
         assert!(sql.contains("\"organizations\".\"organization_id\" IS NOT NULL"));
-        assert!(sql.contains(
-            "\"organizations\".\"organization_id\" = '01K3SKCH4R3Z9KYSKKSVEKYCHV'"
-        ));
+        assert!(
+            sql.contains("\"organizations\".\"organization_id\" = '01K3SKCH4R3Z9KYSKKSVEKYCHV'")
+        );
         assert!(sql.to_lowercase().contains("status"));
         assert!(sql.to_lowercase().contains("categories"));
 
         assert!(sql.contains("GROUP BY \"organizations\".\"id\""));
         assert!(sql.contains("ORDER BY"));
-        assert!(sql.to_lowercase().contains("lower(\"organizations\".\"name\")"));
+        assert!(sql
+            .to_lowercase()
+            .contains("lower(\"organizations\".\"name\")"));
         assert!(sql.to_uppercase().contains(" ASC"));
         assert!(sql.contains("LIMIT 100"));
     }
