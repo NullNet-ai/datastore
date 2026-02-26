@@ -282,8 +282,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             |filters| self.build_infix_expression(filters),
         ));
 
-        sql.push_str(" FROM ");
-        sql.push_str(&self.table);
+        sql.push_str(&format!(" FROM \"{}\" \"{}\"", self.table, self.table));
 
         sql.push_str(&JoinsConstructor::construct_joins(
             &self.request_body,
@@ -351,7 +350,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
 
         let id_expr = format!("\"{}\".\"id\"", self.table);
         let mut sql = format!("SELECT COUNT(DISTINCT {}) FROM ", id_expr);
-        sql.push_str(&self.table);
+        sql.push_str(&format!("\"{}\" \"{}\"", self.table, self.table));
 
         sql.push_str(&JoinsConstructor::construct_joins(
             &self.request_body,
@@ -605,7 +604,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
     pub fn build_system_where_clause(&self, table_alias: &str) -> Result<String, String> {
         // For root access, only check tombstone
         if self.is_root {
-            return Ok(format!("({}.tombstone = 0)", table_alias));
+            return Ok(format!("(\"{}\".\"tombstone\" = 0)", table_alias));
         }
 
         // For non-root access, check organization constraints
@@ -618,7 +617,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         };
 
         Ok(format!(
-            "({}.tombstone = 0 AND {}.organization_id IS NOT NULL AND {}.organization_id = {})",
+            "(\"{}\".\"tombstone\" = 0 AND \"{}\".\"organization_id\" IS NOT NULL AND \"{}\".\"organization_id\" = {})",
             table_alias, table_alias, table_alias, organization_id
         ))
     }
@@ -878,15 +877,24 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         match_pattern: Option<&MatchPattern>,
     ) -> String {
         let (_table_name, field_name, field_with_table) =
-            // Check if field_name contains complex expressions (like COALESCE)
-            if field_name.contains("COALESCE") || field_name.contains("(") {
-                // This is already a complex expression, use it as-is
+            if field_name.contains("COALESCE")
+                || field_name.contains('(')
+                || field_name.contains("::")
+            {
                 let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
-                    // Extract alias if present (e.g., "COALESCE(...) AS full_name" -> "full_name")
                     field_name[start + 3..].trim().replace("\"", "")
+                } else if field_name.contains("::") {
+                    let base = field_name.splitn(2, "::").next().unwrap_or(field_name);
+                    let field_part = base
+                        .rsplit('.')
+                        .next()
+                        .unwrap_or(base)
+                        .trim()
+                        .trim_matches('"')
+                        .to_string();
+                    field_part
                 } else {
-                    // Try to extract a meaningful name from the expression
-                    field_name.replace("\"", "")
+                    field_name.replace('"', "")
                 };
                 (String::new(), extracted_field_name, field_name.to_string())
             } else {
@@ -895,13 +903,13 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                 if let Some(first_part) = parts.next() {
                     if let Some(second_part) = parts.next() {
                         // Two parts: table.field
-                        let table_name = first_part.replace("\"", "");
-                        let field_name = second_part.replace("\"", "");
-                        let field_with_table = format!("{}.{}", table_name, field_name);
+                        let table_name = first_part.replace('"', "");
+                        let field_name = second_part.replace('"', "");
+                        let field_with_table = format!("\"{}\".\"{}\"", table_name, field_name);
                         (table_name, field_name, field_with_table)
                     } else {
                         // One part: just field_name - check if it's a concatenated field
-                        let field_name = first_part.replace("\"", "");
+                        let field_name = first_part.replace('"', "");
                         // Check if this is a concatenated field that should be handled specially
                         let is_concatenated_field = self.request_body.get_concatenate_fields()
                             .iter()
@@ -920,7 +928,8 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                             (String::new(), field_name, field_with_table)
                         } else {
                             // For regular fields without table prefix, assume main table
-                            let field_with_table = format!("{}.{}", &self.table, field_name);
+                            let field_with_table =
+                                format!("\"{}\".\"{}\"", &self.table, field_name);
                             (self.table.clone(), field_name, field_with_table)
                         }
                     }
@@ -978,12 +987,12 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                 };
 
                 if is_plural {
-                    return format!(
-                        "{}::text {} '%{}%'",
-                        field_with_table,
-                        like_op,
-                        values_str[0].trim_matches('\'')
-                    );
+                    let expr = if field_with_table.contains("::text") {
+                        field_with_table.clone()
+                    } else {
+                        format!("{}::text", field_with_table)
+                    };
+                    return format!("{} {} '%{}%'", expr, like_op, values_str[0].trim_matches('\''));
                 }
 
                 format!(
@@ -1001,12 +1010,12 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                 };
 
                 if is_plural {
-                    return format!(
-                        "{}::text {} '%{}%'",
-                        field_with_table,
-                        like_op,
-                        values_str[0].trim_matches('\'')
-                    );
+                    let expr = if field_with_table.contains("::text") {
+                        field_with_table.clone()
+                    } else {
+                        format!("{}::text", field_with_table)
+                    };
+                    return format!("{} {} '%{}%'", expr, like_op, values_str[0].trim_matches('\''));
                 }
 
                 format!(
@@ -1046,7 +1055,12 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                 };
                 let pattern = self.build_like_pattern(&values_str[0], match_pattern);
                 if is_plural {
-                    return format!("{}::text {} {}", field_with_table, like_op, pattern);
+                    let expr = if field_with_table.contains("::text") {
+                        field_with_table.clone()
+                    } else {
+                        format!("{}::text", field_with_table)
+                    };
+                    return format!("{} {} {}", expr, like_op, pattern);
                 }
                 format!("{} {} {}", field_with_table, like_op, pattern)
             }

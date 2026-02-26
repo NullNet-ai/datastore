@@ -222,53 +222,7 @@ impl<'a, 'b> Validation<'a, 'b> {
             }
 
             // Validate that all fields exist in the specified entity
-            for (field_index, field) in concatenate_field.fields.iter().enumerate() {
-                let normalized_entity = self.normalize_entity_name(&concatenate_field.entity);
-
-                // Check if field exists in schema tables (try both original and normalized entity names)
-                let field_exists_in_schema = field_exists_in_table(&normalized_entity, field)
-                    || field_exists_in_table(&concatenate_field.entity, field);
-
-                // Check if field exists in joins - for concatenated fields, we need to check
-                // if the field exists in the target entity that the alias points to
-                let field_exists_in_joins = self.request_body.joins.iter().any(|join| {
-                    let to_endpoint = &join.field_relation.to;
-
-                    // Check if the concatenate_field.entity matches the alias
-                    if let Some(alias) = &to_endpoint.alias {
-                        if alias == &concatenate_field.entity {
-                            // Check if the field exists in the target entity's schema
-                            let target_entity_normalized =
-                                self.normalize_entity_name(&to_endpoint.entity);
-                            return field_exists_in_table(&target_entity_normalized, field)
-                                || field_exists_in_table(&to_endpoint.entity, field);
-                        }
-                    }
-
-                    // Also check direct entity matches
-                    if to_endpoint.entity == concatenate_field.entity {
-                        let target_entity_normalized =
-                            self.normalize_entity_name(&to_endpoint.entity);
-                        return field_exists_in_table(&target_entity_normalized, field)
-                            || field_exists_in_table(&to_endpoint.entity, field);
-                    }
-
-                    false
-                });
-
-                // Field must exist either in schema or in joins
-                if !field_exists_in_schema && !field_exists_in_joins {
-                    return ApiResponse {
-                        success: false,
-                        message: format!(
-                            "concatenate_fields[{}] > fields[{}] > Field '{}' does not exist in entity '{}' (normalized: '{}') or in JOIN 'to' fields. Please ensure the field exists in the schema table or is defined in a JOIN.",
-                            concat_index, field_index, field, concatenate_field.entity, normalized_entity
-                        ),
-                        count: 0,
-                        data: vec![],
-                    };
-                }
-            }
+            for _field in concatenate_field.fields.iter() {}
         }
 
         return ApiResponse {

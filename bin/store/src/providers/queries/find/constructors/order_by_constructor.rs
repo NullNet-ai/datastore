@@ -36,9 +36,12 @@ where
                         let field = field.trim();
                         let field_parts: Vec<&str> = field.split('.').collect();
                         if field_parts.len() == 2 {
-                            format!("{}.{}", field_parts[0], field_parts[1])
+                            let t = Self::dequote_ident(field_parts[0]);
+                            let f = Self::dequote_ident(field_parts[1]);
+                            format!("\"{}\".\"{}\"", t, f)
                         } else {
-                            format!("{}.{}", self.table, field)
+                            let f = Self::dequote_ident(field);
+                            format!("\"{}\".\"{}\"", self.table, f)
                         }
                     })
                     .collect();
@@ -58,14 +61,17 @@ where
                 .iter()
                 .map(|sort_option| {
                     let field_parts: Vec<&str> = sort_option.by_field.split('.').collect();
-                    let (table_alias, field_name) = if field_parts.len() == 2 {
-                        (field_parts[0], field_parts[1])
+                    let (mut table_alias, mut field_name) = if field_parts.len() == 2 {
+                        (field_parts[0].to_string(), field_parts[1].to_string())
                     } else {
-                        (self.table.as_str(), sort_option.by_field.as_str())
+                        (self.table.clone(), sort_option.by_field.clone())
                     };
+                    // Support inputs like "\"table\".\"column\"" by dequoting
+                    table_alias = Self::dequote_ident(&table_alias);
+                    field_name = Self::dequote_ident(&field_name);
 
                     let field_expression =
-                        self.get_field_expression_for_sort(table_alias, field_name);
+                        self.get_field_expression_for_sort(&table_alias, &field_name);
 
                     // Handle case sensitivity
                     let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
@@ -81,13 +87,15 @@ where
                             && g.fields.iter().any(|group_field| {
                                 let group_parts: Vec<&str> =
                                     group_field.trim().split('.').collect();
-                                let group_table_name = self.normalize_entity_name(group_parts[0]);
+                                let group_table_name =
+                                    Self::dequote_ident(&self.normalize_entity_name(group_parts[0]));
+                                let table_alias = Self::dequote_ident(&table_alias);
                                 if group_parts.len() > 1 {
-                                    group_parts[1] == field_name
-                                        && (group_table_name == table_alias
-                                            || group_parts[0] == table_alias)
+                                    let g_field = Self::dequote_ident(group_parts[1]);
+                                    g_field == field_name && group_table_name == table_alias
                                 } else {
-                                    group_parts[0] == field_name
+                                    let g_field = Self::dequote_ident(group_parts[0]);
+                                    g_field == field_name
                                 }
                             })
                     });
@@ -131,8 +139,19 @@ where
                 .filter(|clause| !clause.is_empty()) // Filter out empty clauses
                 .collect();
 
+            // Deduplicate identical ORDER BY clauses while preserving order
             if !sort_clauses.is_empty() {
-                return format!(" ORDER BY {}", sort_clauses.join(", "));
+                let mut seen = std::collections::HashSet::<String>::new();
+                let mut deduped: Vec<String> = Vec::with_capacity(sort_clauses.len());
+                for clause in sort_clauses {
+                    let key = clause.trim().to_lowercase();
+                    if seen.insert(key) {
+                        deduped.push(clause);
+                    }
+                }
+                if !deduped.is_empty() {
+                    return format!(" ORDER BY {}", deduped.join(", "));
+                }
             }
 
             String::from("")
@@ -141,16 +160,18 @@ where
         else if !self.request_body.get_order_by().is_empty() {
             let order_by = self.request_body.get_order_by();
             let order_direction = self.request_body.get_order_direction();
-            let (table_alias, field_name) = {
+            let (mut table_alias, mut field_name) = {
                 let parts: Vec<&str> = order_by.split('.').collect();
                 if parts.len() == 2 {
-                    (parts[0], parts[1])
+                    (parts[0].to_string(), parts[1].to_string())
                 } else {
-                    (self.table.as_str(), order_by)
+                    (self.table.clone(), order_by.to_string())
                 }
             };
+            table_alias = Self::dequote_ident(&table_alias);
+            field_name = Self::dequote_ident(&field_name);
 
-            let field_expression = self.get_field_expression_for_sort(table_alias, field_name);
+            let field_expression = self.get_field_expression_for_sort(&table_alias, &field_name);
 
             // Handle case sensitivity
             let final_field = if self
@@ -218,18 +239,22 @@ where
         };
         let order_parts: Vec<&str> = order_by_field.split('.').collect();
         let (order_entity, order_field) = if order_parts.len() == 2 {
-            (order_parts[0], order_parts[1])
+            (
+                Self::dequote_ident(order_parts[0]),
+                Self::dequote_ident(order_parts[1]),
+            )
         } else {
-            (self.table.as_str(), order_by_field)
+            (self.table.clone(), Self::dequote_ident(order_by_field))
         };
         group_by.fields.iter().any(|gf| {
             let g_parts: Vec<&str> = gf.trim().split('.').collect();
             if g_parts.len() == 2 {
-                let g_entity = self.normalize_entity_name(g_parts[0]);
-                g_parts[1] == order_field
-                    && (g_entity == order_entity || g_parts[0] == order_entity)
+                let g_entity = Self::dequote_ident(&self.normalize_entity_name(g_parts[0]));
+                let g_field = Self::dequote_ident(g_parts[1]);
+                g_field == order_field && g_entity == order_entity
             } else {
-                g_parts[0] == order_field
+                let g_field = Self::dequote_ident(g_parts[0]);
+                g_field == order_field
             }
         })
     }
@@ -280,6 +305,10 @@ where
         }
     }
 
+    fn dequote_ident(s: &str) -> String {
+        s.replace('"', "")
+    }
+
     /// Gets field with proper formatting and date/time handling
     pub fn get_field(
         table: &str,
@@ -313,7 +342,7 @@ where
         with_alias: bool,
         time_format: &str,
     ) -> String {
-        let base_field = format!("{}.{}", table, field);
+        let base_field = format!("\"{}\".\"{}\"", table, field);
 
         let formatted_field = if field.eq_ignore_ascii_case("timestamp") {
             timestamp_format_wrapper(table, field, format_str, time_format, timezone, with_alias)
@@ -329,7 +358,7 @@ where
             Self::time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
         } else {
             if with_alias {
-                format!("{} AS {}", base_field, field)
+                format!("{} AS \"{}\"", base_field, field)
             } else {
                 base_field.clone()
             }
@@ -337,7 +366,7 @@ where
 
         if let Some(cast_type) = parse_as {
             if with_alias {
-                format!("CAST({} AS {}) AS {}", &base_field, cast_type, field)
+                format!("CAST({} AS {}) AS \"{}\"", &base_field, cast_type, field)
             } else {
                 format!("CAST({} AS {})", formatted_field, cast_type)
             }
