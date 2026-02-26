@@ -128,23 +128,23 @@ impl<'a, 'b> Validation<'a, 'b> {
         }
     }
 
-    // pub fn validate_pluck(&self) -> ApiResponse {
-    //     if self.request_body.pluck.is_empty() {
-    //         return ApiResponse {
-    //             success: false,
-    //             message: "pluck is required".to_string(),
-    //             count: 0,
-    //             data: vec![],
-    //         };
-    //     }
+    pub fn validate_pluck(&self) -> ApiResponse {
+        if self.request_body.pluck.is_empty() {
+            return ApiResponse {
+                success: false,
+                message: "pluck is required".to_string(),
+                count: 0,
+                data: vec![],
+            };
+        }
 
-    //     ApiResponse {
-    //         success: true,
-    //         message: "Successfully validated pluck field".to_string(),
-    //         count: 0,
-    //         data: vec![],
-    //     }
-    // }
+        ApiResponse {
+            success: true,
+            message: "Successfully validated pluck field".to_string(),
+            count: 0,
+            data: vec![],
+        }
+    }
 
     pub fn validate_conflicting_filters(&self) -> ApiResponse {
         if !self.request_body.advance_filters.is_empty()

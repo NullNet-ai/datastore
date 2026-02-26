@@ -1272,6 +1272,9 @@ pub async fn get_by_filter(
 
     parameters.date_format = normalize_date_format(&parameters.date_format);
 
+    // Clone parameters for debug logging (since they will be moved to SQLConstructor)
+    let parameters_for_debug = parameters.clone();
+
     // Create SQLConstructor with organization_id if available
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root, timezone);
     if let Some(org_id) = organization_id {
@@ -1290,17 +1293,31 @@ pub async fn get_by_filter(
         }
     };
 
+    log::debug!("@@@parameters: {:?}", parameters_for_debug.clone());
     // Get a connection from the pool
     let mut conn = db::get_async_connection().await;
     // Enhanced debug logging to file
     if EnvConfig::default().debug {
         log::debug!("QUERY: {}", query);
         // Also write to debug log file
-        if let Err(e) = write_query_to_debug_log(&query, &table).await {
+        if let Err(e) = write_query_to_debug_log(&query, &table, false).await {
             log::warn!("Failed to write debug query log: {}", e);
+        }
+
+        // Convert parameters to stringified JSON object
+        match serde_json::to_string_pretty(&parameters_for_debug) {
+            Ok(params_json) => {
+                if let Err(e) = write_query_to_debug_log(&params_json, &table, true).await {
+                    log::warn!("Failed to write debug parameters log: {}", e);
+                }
+            }
+            Err(e) => {
+                log::warn!("Failed to serialize parameters to JSON: {}", e);
+            }
         }
     }
 
+    log::debug!("@@@parameters: {:?}", parameters_for_debug.clone());
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
 
     let results = match diesel::dsl::sql_query(&final_query)
@@ -2631,6 +2648,7 @@ pub async fn search_suggestions(
 async fn write_query_to_debug_log(
     query: &str,
     table: &str,
+    is_body_params: bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use std::path::Path;
 
@@ -2646,10 +2664,18 @@ async fn write_query_to_debug_log(
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
     let formatted_query = query.replace("\n", " ").trim().to_string();
 
+    // Add parameters indicator if body params
+    let params_indicator = if is_body_params {
+        "Body Parameters:"
+    } else {
+        "Query Parameters:"
+    };
+
     let log_entry = format!(
-        "[{}] Table: {}\nQuery: {}\n{}\n",
+        "[{}] Table: {}\n{}: {}\n{}\n",
         timestamp,
         table,
+        params_indicator,
         formatted_query,
         "-".repeat(80)
     );
