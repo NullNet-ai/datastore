@@ -36,9 +36,9 @@ where
                         let field = field.trim();
                         let field_parts: Vec<&str> = field.split('.').collect();
                         if field_parts.len() == 2 {
-                            format!("{}.{}", field_parts[0], field_parts[1])
+                            format!("\"{}\".\"{}\"", field_parts[0], field_parts[1])
                         } else {
-                            format!("{}.{}", self.table, field)
+                            format!("\"{}\".\"{}\"", self.table, field)
                         }
                     })
                     .collect();
@@ -131,8 +131,19 @@ where
                 .filter(|clause| !clause.is_empty()) // Filter out empty clauses
                 .collect();
 
+            // Deduplicate identical ORDER BY clauses while preserving order
             if !sort_clauses.is_empty() {
-                return format!(" ORDER BY {}", sort_clauses.join(", "));
+                let mut seen = std::collections::HashSet::<String>::new();
+                let mut deduped: Vec<String> = Vec::with_capacity(sort_clauses.len());
+                for clause in sort_clauses {
+                    let key = clause.trim().to_lowercase();
+                    if seen.insert(key) {
+                        deduped.push(clause);
+                    }
+                }
+                if !deduped.is_empty() {
+                    return format!(" ORDER BY {}", deduped.join(", "));
+                }
             }
 
             String::from("")
@@ -313,7 +324,7 @@ where
         with_alias: bool,
         time_format: &str,
     ) -> String {
-        let base_field = format!("{}.{}", table, field);
+        let base_field = format!("\"{}\".\"{}\"", table, field);
 
         let formatted_field = if field.eq_ignore_ascii_case("timestamp") {
             timestamp_format_wrapper(table, field, format_str, time_format, timezone, with_alias)
@@ -329,7 +340,7 @@ where
             Self::time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
         } else {
             if with_alias {
-                format!("{} AS {}", base_field, field)
+                format!("{} AS \"{}\"", base_field, field)
             } else {
                 base_field.clone()
             }
@@ -337,7 +348,7 @@ where
 
         if let Some(cast_type) = parse_as {
             if with_alias {
-                format!("CAST({} AS {}) AS {}", &base_field, cast_type, field)
+                format!("CAST({} AS {}) AS \"{}\"", &base_field, cast_type, field)
             } else {
                 format!("CAST({} AS {})", formatted_field, cast_type)
             }

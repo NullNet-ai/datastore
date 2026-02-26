@@ -62,33 +62,7 @@ impl SelectionsConstructor {
         // Determine if main table is in pluck_object
         let main_in_pluck_object = request_body.get_pluck_object().contains_key(table);
 
-        // Include aggregated selections for related entities specified in pluck_object
-        if !request_body.get_pluck_object().is_empty() {
-            // // If main table exists in pluck_object, add aggregated selection for it
-            // if let Some(main_agg) = Self::build_main_table_aggregation(
-            //     request_body,
-            //     table,
-            //     timezone,
-            //     &get_field,
-            //     &build_system_where_clause,
-            // ) {
-            //     selections.push(main_agg);
-            // }
-
-            let join_selections = Self::construct_join_selections(
-                request_body,
-                table,
-                timezone,
-                &normalize_entity_name,
-                &get_field,
-                &build_system_where_clause,
-                &build_infix_expression,
-                &get_field_with_parse_as,
-            );
-            selections.extend(join_selections);
-        }
-
-        // Include main table pluck fields when present, unless pluck_object already specifies main table
+        // First, include main table pluck fields (to match final SQL structure)
         if main_in_pluck_object && !request_body.get_pluck().is_empty() {
             let pluck_sel = Self::construct_pluck_object(
                 request_body,
@@ -111,6 +85,21 @@ impl SelectionsConstructor {
             if !pluck_sel.is_empty() {
                 selections.push(pluck_sel);
             }
+        }
+
+        // Then, include aggregated selections for related entities specified in pluck_object
+        if !request_body.get_pluck_object().is_empty() {
+            let join_selections = Self::construct_join_selections(
+                request_body,
+                table,
+                timezone,
+                &normalize_entity_name,
+                &get_field,
+                &build_system_where_clause,
+                &build_infix_expression,
+                &get_field_with_parse_as,
+            );
+            selections.extend(join_selections);
         }
 
         // Fallback: if no selections were added, select main table id
@@ -501,84 +490,12 @@ impl SelectionsConstructor {
         }
     }
 
-    /// Helper to build a nested aggregated selection for a child join embedded within a parent alias
-    fn build_nested_child_selection<T: QueryFilter>(
-        request_body: &T,
-        table: &str,
-        timezone: Option<&str>,
-        parent_alias: &str,
-        child_join: &Join,
-        fields: &[String],
-        normalize_entity_name: &impl Fn(&str) -> String,
-        get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
-        build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
-        build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
-    ) -> String {
-        let to_alias = child_join
-            .field_relation
-            .to
-            .alias
-            .as_deref()
-            .unwrap_or(&child_join.field_relation.to.entity);
-        let target_table = &child_join.field_relation.to.entity;
-        let mut field_pairs =
-            Self::build_field_pairs(request_body, table, timezone, fields, to_alias, get_field);
-        Self::add_concatenated_field_pairs(
-            request_body,
-            table,
-            timezone,
-            &mut field_pairs,
-            to_alias,
-            normalize_entity_name,
-            get_field,
-        );
-
-        let mut where_conditions = Vec::new();
-        let standard_where = match build_system_where_clause(to_alias) {
-            Ok(clause) => clause,
-            Err(_) => format!("({}.tombstone = 0)", to_alias),
-        };
-        where_conditions.push(standard_where);
-
-        // Child join condition referencing the parent alias
-        let join_condition = format!(
-            "\"{}\".\"{}\" = \"{}\".\"{}\"",
-            to_alias,
-            child_join.field_relation.to.field,
-            parent_alias,
-            child_join.field_relation.from.field
-        );
-        where_conditions.push(join_condition);
-
-        // Add filters if present on child join
-        if !child_join.field_relation.to.filters.is_empty() {
-            if let Ok(filter_expression) =
-                build_infix_expression(&child_join.field_relation.to.filters)
-            {
-                if !filter_expression.is_empty() {
-                    where_conditions.push(filter_expression);
-                }
-            }
-        }
-
-        let combined_where = where_conditions.join(" AND ");
-        let order_by_clause = Self::build_join_order_by_clause(child_join, "elem");
-
-        format!(
-            "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' )",
-            order_by_clause,
-            field_pairs.join(", "),
-            target_table,
-            to_alias,
-            combined_where
-        )
-    }
-
     /// Helper method to build the final join selection
     fn build_join_selection<T: QueryFilter>(
         _request_body: &T,
         join: &Join,
         previous_join: Option<&Join>,
+        main_table: &str,
         to_alias: &str,
         target_table: &str,
         field_pairs: &[String],
@@ -586,76 +503,27 @@ impl SelectionsConstructor {
         build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
         build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
     ) -> String {
-        let mut where_conditions = Vec::new();
-
-        // Add system where clause
-        let standard_where = match build_system_where_clause(to_alias) {
-            Ok(clause) => clause,
-            Err(_) => format!("({}.tombstone = 0)", to_alias),
-        };
-        where_conditions.push(standard_where);
-
-        // Add join condition
-        where_conditions.push(join_condition.to_string());
-
-        // Add filters from 'to' RelationEndpoint if present
-        if !join.field_relation.to.filters.is_empty() {
-            match build_infix_expression(&join.field_relation.to.filters) {
-                Ok(filter_expression) if !filter_expression.is_empty() => {
-                    where_conditions.push(filter_expression);
-                }
-                Err(_) => {
-                    // Log error or handle gracefully - for now, continue without the filter
-                }
-                _ => {}
-            }
-        }
-
-        let combined_where = where_conditions.join(" AND ");
-
         // Build order_by clause with join-specific override logic
         let order_by_clause = Self::build_join_order_by_clause(join, "elem");
 
-        if join.nested {
-            if let Some(prev_join) = previous_join {
-                let _prev_join_to_alias = if prev_join.r#type == "self" {
-                    prev_join
-                        .field_relation
-                        .from
-                        .alias
-                        .as_deref()
-                        .unwrap_or(&prev_join.field_relation.to.entity)
-                } else {
-                    prev_join
-                        .field_relation
-                        .to
-                        .alias
-                        .as_deref()
-                        .unwrap_or(&prev_join.field_relation.to.entity)
-                };
-                format!(
-                    "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
-                    order_by_clause,
-                    field_pairs.join(", "),
-                    target_table,
-                    to_alias,
-                    combined_where,
-                    to_alias
-                )
-            } else {
-                // This should not happen for nested joins, but provide a fallback
-                format!(
-                    "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
-                    order_by_clause,
-                    field_pairs.join(", "),
-                    target_table,
-                    to_alias,
-                    combined_where,
-                    to_alias
-                )
+        if !join.nested {
+            let mut where_conditions = Vec::new();
+            let standard_where = match build_system_where_clause(to_alias) {
+                Ok(clause) => clause,
+                Err(_) => format!("({}.tombstone = 0)", to_alias),
+            };
+            where_conditions.push(standard_where);
+            where_conditions.push(join_condition.to_string());
+            if !join.field_relation.to.filters.is_empty() {
+                if let Ok(filter_expression) = build_infix_expression(&join.field_relation.to.filters)
+                {
+                    if !filter_expression.is_empty() {
+                        where_conditions.push(filter_expression);
+                    }
+                }
             }
-        } else {
-            format!(
+            let combined_where = where_conditions.join(" AND ");
+            return format!(
                 "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
                 order_by_clause,
                 field_pairs.join(", "),
@@ -663,8 +531,107 @@ impl SelectionsConstructor {
                 to_alias,
                 combined_where,
                 to_alias
-            )
+            );
         }
+
+        if let Some(prev_join) = previous_join {
+            // For nested joins, if the previous join is a self-join, we must reference the
+            // previous join's FROM alias (e.g., "district_orgs") as the parent alias and
+            // its entity (e.g., "organizations") as the parent table. This ensures the
+            // subquery defines its own local "district_orgs" alias and does not
+            // accidentally reference the outer LATERAL alias, which would cause
+            // "ungrouped column from outer query" errors.
+            let (prev_alias, prev_table) = if prev_join.r#type == "self" {
+                (
+                    prev_join
+                        .field_relation
+                        .from
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.from.entity),
+                    prev_join.field_relation.from.entity.as_str(),
+                )
+            } else {
+                (
+                    prev_join
+                        .field_relation
+                        .to
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.to.entity),
+                    prev_join.field_relation.to.entity.as_str(),
+                )
+            };
+
+            let parent_where = match build_system_where_clause(prev_alias) {
+                Ok(clause) => clause,
+                Err(_) => format!("(\"{}\".\"tombstone\" = 0)", prev_alias),
+            };
+            let child_where = match build_system_where_clause(to_alias) {
+                Ok(clause) => clause,
+                Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+            };
+
+            // Correlate the parent row to the main table row, using the main table alias
+            // on the left side and the locally defined parent alias on the right side.
+            let main_to_parent_correlation = format!(
+                "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                main_table,
+                prev_join.field_relation.from.field,
+                prev_alias,
+                prev_join.field_relation.to.field
+            );
+
+            let on_condition = format!(
+                "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                to_alias,
+                join.field_relation.to.field,
+                prev_alias,
+                join.field_relation.from.field
+            );
+
+            let mut where_conditions = vec![child_where, parent_where, main_to_parent_correlation];
+            if !join.field_relation.to.filters.is_empty() {
+                if let Ok(filter_expression) = build_infix_expression(&join.field_relation.to.filters)
+                {
+                    if !filter_expression.is_empty() {
+                        where_conditions.push(filter_expression);
+                    }
+                }
+            }
+            let combined_where = where_conditions.join(" AND ");
+
+            return format!(
+                "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {}) sub ), '[]' ) AS \"{}\"",
+                order_by_clause,
+                field_pairs.join(", "),
+                prev_table,
+                prev_alias,
+                target_table,
+                to_alias,
+                on_condition,
+                combined_where,
+                to_alias
+            );
+        }
+
+        let mut where_conditions = Vec::new();
+        let standard_where = match build_system_where_clause(to_alias) {
+            Ok(clause) => clause,
+            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+        };
+        where_conditions.push(standard_where);
+        where_conditions.push(join_condition.to_string());
+        let combined_where = where_conditions.join(" AND ");
+        format!(
+            "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM \"{}\" \"{}\" WHERE {}) sub ), '[]' ) AS \"{}\"",
+            order_by_clause,
+            field_pairs.join(", "),
+            target_table,
+            to_alias,
+            combined_where,
+            to_alias
+        )
     }
 
     /// Builds ORDER BY clause for join selections with join-specific override logic
@@ -768,34 +735,7 @@ impl SelectionsConstructor {
         )
     }
 
-    fn build_join_condition_for_from_alias<T: QueryFilter>(
-        request_body: &T,
-        table: &str,
-        alias: &str,
-        join: &Join,
-        _previous_join: Option<&Join>,
-    ) -> String {
-        let to_field = &join.field_relation.to.field;
-        let from_field = &join.field_relation.from.field;
-        let to_table_ref = if let Some(to_alias) = &join.field_relation.to.alias {
-            to_alias.as_str()
-        } else {
-            let to_entity = &join.field_relation.to.entity;
-            let matching_alias = request_body.get_joins().iter().find_map(|j| {
-                if let Some(alias) = &j.field_relation.to.alias {
-                    if alias == to_entity {
-                        return Some(alias.as_str());
-                    }
-                }
-                None
-            });
-            matching_alias.unwrap_or_else(|| if to_entity == table { table } else { to_entity })
-        };
-        format!(
-            "\"{}\".\"{}\" = \"{}\".\"{}\"",
-            alias, from_field, to_table_ref, to_field
-        )
-    }
+    
 
     /// Constructs JOIN selections for related entities when pluck_object is provided
     fn construct_join_selections<T: QueryFilter>(
@@ -824,12 +764,6 @@ impl SelectionsConstructor {
                 "DEBUG: Processing join {}: from={}, to={}",
                 join_index, join.field_relation.from.entity, join.field_relation.to.entity
             );
-            let from_alias = join
-                .field_relation
-                .from
-                .alias
-                .as_deref()
-                .unwrap_or(&join.field_relation.from.entity);
             let to_alias = join
                 .field_relation
                 .to
@@ -837,109 +771,13 @@ impl SelectionsConstructor {
                 .as_deref()
                 .unwrap_or(&join.field_relation.to.entity);
 
-            // Skip adding duplicate selection for main table in 'from' branch; still process 'to' branch
-            let _skip_from_branch = from_alias == table;
-
-            // Handle fields for this join tables from "from"
-            if request_body.get_pluck_object().contains_key(from_alias)
-                && !added_entity_selection.contains(from_alias)
-                && from_alias != table
-            // Skip main table - it's handled separately
-            {
-                if let Some(fields) = request_body.get_pluck_object().get(from_alias) {
-                    let target_table: String = request_body
-                        .get_joins()
-                        .iter()
-                        .find_map(|j| {
-                            if let Some(alias) = &j.field_relation.to.alias {
-                                if alias == from_alias {
-                                    return Some(j.field_relation.to.entity.clone());
-                                }
-                            }
-                            None
-                        })
-                        .unwrap_or_else(|| join.field_relation.from.entity.clone());
-                    let mut field_pairs = Self::build_field_pairs(
-                        request_body,
-                        table,
-                        timezone,
-                        fields,
-                        from_alias,
-                        get_field,
-                    );
-                    Self::add_concatenated_field_pairs(
-                        request_body,
-                        table,
-                        timezone,
-                        &mut field_pairs,
-                        from_alias,
-                        normalize_entity_name,
-                        get_field,
-                    );
-                    // Embed nested children selections that reference this alias
-                    for child_join in request_body
-                        .get_joins()
-                        .iter()
-                        .filter(|cj| cj.nested && cj.field_relation.from.entity == from_alias)
-                    {
-                        let child_to_alias = child_join
-                            .field_relation
-                            .to
-                            .alias
-                            .as_deref()
-                            .unwrap_or(&child_join.field_relation.to.entity);
-                        if let Some(child_fields) =
-                            request_body.get_pluck_object().get(child_to_alias)
-                        {
-                            let nested_sel = Self::build_nested_child_selection(
-                                request_body,
-                                table,
-                                timezone,
-                                from_alias,
-                                child_join,
-                                child_fields,
-                                normalize_entity_name,
-                                get_field,
-                                build_system_where_clause,
-                                build_infix_expression,
-                            );
-                            field_pairs.push(format!("'{}', {}", child_to_alias, nested_sel));
-                            added_entity_selection.insert(child_to_alias.to_string());
-                        }
-                    }
-                    let join_condition = Self::build_join_condition_for_from_alias(
-                        request_body,
-                        table,
-                        from_alias,
-                        join,
-                        None,
-                    );
-                    let mut where_conditions = Vec::new();
-                    let standard_where = match build_system_where_clause(from_alias) {
-                        Ok(clause) => clause,
-                        Err(_) => format!("({}.tombstone = 0)", from_alias),
-                    };
-                    where_conditions.push(standard_where);
-                    where_conditions.push(join_condition);
-                    let combined_where = where_conditions.join(" AND ");
-                    let order_by_clause = String::from("");
-                    join_selections.push(format!(
-                        "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
-                        order_by_clause,
-                        field_pairs.join(", "),
-                        target_table,
-                        from_alias,
-                        combined_where,
-                        from_alias
-                    ));
-                    added_entity_selection.insert(from_alias.to_string());
-                }
-            }
-
             // Handle fields for this join tables from "to"
             if let Some(fields) = request_body.get_pluck_object().get(to_alias) {
                 // Skip main table - it's handled separately
                 if to_alias == table {
+                    continue;
+                }
+                if added_entity_selection.contains(to_alias) {
                     continue;
                 }
 
@@ -1000,6 +838,7 @@ impl SelectionsConstructor {
                     request_body,
                     join,
                     previous_join,
+                    table,
                     to_alias,
                     target_table,
                     &field_pairs,
@@ -1009,6 +848,7 @@ impl SelectionsConstructor {
                 );
 
                 join_selections.push(selection);
+                added_entity_selection.insert(to_alias.to_string());
             }
         }
 

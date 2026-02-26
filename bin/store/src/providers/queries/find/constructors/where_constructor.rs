@@ -55,8 +55,9 @@ impl<'a> WhereConstructor<'a> {
                 time_format,
             )?;
             if !expression.is_empty() {
-                base_where.push_str(" AND ");
+                base_where.push_str(" AND (");
                 base_where.push_str(&expression);
+                base_where.push(')');
             }
         } else if !group_advance_filters.is_empty() {
             let group_expression = self.build_group_advance_filters_expression(
@@ -66,8 +67,9 @@ impl<'a> WhereConstructor<'a> {
                 time_format,
             )?;
             if !group_expression.is_empty() {
-                base_where.push_str(" AND ");
+                base_where.push_str(" AND (");
                 base_where.push_str(&group_expression);
+                base_where.push(')');
             }
         }
 
@@ -77,7 +79,7 @@ impl<'a> WhereConstructor<'a> {
     pub fn build_system_where_clause(&self, table_alias: &str) -> Result<String, String> {
         // For root access, only check tombstone
         if self.is_root {
-            return Ok(format!("({}.tombstone = 0)", table_alias));
+            return Ok(format!("(\"{}\".\"tombstone\" = 0)", table_alias));
         }
 
         // For non-root access, check organization constraints
@@ -87,7 +89,7 @@ impl<'a> WhereConstructor<'a> {
         };
 
         Ok(format!(
-            "({}.tombstone = 0 AND {}.organization_id IS NOT NULL AND {}.organization_id = {})",
+            "(\"{}\".\"tombstone\" = 0 AND \"{}\".\"organization_id\" IS NOT NULL AND \"{}\".\"organization_id\" = {})",
             table_alias, table_alias, table_alias, organization_id
         ))
     }

@@ -282,8 +282,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             |filters| self.build_infix_expression(filters),
         ));
 
-        sql.push_str(" FROM ");
-        sql.push_str(&self.table);
+        sql.push_str(&format!(" FROM \"{}\" \"{}\"", self.table, self.table));
 
         sql.push_str(&JoinsConstructor::construct_joins(
             &self.request_body,
@@ -351,7 +350,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
 
         let id_expr = format!("\"{}\".\"id\"", self.table);
         let mut sql = format!("SELECT COUNT(DISTINCT {}) FROM ", id_expr);
-        sql.push_str(&self.table);
+        sql.push_str(&format!("\"{}\" \"{}\"", self.table, self.table));
 
         sql.push_str(&JoinsConstructor::construct_joins(
             &self.request_body,
@@ -605,7 +604,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
     pub fn build_system_where_clause(&self, table_alias: &str) -> Result<String, String> {
         // For root access, only check tombstone
         if self.is_root {
-            return Ok(format!("({}.tombstone = 0)", table_alias));
+            return Ok(format!("(\"{}\".\"tombstone\" = 0)", table_alias));
         }
 
         // For non-root access, check organization constraints
@@ -618,7 +617,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         };
 
         Ok(format!(
-            "({}.tombstone = 0 AND {}.organization_id IS NOT NULL AND {}.organization_id = {})",
+            "(\"{}\".\"tombstone\" = 0 AND \"{}\".\"organization_id\" IS NOT NULL AND \"{}\".\"organization_id\" = {})",
             table_alias, table_alias, table_alias, organization_id
         ))
     }
