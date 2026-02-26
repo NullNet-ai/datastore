@@ -48,7 +48,7 @@ impl<'a, 'b> Validation<'a, 'b> {
         for check in &validation_checks {
             let response = match *check {
                 "table" => self.validate_table(),
-                "pluck" => self.validate_pluck(),
+                // "pluck" => self.validate_pluck(),
                 "pluck_object" => self.validate_pluck_object(),
                 "pluck_group_object" => self.validate_pluck_group_object(),
                 "concatenated_fields" => self.validate_concatenated_fields(),
