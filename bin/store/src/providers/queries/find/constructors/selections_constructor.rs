@@ -63,7 +63,7 @@ impl SelectionsConstructor {
         let main_in_pluck_object = request_body.get_pluck_object().contains_key(table);
 
         // First, include main table pluck fields (to match final SQL structure)
-        if main_in_pluck_object && !request_body.get_pluck().is_empty() {
+        if main_in_pluck_object {
             let pluck_sel = Self::construct_pluck_object(
                 request_body,
                 table,
