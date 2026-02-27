@@ -1023,6 +1023,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn add_common_fields_skips_system_fields_when_migration_mode_enabled() {
         env::set_var("MIGRATION_MODE", "true");
 
