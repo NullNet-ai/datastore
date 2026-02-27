@@ -77,25 +77,26 @@ pub async fn apply(
 
         let json_values = serde_json::Value::Object(json_obj);
 
-        match table.upsert_record_with_id_timestamp(tx, json_values).await {
-            Ok(_) => return Ok(()),
-            Err(e) => {
+        table
+            .upsert_record_with_id_timestamp(tx, json_values)
+            .await
+            .map_err(|e| {
                 print!("Error applying message: {}", e);
-                Err(Box::new(e))
-            }
-        }
+                Box::<dyn std::error::Error>::from(e)
+            })?;
+        return Ok(());
     } else {
         // Insert or update without hypertable timestamp
         let json_values = serde_json::Value::Object(json_obj);
 
-        match table.upsert_record_with_id(tx, json_values).await {
-            Ok(_) => return Ok(()),
-            Err(e) => {
+        table
+            .upsert_record_with_id(tx, json_values)
+            .await
+            .map_err(|e| {
                 log::error!("Error applying message: {}", e);
-                Err(Box::new(e))
-                // return error
-            }
-        }
+                Box::<dyn std::error::Error>::from(e)
+            })?;
+        return Ok(());
     }
 }
 
@@ -108,7 +109,9 @@ fn normalize_rfc3339_timezone(s: &str) -> String {
     // Trailing +HH or -HH without :MM (e.g. "2026-02-27T02:17:06.634944+00" -> "...+00:00")
     if s.len() >= 3 {
         let rest = &s[s.len() - 3..];
-        if (rest.starts_with('+') || rest.starts_with('-')) && rest[1..].chars().all(|c| c.is_ascii_digit()) {
+        if (rest.starts_with('+') || rest.starts_with('-'))
+            && rest[1..].chars().all(|c| c.is_ascii_digit())
+        {
             return format!("{}:00", s);
         }
     }

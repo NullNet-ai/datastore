@@ -13,6 +13,7 @@ use futures::{pin_mut, SinkExt};
 use serde_json::Value;
 use tokio_postgres::Client;
 use tonic::Status;
+use std::env;
 
 use super::store_controller::ApiError;
 
@@ -35,6 +36,16 @@ impl From<tokio_postgres::Error> for AppError {
     fn from(e: tokio_postgres::Error) -> Self {
         AppError::DbConnection(e.to_string())
     }
+}
+
+fn migration_mode_enabled() -> bool {
+    env::var("MIGRATION_MODE")
+        .ok()
+        .map(|v| {
+            let v = v.trim();
+            v.eq_ignore_ascii_case("true") || v == "1"
+        })
+        .unwrap_or(false)
 }
 
 pub async fn execute_copy(
@@ -296,20 +307,23 @@ pub async fn process_and_insert_record(
     auth: &Auth,
     is_root_account: bool,
 ) -> ControllerResult {
-    let code = generate_code(table_name, "", 100000).await.map_err(|e| {
-        ApiError::new(
-            http::StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Unable to generate code: {}", e),
-        )
-    })?;
-    //assign code in the record
-    if let Value::Object(ref mut map) = record {
-        map.insert("code".to_string(), Value::String(code));
-    } else {
-        return Err(ApiError::new(
-            http::StatusCode::BAD_REQUEST,
-            "Record must be an object".to_string(),
-        ));
+    // In MIGRATION_MODE we trust the incoming 'code' (if any) and do NOT auto-generate/override it.
+    if !migration_mode_enabled() {
+        let code = generate_code(table_name, "", 100000).await.map_err(|e| {
+            ApiError::new(
+                http::StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Unable to generate code: {}", e),
+            )
+        })?;
+        // assign code in the record (override any existing value)
+        if let Value::Object(ref mut map) = record {
+            map.insert("code".to_string(), Value::String(code));
+        } else {
+            return Err(ApiError::new(
+                http::StatusCode::BAD_REQUEST,
+                "Record must be an object".to_string(),
+            ));
+        }
     }
     let record_value = process_record_for_insert(record, table_name, auth, is_root_account)
         .await

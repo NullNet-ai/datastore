@@ -208,6 +208,19 @@ impl RequestBody {
         is_root_account: bool,
         table: &str,
     ) {
+        // When running migrations we must not touch system fields at all.
+        // MIGRATION_MODE=true (or "1") disables automatic system field assignment.
+        if std::env::var("MIGRATION_MODE")
+            .ok()
+            .map(|v| {
+                let v = v.trim();
+                v.eq_ignore_ascii_case("true") || v == "1"
+            })
+            .unwrap_or(false)
+        {
+            return;
+        }
+
         // Get current time for timestamps
         let now = Utc::now();
         let date_str = now.format("%Y-%m-%d").to_string();
@@ -913,6 +926,7 @@ pub struct SearchSuggestionParams {
 mod tests {
     use super::{Auth, RequestBody};
     use serde_json::json;
+    use std::env;
 
     fn test_auth() -> Auth {
         Auth {
@@ -929,6 +943,9 @@ mod tests {
 
     #[test]
     fn process_record_create_assigns_id_when_id_missing() {
+        // Ensure MIGRATION_MODE does not disable id generation
+        env::remove_var("MIGRATION_MODE");
+
         let mut body = RequestBody {
             record: json!({ "name": "Test" }),
         };
@@ -943,6 +960,8 @@ mod tests {
 
     #[test]
     fn process_record_create_assigns_id_when_id_null() {
+        env::remove_var("MIGRATION_MODE");
+
         let mut body = RequestBody {
             record: json!({ "id": null, "name": "Test" }),
         };
@@ -957,6 +976,8 @@ mod tests {
 
     #[test]
     fn process_record_create_assigns_id_when_id_empty_string() {
+        env::remove_var("MIGRATION_MODE");
+
         let mut body = RequestBody {
             record: json!({ "id": "", "name": "Test" }),
         };
@@ -971,6 +992,8 @@ mod tests {
 
     #[test]
     fn process_record_create_assigns_id_when_id_whitespace_only() {
+        env::remove_var("MIGRATION_MODE");
+
         let mut body = RequestBody {
             record: json!({ "id": "   ", "name": "Test" }),
         };
@@ -988,6 +1011,8 @@ mod tests {
 
     #[test]
     fn process_record_create_preserves_id_when_non_empty() {
+        env::remove_var("MIGRATION_MODE");
+
         let existing_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
         let mut body = RequestBody {
             record: json!({ "id": existing_id, "name": "Test" }),
@@ -995,5 +1020,67 @@ mod tests {
         body.process_record("create", &test_auth(), true, "contacts");
         let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
         assert_eq!(id, existing_id, "existing id should be preserved");
+    }
+
+    #[test]
+    fn add_common_fields_sets_system_fields_for_create_when_migration_mode_disabled() {
+        // Ensure MIGRATION_MODE is not set to an enabled value
+        env::remove_var("MIGRATION_MODE");
+
+        let mut body = RequestBody {
+            record: json!({ "name": "Test" }),
+        };
+        let auth = test_auth();
+
+        body.process_record("create", &auth, false, "contacts");
+        let obj = body.record.as_object().expect("record should be an object");
+
+        assert_eq!(obj.get("status").unwrap(), "Active");
+        assert!(obj.get("created_date").is_some());
+        assert!(obj.get("created_time").is_some());
+        assert!(obj.get("updated_date").is_some());
+        assert!(obj.get("updated_time").is_some());
+        assert_eq!(obj.get("version").unwrap(), 1);
+        assert_eq!(obj.get("tombstone").unwrap(), 0);
+        assert_eq!(
+            obj.get("organization_id").unwrap(),
+            &json!(auth.organization_id)
+        );
+        assert_eq!(
+            obj.get("created_by").unwrap(),
+            &json!(auth.responsible_account)
+        );
+    }
+
+    #[test]
+    fn add_common_fields_skips_system_fields_when_migration_mode_enabled() {
+        env::set_var("MIGRATION_MODE", "true");
+
+        let mut body = RequestBody {
+            record: json!({ "name": "Test" }),
+        };
+        let auth = test_auth();
+
+        body.process_record("create", &auth, false, "contacts");
+        let obj = body.record.as_object().expect("record should be an object");
+
+        // System fields should not be injected when MIGRATION_MODE is enabled
+        assert!(obj.get("status").is_none());
+        assert!(obj.get("created_date").is_none());
+        assert!(obj.get("created_time").is_none());
+        assert!(obj.get("updated_date").is_none());
+        assert!(obj.get("updated_time").is_none());
+        assert!(obj.get("version").is_none());
+        assert!(obj.get("tombstone").is_none());
+        assert!(obj.get("organization_id").is_none());
+        assert!(obj.get("created_by").is_none());
+        assert!(obj.get("updated_by").is_none());
+        assert!(obj.get("deleted_by").is_none());
+
+        // Original fields should be preserved
+        assert_eq!(obj.get("name").unwrap(), "Test");
+
+        // Clean up for other tests
+        env::remove_var("MIGRATION_MODE");
     }
 }

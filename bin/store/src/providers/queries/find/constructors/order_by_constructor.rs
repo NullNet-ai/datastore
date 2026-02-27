@@ -411,24 +411,60 @@ where
 mod tests {
     use super::*;
 
+    #[derive(Default)]
+    struct MockOrderByFilter;
+
+    impl OrderByQueryFilter for MockOrderByFilter {
+        fn get_multiple_sort(&self) -> &[SortOption] {
+            &[]
+        }
+        fn get_order_by(&self) -> &str {
+            ""
+        }
+        fn get_order_direction(&self) -> &str {
+            "asc"
+        }
+        fn get_is_case_sensitive_sorting(&self) -> Option<bool> {
+            None
+        }
+        fn get_group_by(&self) -> Option<&GroupBy> {
+            None
+        }
+        fn get_distinct_by(&self) -> Option<&str> {
+            None
+        }
+        fn get_date_format(&self) -> &str {
+            "YYYY-mm-dd"
+        }
+        fn get_concatenate_fields(&self) -> &[ConcatenateField] {
+            &[]
+        }
+    }
+
     #[test]
     fn should_detect_timestamp_columns_by_type_for_order_by_constructor() {
-        // sample_checks.some_test_field -> Timestamp
-        assert!(OrderByConstructor::is_timestamp_column(
-            "sample_checks",
-            "some_test_field"
+        // account_profiles.date_of_birth -> Timestamp, field name is not "timestamp"
+        assert!(OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
+            "account_profiles",
+            "date_of_birth"
         ));
 
-        // sample_checks.timestamp2 -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
-        assert!(OrderByConstructor::is_timestamp_column(
-            "sample_checks",
-            "timestamp2"
+        // account_profiles.timestamp -> Timestamp, classic timestamp column
+        assert!(OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
+            "account_profiles",
+            "timestamp"
+        ));
+
+        // accounts.timestamp -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
+        assert!(OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
+            "accounts",
+            "timestamp"
         ));
 
         // Non-timestamp column should not be treated as timestamp
-        assert!(!OrderByConstructor::is_timestamp_column(
-            "sample_checks",
-            "id"
+        assert!(!OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
+            "account_profiles",
+            "code"
         ));
     }
 }

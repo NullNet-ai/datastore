@@ -773,19 +773,16 @@ mod tests {
 
     #[test]
     fn should_detect_timestamp_columns_by_type_for_search_suggestion() {
-        // sample_checks.some_test_field -> Timestamp
-        assert!(is_timestamp_column(
-            "sample_checks",
-            "some_test_field"
-        ));
+        // account_profiles.date_of_birth -> Timestamp, field name is not "timestamp"
+        assert!(is_timestamp_column("account_profiles", "date_of_birth"));
 
-        // sample_checks.timestamp2 -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
-        assert!(is_timestamp_column(
-            "sample_checks",
-            "timestamp2"
-        ));
+        // account_profiles.timestamp -> Timestamp, classic timestamp column
+        assert!(is_timestamp_column("account_profiles", "timestamp"));
+
+        // accounts.timestamp -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
+        assert!(is_timestamp_column("accounts", "timestamp"));
 
         // Non-timestamp column should not be treated as timestamp
-        assert!(!is_timestamp_column("sample_checks", "id"));
+        assert!(!is_timestamp_column("account_profiles", "code"));
     }
 }

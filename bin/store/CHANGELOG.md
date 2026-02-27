@@ -5,6 +5,32 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.38
+
+### Author
+Kashan
+
+### Changed
+  - ***Code generation behavior for migrations***:
+    - Updated `process_and_insert_record` in `controllers/common_controller.rs` to respect `MIGRATION_MODE`. When `MIGRATION_MODE=true` (or `1`), the store no longer auto-generates or overwrites the `code` field for generic insert requests and instead preserves whatever `code` is provided in the request body.
+
+### Added
+  - ***Tests for code generation vs. migration mode***:
+    - Added async tests in `common_controller.rs` to ensure `process_and_insert_record` succeeds when `MIGRATION_MODE` is disabled (normal auto-generated code path) and also when it is enabled while trusting body-provided `code` values.
+
+## 0.2.37
+
+### Author
+Kashan
+
+### Changed
+  - ***System fields handling for migrations***:
+    - Updated `RequestBody::add_common_fields` in `structs/core.rs` to respect a `MIGRATION_MODE` environment flag. When `MIGRATION_MODE=true` (or `1`), the store now skips assigning all system fields (`status`, `tombstone`, `created_*`, `updated_*`, `deleted_*`, `organization_id`, `version`) regardless of operation (`create`, `update`, `delete`), so migration tooling can insert raw records without automatic metadata changes.
+
+### Added
+  - ***Tests for common/system fields and migration mode***:
+    - Added unit tests in `structs/core.rs` to verify that `process_record`/`add_common_fields` populate system fields correctly for creates when `MIGRATION_MODE` is disabled, and that the same fields are **not** added when `MIGRATION_MODE` is enabled.
+
 ## 0.2.36
 
 ### Author
