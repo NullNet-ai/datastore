@@ -114,13 +114,19 @@ pub async fn register(
         ..Default::default()
     };
 
-    let account_organization_json_initial = serde_json::to_value(&account_organization)
-    .map_err(|e| ApiError::new(
-        StatusCode::INTERNAL_SERVER_ERROR,
-        format!("Failed to serialize account organization: {}", e)
-    ))?;
+    let account_organization_json_initial =
+        serde_json::to_value(&account_organization).map_err(|e| {
+            ApiError::new(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                format!("Failed to serialize account organization: {}", e),
+            )
+        })?;
 
-    sync_service::insert(&"account_organizations".to_string(), account_organization_json_initial.clone()).await?;
+    sync_service::insert(
+        &"account_organizations".to_string(),
+        account_organization_json_initial.clone(),
+    )
+    .await?;
 
     let mut _account_id = if is_request {
         Ulid::new().to_string()
@@ -216,8 +222,9 @@ pub async fn register(
         }
     } else {
         //create a personal organization (use static ID only when set by initializers, e.g. super admin / system device)
-        let personal_categories =
-            organization_categories.clone().unwrap_or_else(|| vec!["Personal".to_string()]);
+        let personal_categories = organization_categories
+            .clone()
+            .unwrap_or_else(|| vec!["Personal".to_string()]);
         let personal_organization_id = create_new_organization(
             "Personal Organization".to_string(),
             personal_categories,
@@ -262,8 +269,9 @@ pub async fn register(
         .await?;
     }
 
-    let team_categories =
-        organization_categories.clone().unwrap_or_else(|| vec!["Team".to_string()]);
+    let team_categories = organization_categories
+        .clone()
+        .unwrap_or_else(|| vec!["Team".to_string()]);
     team_organization_id = Some(
         create_new_organization(
             team_organization_name
