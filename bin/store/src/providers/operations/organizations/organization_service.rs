@@ -92,6 +92,14 @@ pub async fn register(
 
     let _personal_organization_id: Option<String> = None;
 
+    // Determine a concrete account_organization_id to use everywhere (created_by and AO id)
+    let default_account_organization_id = if !account_organization_id.is_empty() {
+        account_organization_id.clone()
+    } else {
+        Ulid::new().to_string()
+    };
+    let created_by_override = Some(default_account_organization_id.clone());
+
     let now = chrono::Utc::now();
     let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
     let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
@@ -190,9 +198,8 @@ pub async fn register(
         }
     } else {
         //create a personal organization (use static ID only when set by initializers, e.g. super admin / system device)
-        let personal_categories = organization_categories
-            .clone()
-            .unwrap_or_else(|| vec!["Personal".to_string()]);
+        let personal_categories =
+            organization_categories.clone().unwrap_or_else(|| vec!["Personal".to_string()]);
         let personal_organization_id = create_new_organization(
             "Personal Organization".to_string(),
             personal_categories,
@@ -205,7 +212,7 @@ pub async fn register(
             } else {
                 None
             },
-            responsible_account_organization_id.clone(),
+            created_by_override.clone(),
         )
         .await?;
 
@@ -231,15 +238,14 @@ pub async fn register(
             } else {
                 None
             },
-            responsible_account_organization_id.clone(),
+            created_by_override.clone(),
             Some(true),
         )
         .await?;
     }
 
-    let team_categories = organization_categories
-        .clone()
-        .unwrap_or_else(|| vec!["Team".to_string()]);
+    let team_categories =
+        organization_categories.clone().unwrap_or_else(|| vec!["Team".to_string()]);
     team_organization_id = Some(
         create_new_organization(
             team_organization_name
@@ -253,7 +259,7 @@ pub async fn register(
             } else {
                 None
             },
-            responsible_account_organization_id.clone(),
+            created_by_override.clone(),
         )
         .await?,
     );
@@ -294,7 +300,7 @@ pub async fn register(
                     created_time: Some(formatted_time.clone()),
                     updated_date: Some(formatted_date.clone()),
                     updated_time: Some(formatted_time.clone()),
-                    created_by: responsible_account_organization_id.clone(),
+                    created_by: created_by_override.clone(),
                     ..Default::default()
                 };
 
@@ -320,7 +326,7 @@ pub async fn register(
                     created_time: Some(formatted_time.clone()),
                     updated_date: Some(formatted_date.clone()),
                     updated_time: Some(formatted_time.clone()),
-                    created_by: responsible_account_organization_id.clone(),
+                    created_by: created_by_override.clone(),
                     ..Default::default()
                 };
 
@@ -335,7 +341,7 @@ pub async fn register(
 
                 // Create Account Organization using AccountOrganizationModel
                 let account_organization = AccountOrganizationModel {
-                    id: Some(Ulid::new().to_string()),
+                    id: Some(default_account_organization_id.clone()),
                     email: Some(account_id.clone()),
                     categories: Some(account_organization_categories.clone().unwrap_or_else(|| vec!["Internal User".to_string()])),
                     account_id: Some(_account_id.clone()),
@@ -351,7 +357,7 @@ pub async fn register(
                     created_time: Some(formatted_time.clone()),
                     updated_date: Some(formatted_date.clone()),
                     updated_time: Some(formatted_time.clone()),
-                    created_by: responsible_account_organization_id.clone(),
+                    created_by: created_by_override.clone(),
                     ..Default::default()
                 };
 
@@ -379,7 +385,9 @@ pub async fn register(
                     let update_result = diesel::update(
                         organizations::table.filter(organizations::id.eq(&team_organization_id))
                     )
-                    .set(organizations::created_by.eq(&account_org_id))
+                    .set(organizations::created_by.eq(
+                        &created_by_override.clone().unwrap_or_else(|| account_org_id.clone()),
+                    ))
                     .execute(&mut conn)
                     .await;
 
@@ -455,7 +463,7 @@ pub async fn register(
                     created_time: Some(formatted_time.clone()),
                     updated_date: Some(formatted_date.clone()),
                     updated_time: Some(formatted_time.clone()),
-                    created_by: responsible_account_organization_id.clone(),
+                    created_by: created_by_override.clone(),
                     ..Default::default()
                 };
 
@@ -480,7 +488,7 @@ pub async fn register(
 
             // Create AccountOrganizationModel
             let account_organization = AccountOrganizationModel {
-                id: Some(account_org_id.clone()),
+                id: Some(default_account_organization_id.clone()),
                 email: Some(account_id.clone()),
                 account_id: Some(_account_id.clone()),
                 organization_id: team_organization_id.clone(),
@@ -492,7 +500,7 @@ pub async fn register(
                 created_time: Some(formatted_time.clone()),
                 updated_date: Some(formatted_date.clone()),
                 updated_time: Some(formatted_time.clone()),
-                created_by: responsible_account_organization_id.clone(),
+                created_by: created_by_override.clone(),
                 device_id: if !is_contact_account { device_id.clone() } else { None },
                 // Conditional fields for non-contact accounts
                 account_organization_status: if !is_contact_account && is_request {
@@ -537,7 +545,9 @@ pub async fn register(
                 let update_result = diesel::update(
                     organizations::table.filter(organizations::id.eq(&params.organization_id.clone().unwrap_or_default()))
                 )
-                .set(organizations::created_by.eq(&account_org_id))
+                .set(organizations::created_by.eq(
+                    &created_by_override.clone().unwrap_or_else(|| account_org_id.clone()),
+                ))
                 .execute(&mut conn)
                 .await;
 

@@ -44,6 +44,16 @@ impl CodePrefixInitializer {
                 digits_number: 6,
             },
         );
+        prefixes.insert(
+            "contacts".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "CO".to_string(),
+                counter: 0,
+                entity: "contacts".to_string(),
+                digits_number: 6,
+            },
+        );
         // Initialize with the example provided
         prefixes.insert(
             "devices".to_string(),

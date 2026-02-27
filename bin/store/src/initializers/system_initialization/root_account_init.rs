@@ -91,6 +91,10 @@ impl RootAccountInitializer {
         let formatted_date = now.format("%Y-%m-%d").to_string();
         let formatted_time = now.format("%H:%M:%S").to_string();
 
+        // In this initializer, the account organization uses the same static ULID as the root account.
+        // Use the AO ID for created_by fields.
+        let root_account_org_id = root_account_id.clone();
+
         // Create system fields
         let system_fields = (
             0,                      // tombstone
@@ -127,6 +131,7 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
+            created_by: Some(root_account_org_id.clone()),
             sync_status: Some("complete".to_string()),
             ..Default::default()
         };
@@ -156,6 +161,7 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
+            created_by: Some(root_account_org_id.clone()),
             sync_status: Some("complete".to_string()),
             ..Default::default()
         };
@@ -172,6 +178,7 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
+            created_by: Some(root_account_org_id.clone()),
             sync_status: Some("complete".to_string()),
             ..Default::default()
         };
@@ -190,6 +197,7 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
+            created_by: Some(root_account_org_id.clone()),
             sync_status: Some("complete".to_string()),
             ..Default::default()
         };
