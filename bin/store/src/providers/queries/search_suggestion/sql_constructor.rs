@@ -7,6 +7,7 @@ use crate::providers::queries::search_suggestion::{
     structs::{ConcatenatedExpressions, FieldFiltersResult},
     utils::get_field_filters,
 };
+use crate::database::schema::verify::field_type_in_table;
 use crate::structs::core::{
     ConcatenateField, FilterCriteria, GroupAdvanceFilter, Join, SearchSuggestionParams,
 };
@@ -267,7 +268,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                         time_format
                                     )
                                 );
-                            } else if field.eq_ignore_ascii_case("timestamp") {
+                            } else if is_timestamp_column(entity.as_str(), field) {
                                 let date_fmt = date_format.unwrap_or("YYYY-mm-dd");
                                 entity_field = format!(
                                     "{}",
@@ -755,5 +756,36 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         } else {
             String::from("")
         }
+    }
+}
+
+fn is_timestamp_column(table: &str, field: &str) -> bool {
+    if let Some(info) = field_type_in_table(table, field) {
+        info.field_type == "timestamp"
+    } else {
+        false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_detect_timestamp_columns_by_type_for_search_suggestion() {
+        // sample_checks.some_test_field -> Timestamp
+        assert!(is_timestamp_column(
+            "sample_checks",
+            "some_test_field"
+        ));
+
+        // sample_checks.timestamp2 -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
+        assert!(is_timestamp_column(
+            "sample_checks",
+            "timestamp2"
+        ));
+
+        // Non-timestamp column should not be treated as timestamp
+        assert!(!is_timestamp_column("sample_checks", "id"));
     }
 }

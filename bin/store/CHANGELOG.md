@@ -5,6 +5,23 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.36
+
+### Author
+Kashan
+
+### Fixed
+  - ***Timestamp and timestamptz handling in queries and sync***:
+    - Updated `FieldTypeInfo` in `database/schema/verify.rs` to track `is_timestamptz` so we can distinguish `timestamp` vs `timestamptz` while still simplifying both to the `"timestamp"` logical type for query constructors.
+    - Adjusted sync message parsing in `providers/operations/sync/store/store_driver.rs` to serialize `timestamp` fields as naive datetimes (no timezone, for `NaiveDateTime`) and `timestamptz` fields as RFC3339 with timezone (for `DateTime<Utc>`), fixing “trailing input” deserialization errors.
+    - Normalized API request and sync payloads for timestamp/timestamptz fields in `structs/core.rs` so they are always parsed as valid RFC3339 before being stored or sent.
+    - Updated `sample_checks` and `sessions` models to use correct chrono types for `timestamp` and `timestamptz` columns (e.g. `last_accessed: DateTime<Utc>`), ensuring round-trip sync works both on create and when bootstrapping from the server.
+
+### Added
+  - ***Timestamp-aware query constructors tests***:
+    - Added unit tests for `GroupByConstructor`, `WhereConstructor`, `OrderByConstructor`, and search suggestion SQL to assert that `field_type_in_table` treats both `timestamp` and `timestamptz` columns as timestamp types and leaves non-timestamp fields untouched.
+    - These tests cover the new behavior using the `sample_checks` table (`some_test_field` as `timestamp`, `timestamp2` as `timestamptz`) so that future schema or constructor changes don’t regress timestamp handling.
+
 ## 0.2.35
 ### Author
 Bert

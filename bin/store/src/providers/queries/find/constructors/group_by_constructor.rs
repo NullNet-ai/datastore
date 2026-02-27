@@ -1,4 +1,5 @@
 use crate::database::schema::hypertables::is_hypertable;
+use crate::database::schema::verify::field_type_in_table;
 use crate::structs::core::{ConcatenateField, GroupBy, Join};
 use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 use std::collections::HashMap;
@@ -216,7 +217,7 @@ impl<'a> GroupByConstructor<'a> {
                         with_alias,
                         time_format,
                     )
-                } else if field.eq_ignore_ascii_case("timestamp") {
+                } else if Self::is_timestamp_column(table, field) {
                     timestamp_format_wrapper(
                         table,
                         field,
@@ -235,6 +236,14 @@ impl<'a> GroupByConstructor<'a> {
                 };
                 field_expr
             }
+        }
+    }
+
+    fn is_timestamp_column(table: &str, field: &str) -> bool {
+        if let Some(info) = field_type_in_table(table, field) {
+            info.field_type == "timestamp"
+        } else {
+            false
         }
     }
 
@@ -257,5 +266,31 @@ impl<'a> GroupByConstructor<'a> {
         time_format: &str,
     ) -> String {
         time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_detect_timestamp_columns_by_type_for_group_by() {
+        // sample_checks.some_test_field -> Timestamp
+        assert!(GroupByConstructor::is_timestamp_column(
+            "sample_checks",
+            "some_test_field"
+        ));
+
+        // sample_checks.timestamp2 -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
+        assert!(GroupByConstructor::is_timestamp_column(
+            "sample_checks",
+            "timestamp2"
+        ));
+
+        // Non-timestamp column should not be treated as timestamp
+        assert!(!GroupByConstructor::is_timestamp_column(
+            "sample_checks",
+            "id"
+        ));
     }
 }

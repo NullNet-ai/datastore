@@ -1,3 +1,4 @@
+use crate::database::schema::verify::field_type_in_table;
 use crate::structs::core::{ConcatenateField, GroupBy, SortOption};
 use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
 
@@ -345,7 +346,7 @@ where
     ) -> String {
         let base_field = format!("\"{}\".\"{}\"", table, field);
 
-        let formatted_field = if field.eq_ignore_ascii_case("timestamp") {
+        let formatted_field = if Self::is_timestamp_column(table, field) {
             timestamp_format_wrapper(table, field, format_str, time_format, timezone, with_alias)
         } else if format_str.contains("%Y")
             || format_str.contains("%m")
@@ -376,6 +377,14 @@ where
         }
     }
 
+    fn is_timestamp_column(table: &str, field: &str) -> bool {
+        if let Some(info) = field_type_in_table(table, field) {
+            info.field_type == "timestamp"
+        } else {
+            false
+        }
+    }
+
     fn date_format_wrapper(
         table: &str,
         field: &str,
@@ -395,6 +404,32 @@ where
         time_format: &str,
     ) -> String {
         time_format_wrapper(table, field, timezone, main_table, with_alias, time_format)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_detect_timestamp_columns_by_type_for_order_by_constructor() {
+        // sample_checks.some_test_field -> Timestamp
+        assert!(OrderByConstructor::is_timestamp_column(
+            "sample_checks",
+            "some_test_field"
+        ));
+
+        // sample_checks.timestamp2 -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
+        assert!(OrderByConstructor::is_timestamp_column(
+            "sample_checks",
+            "timestamp2"
+        ));
+
+        // Non-timestamp column should not be treated as timestamp
+        assert!(!OrderByConstructor::is_timestamp_column(
+            "sample_checks",
+            "id"
+        ));
     }
 }
 

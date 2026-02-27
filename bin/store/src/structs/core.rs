@@ -1,4 +1,5 @@
 use crate::database::schema::forbidden_tables;
+use crate::database::schema::verify::field_type_in_table;
 use crate::providers::operations::sync::hlc::mutable_timestamp::MutableTimestamp;
 use actix_web::{HttpResponse, ResponseError};
 use chrono::Utc;
@@ -91,6 +92,36 @@ pub struct SwitchAccountData {
     pub organization_id: String,
 }
 
+/// Ensure the string has an RFC3339 timezone so chrono accepts it.
+/// - "2026-02-27T10:30:00" or "2025-12-01 23:06:21.25" -> append "+00:00"
+/// - "...+00" or "...-05" -> append ":00" so offset is full (+00:00, -05:00)
+fn ensure_rfc3339_has_timezone(s: &str) -> String {
+    let s = s.trim();
+    if s.ends_with('Z') {
+        return s.to_string();
+    }
+    // Already has full offset (+HH:MM or -HH:MM)
+    if s.contains('+') || s.rfind('-').map_or(false, |i| i > 10) {
+        // Normalize short offset e.g. "+00" -> "+00:00"
+        if s.len() >= 3 {
+            let rest = &s[s.len() - 3..];
+            if (rest.starts_with('+') || rest.starts_with('-'))
+                && rest[1..].chars().all(|c| c.is_ascii_digit())
+            {
+                return format!("{}:00", s);
+            }
+        }
+        return s.to_string();
+    }
+    // No timezone: append +00:00 (and ensure space-separated has T for RFC3339)
+    let with_t = if s.contains(' ') && !s.contains('T') {
+        s.replace(' ', "T")
+    } else {
+        s.to_string()
+    };
+    format!("{}+00:00", with_t)
+}
+
 impl RequestBody {
     // Process record with common fields and return a Value directly
     pub fn process_record(
@@ -102,6 +133,9 @@ impl RequestBody {
     ) {
         // // Add common fields to the record
         self.add_common_fields(operation, auth, is_root_account, table);
+
+        // Normalize all timestamp/timestamptz fields to RFC3339 so model deserialization and sync succeed
+        self.normalize_timestamp_fields(table);
 
         if let Some(timestamp) = self.record.get_mut("timestamp") {
             if let Some(ts_str) = timestamp.as_str() {
@@ -128,6 +162,31 @@ impl RequestBody {
             let now = chrono::Utc::now();
             let formatted_timestamp = now.format("%Y-%m-%dT%H:%M:%S%.6f").to_string();
             self.record["timestamp"] = json!(formatted_timestamp);
+        }
+    }
+
+    /// Ensure every timestamp/timestamptz field in the record has an RFC3339 timezone so chrono
+    /// deserialization and sync message parsing succeed (e.g. "2026-02-27T10:30:00" -> "...+00:00").
+    fn normalize_timestamp_fields(&mut self, table: &str) {
+        let obj = match self.record.as_object_mut() {
+            Some(o) => o,
+            None => return,
+        };
+        let keys: Vec<String> = obj.keys().cloned().collect();
+        for key in keys {
+            if let Some(info) = field_type_in_table(table, &key) {
+                if info.field_type != "timestamp" {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+            if let Some(Value::String(s)) = obj.get(&key) {
+                let normalized = ensure_rfc3339_has_timezone(s);
+                if normalized != *s {
+                    obj.insert(key, Value::String(normalized));
+                }
+            }
         }
     }
 
