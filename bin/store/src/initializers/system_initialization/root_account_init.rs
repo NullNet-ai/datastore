@@ -8,7 +8,6 @@ use crate::generated::models::counter_model::CounterModel;
 use crate::generated::models::organization_model::OrganizationModel;
 use crate::generated::schema;
 use crate::initializers::system_initialization::structs::InitializerParams;
-use crate::utils::helpers;
 use actix_web::http::StatusCode;
 use chrono::Utc;
 use diesel::prelude::*;
@@ -64,6 +63,12 @@ impl RootAccountInitializer {
             .await
             .optional()?;
 
+        let account_organizations_counter = schema::counters::table
+            .filter(schema::counters::dsl::entity.eq("account_organizations"))
+            .first::<CounterModel>(&mut conn)
+            .await
+            .optional()?;
+
         // Generate code function
         let generate_root_account_code = |counter: &CounterModel| -> String {
             let root_count = 0;
@@ -90,10 +95,6 @@ impl RootAccountInitializer {
         let now = Utc::now();
         let formatted_date = now.format("%Y-%m-%d").to_string();
         let formatted_time = now.format("%H:%M:%S").to_string();
-
-        // In this initializer, the account organization uses the same static ULID as the root account.
-        // Use the AO ID for created_by fields.
-        let root_account_org_id = root_account_id.clone();
 
         // Create system fields
         let system_fields = (
@@ -131,7 +132,6 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
-            created_by: Some(root_account_org_id.clone()),
             sync_status: Some("complete".to_string()),
             ..Default::default()
         };
@@ -147,12 +147,6 @@ impl RootAccountInitializer {
             categories: Some(vec!["Root".to_string()]),
             account_id: Some(account_id.clone()),
             account_secret: Some(hashed_password),
-            code: helpers::generate_code("accounts").await.map_err(|e| {
-                ApiError::new(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to generate account code: {}", e),
-                )
-            })?,
             organization_id: Some(personal_organization_id.clone()),
             account_status: Some("Active".to_string()),
             tombstone: Some(system_fields.0),
@@ -161,7 +155,6 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
-            created_by: Some(root_account_org_id.clone()),
             sync_status: Some("complete".to_string()),
             ..Default::default()
         };
@@ -178,7 +171,6 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
-            created_by: Some(root_account_org_id.clone()),
             sync_status: Some("complete".to_string()),
             ..Default::default()
         };
@@ -197,19 +189,14 @@ impl RootAccountInitializer {
             created_time: Some(system_fields.3.clone()),
             updated_date: Some(system_fields.4.clone()),
             updated_time: Some(system_fields.5.clone()),
-            created_by: Some(root_account_org_id.clone()),
             sync_status: Some("complete".to_string()),
             ..Default::default()
         };
 
-        root_account_organization.code = helpers::generate_code("account_organizations")
-            .await
-            .map_err(|e| {
-                ApiError::new(
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    format!("Failed to generate account organization code: {}", e),
-                )
-            })?;
+        // Add code if counter exists
+        if let Some(counter) = &account_organizations_counter {
+            root_account_organization.code = Some(generate_root_account_code(counter));
+        }
 
         // Start a transaction
         let result = conn

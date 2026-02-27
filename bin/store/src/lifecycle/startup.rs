@@ -1,6 +1,6 @@
 use crate::config::core::EnvConfig;
 use crate::database::db;
-use crate::initializers::system_initialization::init::{initialize, initialize_all};
+use crate::initializers::system_initialization::init::initialize;
 use crate::initializers::system_initialization::structs::EInitializer;
 use crate::lifecycle::logging::{LogCategory, LogLevel};
 use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
@@ -14,11 +14,7 @@ use crate::providers::storage::cache::{cache, CacheConfig};
 use log::{debug, error, info, warn};
 use std::sync::Arc;
 use std::time::Instant;
-use diesel::pg::PgConnection;
-use diesel::prelude::*;
-use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 
-pub const MIGRATIONS: EmbeddedMigrations = embed_migrations!("./migrations");
 /// Startup configuration validation result
 #[derive(Debug)]
 pub struct StartupValidation {
@@ -149,50 +145,6 @@ impl StartupManager {
             )
             .await;
 
-        self.logger
-            .log(
-                LogLevel::Info,
-                LogCategory::Startup,
-                "StartupManager",
-                "Running database migrations",
-            )
-            .await;
-        self.run_migrations().await?;
-
-        let run_initializers = std::env::var("RUN_INITIALIZERS_ON_STARTUP")
-            .unwrap_or_else(|_| "false".to_string())
-            .to_lowercase()
-            == "true";
-        if run_initializers {
-            self.logger
-                .log(
-                    LogLevel::Info,
-                    LogCategory::Startup,
-                    "StartupManager",
-                    "Running initialize_all during startup",
-                )
-                .await;
-            if let Err(e) = initialize_all(None).await {
-                self.logger
-                    .log(
-                        LogLevel::Error,
-                        LogCategory::Startup,
-                        "StartupManager",
-                        &format!("initialize_all failed: {}", e),
-                    )
-                    .await;
-                return Err(e.into());
-            }
-            self.logger
-                .log(
-                    LogLevel::Info,
-                    LogCategory::Startup,
-                    "StartupManager",
-                    "initialize_all completed successfully",
-                )
-                .await;
-        }
-
         // Phase 4: Background services initialization
         self.logger
             .log(
@@ -236,17 +188,6 @@ impl StartupManager {
             )
             .await;
 
-        Ok(())
-    }
-
-    async fn run_migrations(&self) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let database_url = self.config.database_url.clone();
-        tokio::task::spawn_blocking(move || -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-            let mut conn = PgConnection::establish(&database_url)?;
-            conn.run_pending_migrations(MIGRATIONS)?;
-            Ok(())
-        })
-        .await??;
         Ok(())
     }
 
