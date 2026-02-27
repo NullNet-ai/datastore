@@ -1,0 +1,58 @@
+use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(
+    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
+)]
+#[diesel(table_name = crate::generated::schema::pages)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[serde(default)]
+pub struct PageModel {
+    pub tombstone: Option<i32>,
+    pub status: Option<String>,
+    pub previous_status: Option<String>,
+    pub version: Option<i32>,
+    pub created_date: Option<String>,
+    pub created_time: Option<String>,
+    pub updated_date: Option<String>,
+    pub updated_time: Option<String>,
+    pub organization_id: Option<String>,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
+    pub deleted_by: Option<String>,
+    pub requested_by: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub tags: Option<Vec<String>>,
+    pub categories: Option<Vec<String>>,
+    pub code: Option<String>,
+    pub id: Option<String>,
+    pub sensitivity_level: Option<i32>,
+    pub sync_status: Option<String>,
+    pub is_batch: Option<bool>,
+    pub image_url: Option<String>,
+    pub website_id: Option<String>,
+    pub audit_id: Option<String>,
+    pub upstream_audit_id: Option<String>,
+    pub crawl_id: Option<String>,
+    pub page_title: Option<String>,
+    pub page_url: Option<String>,
+    pub page_links: Option<String>,
+    pub page_headers: Option<String>,
+    pub screenshot_url: Option<String>,
+    pub category: Option<String>,
+    pub page_hash: Option<String>,
+    pub page_accessible_url: Option<String>,
+    pub page_accessibility_score: Option<i32>,
+    pub page_image_count: Option<i32>,
+    pub page_document_count: Option<i32>,
+    pub page_multimedia_count: Option<i32>,
+    pub page_broken_link_count: Option<i32>,
+    pub is_excluded: Option<bool>,
+    pub capture: Option<String>,
+    pub website_url: Option<String>,
+    pub scan_rule: Option<String>,
+    pub page_status_code: Option<String>,
+    pub has_form: Option<bool>,
+    pub form_count: Option<i32>,
+    pub forms: Option<String>,
+}

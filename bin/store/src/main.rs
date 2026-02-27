@@ -59,7 +59,7 @@ async fn bootstrap_with_lifecycle() -> std::io::Result<()> {
         level: LogLevel::Info,
         enable_console: true,
         enable_file: true,
-        file_path: Some("logs/lifecycle.log".to_string()),
+        file_path: Some("lifecycle.log".to_string()),
         enable_structured: true,
         max_entries: 10000,
     };

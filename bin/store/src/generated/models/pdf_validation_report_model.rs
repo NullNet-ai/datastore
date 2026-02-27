@@ -1,0 +1,57 @@
+use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(
+    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
+)]
+#[diesel(table_name = crate::generated::schema::pdf_validation_reports)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[serde(default)]
+pub struct PdfValidationReportModel {
+    pub tombstone: Option<i32>,
+    pub status: Option<String>,
+    pub previous_status: Option<String>,
+    pub version: Option<i32>,
+    pub created_date: Option<String>,
+    pub created_time: Option<String>,
+    pub updated_date: Option<String>,
+    pub updated_time: Option<String>,
+    pub organization_id: Option<String>,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
+    pub deleted_by: Option<String>,
+    pub requested_by: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub tags: Option<Vec<String>>,
+    pub categories: Option<Vec<String>>,
+    pub code: Option<String>,
+    pub id: Option<String>,
+    pub sensitivity_level: Option<i32>,
+    pub sync_status: Option<String>,
+    pub is_batch: Option<bool>,
+    pub image_url: Option<String>,
+    pub website_id: Option<String>,
+    pub audit_id: Option<String>,
+    pub page_id: Option<String>,
+    pub file_id: Option<String>,
+    pub queue_item_id: Option<String>,
+    pub profile_name: Option<String>,
+    pub statement: Option<String>,
+    pub is_compliant: Option<bool>,
+    pub passed_rule: Option<i32>,
+    pub failed_rule: Option<i32>,
+    pub passed_check: Option<i32>,
+    pub failed_check: Option<i32>,
+    pub duration_ms: Option<i32>,
+    pub build_core_version: Option<String>,
+    pub validation_model_version: Option<String>,
+    pub gui_version: Option<String>,
+    pub verapdf_version: Option<String>,
+    pub upstream_issues_count: Option<i32>,
+    pub fixed_issues_count: Option<i32>,
+    pub remaining_issues_count: Option<i32>,
+    pub accessibility_score: Option<String>,
+    pub published_issues_count: Option<i32>,
+    pub published_date: Option<String>,
+    pub published_time: Option<String>,
+}

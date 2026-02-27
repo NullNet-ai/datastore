@@ -427,7 +427,7 @@ store-clean-setup:
 				expect "Enter password for database cleanup:"; \
 				send "admin\r"; \
 				expect { \
-					"Store is running" { \
+					"Store is running on " { \
 						puts "\n=== Setup completed successfully! ==="; \
 						kill [exp_pid]; \
 						exit 0 \
