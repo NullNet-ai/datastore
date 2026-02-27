@@ -7,15 +7,15 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 # Set workspace
-WORKDIR /usr/src/crdt-workspace
-
+# Install build dependencies
+RUN apt-get update && \
 # Copy workspace
-COPY . .
+
 
 # Build server
-WORKDIR /usr/src/crdt-workspace/bin/store
-RUN cargo build --release
+COPY --from=builder /usr/src/crdt-workspace/target/release/store /usr/local/bin/store
 
+# Set the startup command
 # Final image
 FROM debian:bullseye-slim
 
@@ -23,7 +23,4 @@ RUN apt-get update && \
     apt-get install -y libpq5 && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/crdt-workspace/target/release/store /usr/local/bin/store
-
 # Set the startup command
-CMD ["store"]

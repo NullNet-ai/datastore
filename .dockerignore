@@ -1,0 +1,15 @@
+target
+**/target
+.git
+.gitignore
+.vscode
+.idea
+.DS_Store
+logs
+bin/store/logs
+bin/store/tests
+bin/store/raw_queries
+.mycheckpoints
+.env
+.env.local
+skills

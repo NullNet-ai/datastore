@@ -30,6 +30,7 @@ impl SystemDeviceInitializer {
             account_type: Some(AccountType::Device),
             organization_id: Some(default_organization_id.clone()),
             organization_name: Some(default_organization_name.clone()),
+            organization_categories: None,
             account_id: default_device_id,
             account_secret: default_device_secret,
             first_name: "".to_string(),

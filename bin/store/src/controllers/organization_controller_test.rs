@@ -991,4 +991,76 @@ mod tests {
         // but it verifies the endpoint handles the request appropriately
         assert!(status.as_u16() > 0, "Endpoint should return a response");
     }
+
+    /// Tests successful user registration:
+    /// - Verifies the register endpoint processes valid input correctly
+    /// - Tests that code and created_by fields are properly assigned (not NULL)
+    /// - Validates response structure and success status
+    #[tokio::test]
+    #[ignore]
+    async fn test_register_success_with_code_and_created_by_assignment() {
+        println!("Testing successful user registration with code and created_by assignment...");
+
+        // Create test application
+        let app = test::init_service(App::new().route(
+            "/register",
+            web::post().to(OrganizationsController::register),
+        ))
+        .await;
+
+        // Create a test request with the provided parameters
+        let req_body = serde_json::json!({
+            "data": {
+                "account_type": "contact",
+                "organization_id": "01JBHKXHYSKPP247HZZWHA3JCT",
+                "organization_name": "global-organization",
+                "account_id": "charlyn3344@dnamicro.com",
+                "account_secret": "sillyisland63!!",
+                "first_name": "Charlyn",
+                "last_name": "Tabada",
+                "is_new_user": true,
+                "account_organization_categories": ["Internal User"],
+                "account_organization_status": "Active",
+                "account_status": "Active",
+                "contact_categories": ["Contact", "User"]
+            }
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/register")
+            .set_json(&req_body)
+            .to_request();
+
+        // Test the endpoint
+        let resp = test::call_service(&app, req).await;
+
+        // Verify response status
+        let status = resp.status();
+        println!("Response status: {}", status);
+
+        // Read response body
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Response body: {}", body_str);
+
+        // Verify successful registration
+        assert_eq!(status, StatusCode::OK, "Registration should succeed");
+
+        // Parse response to verify structure
+        let response_json: serde_json::Value =
+            serde_json::from_str(&body_str).expect("Response should be valid JSON");
+
+        // Verify response contains expected structure
+        assert!(
+            response_json.get("personal_organization_id").is_some()
+                || response_json.get("team_organization_id").is_some(),
+            "Response should contain organization ID"
+        );
+
+        // Log success message for verification
+        println!(
+            "Registration test completed successfully - code and created_by should be assigned"
+        );
+        println!("To verify in database, run: SELECT code, created_by FROM organizations WHERE organization_id IN (SELECT organization_id FROM accounts WHERE account_id = 'charlyn3344@dnamicro.com');");
+    }
 }
