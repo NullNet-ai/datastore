@@ -14,7 +14,26 @@ pub struct CodePrefixInitializer {
 impl CodePrefixInitializer {
     pub fn new() -> Self {
         let mut prefixes = HashMap::new();
-
+        prefixes.insert(
+            "accounts".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "A".to_string(),
+                counter: 0,
+                entity: "accounts".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "account_organizations".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "AO".to_string(),
+                counter: 0,
+                entity: "account_organizations".to_string(),
+                digits_number: 6,
+            },
+        );
         // Initialize with the example provided
         prefixes.insert(
             "devices".to_string(),
