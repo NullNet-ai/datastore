@@ -216,11 +216,11 @@ mod tests {
         let mut pluck_object = HashMap::new();
         pluck_object.insert(
             "created_by".to_string(),
-            vec!["id", "first_name", "last_name"],
+            vec!["id", "first_name", "last_name", "full_name"],
         );
         pluck_object.insert(
             "updated_by".to_string(),
-            vec!["id", "first_name", "last_name"],
+            vec!["id", "first_name", "last_name", "full_name"],
         );
         pluck_object.insert(
             "organizations".to_string(),
@@ -228,7 +228,7 @@ mod tests {
         );
 
         let filter = create_test_filter(
-            vec![], // empty pluck
+            vec!["id"], // non-empty pluck to trigger pluck_object path
             pluck_object,
             concatenate_fields,
         );
@@ -287,7 +287,7 @@ mod tests {
         let mut pluck_object = HashMap::new();
         pluck_object.insert(
             "created_by".to_string(),
-            vec!["id", "first_name", "last_name"],
+            vec!["id", "first_name", "last_name", "full_name"],
         );
         pluck_object.insert(
             "organizations".to_string(),
@@ -295,7 +295,7 @@ mod tests {
         );
 
         let filter = create_test_filter(
-            vec![], // empty pluck
+            vec!["id"], // non-empty pluck to trigger pluck_object path
             pluck_object,
             concatenate_fields,
         );
@@ -347,12 +347,12 @@ mod tests {
         let mut pluck_object = HashMap::new();
         pluck_object.insert(
             "created_by".to_string(),
-            vec!["id", "first_name", "last_name", "email"],
+            vec!["id", "first_name", "last_name", "email", "full_name"],
         );
         pluck_object.insert("organizations".to_string(), vec!["id", "name"]);
 
         let filter = create_test_filter(
-            vec![], // empty pluck
+            vec!["id"], // non-empty pluck to trigger pluck_object path
             pluck_object,
             concatenate_fields,
         );
@@ -405,11 +405,11 @@ mod tests {
         let mut pluck_object = HashMap::new();
         pluck_object.insert(
             "contacts".to_string(),
-            vec!["id", "first_name", "last_name", "email"],
+            vec!["id", "first_name", "last_name", "email", "full_name"],
         );
 
         let filter = create_test_filter(
-            vec![], // empty pluck
+            vec!["id"], // non-empty pluck to trigger pluck_object path
             pluck_object,
             concatenate_fields,
         );

@@ -1,5 +1,38 @@
 use serde::{Deserialize, Serialize};
 
+/// Scalar value for WHERE expression (string, number, boolean, null).
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum IndexWhereScalar {
+    String(String),
+    Int(i64),
+    Float(f64),
+    Bool(bool),
+    Null,
+}
+
+/// Recursive WHERE expression for partial index predicates.
+/// Supports and, or, not, and comparison ops: =, !=, <, <=, >, >=, IN, NOT IN, LIKE, ILIKE, IS, IS NOT.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(untagged)]
+pub enum WhereExpr {
+    And {
+        and: Vec<WhereExpr>,
+    },
+    Or {
+        or: Vec<WhereExpr>,
+    },
+    Not {
+        not: Box<WhereExpr>,
+    },
+    Pred {
+        op: String,
+        column: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        value: Option<serde_json::Value>,
+    },
+}
+
 /// Trait for defining table schemas using Diesel types
 #[allow(dead_code)]
 pub trait DieselTableDefinition {
@@ -91,6 +124,9 @@ pub struct IndexDefinition {
     pub columns: Vec<String>,
     pub is_unique: bool,
     pub index_type: Option<String>, // btree, hash, gin, gist, etc.
+    /// Partial index predicate (WHERE clause). Optional.
+    #[serde(default)]
+    pub where_clause: Option<WhereExpr>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -190,6 +226,7 @@ macro_rules! define_table_schema {
                                 columns: vec![$($col.to_string()),*],
                                 is_unique: $unique,
                                 index_type: $crate::define_table_schema!(@index_type $($index_type)?),
+                                where_clause: None,
                             },
                         )*
                     ]
@@ -277,6 +314,7 @@ macro_rules! define_table_schema {
                                 columns: vec![$($col.to_string()),*],
                                 is_unique: $unique,
                                 index_type: $crate::define_table_schema!(@index_type $($index_type)?),
+                                where_clause: None,
                             },
                         )*
                     ]

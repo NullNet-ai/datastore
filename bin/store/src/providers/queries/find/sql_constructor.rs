@@ -282,8 +282,17 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             |filters| self.build_infix_expression(filters),
         ));
 
-        sql.push_str(" FROM ");
-        sql.push_str(&self.table);
+        let field_array_selections = self.construct_pluck_group_field_arrays_selections();
+        if !field_array_selections.is_empty() {
+            if !sql.ends_with("SELECT ") {
+                sql.push_str(", ");
+            }
+            sql.push_str(&field_array_selections.join(", "));
+        }
+
+        // legacy ids/items selections are superseded by per-field arrays
+
+        sql.push_str(&format!(" FROM \"{}\" \"{}\"", self.table, self.table));
 
         sql.push_str(&JoinsConstructor::construct_joins(
             &self.request_body,
@@ -338,6 +347,249 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         Ok(sql)
     }
 
+    fn construct_pluck_group_field_arrays_selections(&self) -> Vec<String> {
+        let mut selections = Vec::new();
+        let pluck_group_object = self.request_body.get_pluck_group_object();
+        if pluck_group_object.is_empty() {
+            return selections;
+        }
+        for (alias_key, fields) in pluck_group_object.iter() {
+            if fields.is_empty() {
+                continue;
+            }
+            if let Some((idx, join)) = self.find_join_by_alias(alias_key) {
+                let to_alias = join
+                    .field_relation
+                    .to
+                    .alias
+                    .as_deref()
+                    .unwrap_or(&join.field_relation.to.entity);
+                let target_table = &join.field_relation.to.entity;
+                let previous_join = self.find_previous_join(idx, join);
+                for field in fields {
+                    let field_expr = Self::get_field(
+                        to_alias,
+                        field,
+                        self.request_body.get_date_format(),
+                        &self.table,
+                        self.timezone.as_deref(),
+                        false,
+                        self.request_body.get_time_format(),
+                        None,
+                    );
+                    let base_expr = field_expr
+                        .split(" AS ")
+                        .next()
+                        .map(|s| s.to_string())
+                        .unwrap_or(field_expr);
+                    let mut plural_field = field.clone();
+                    if !plural_field.ends_with('s') {
+                        plural_field.push('s');
+                    }
+                    let selection_alias = format!("{}_{}", to_alias, plural_field);
+                    let selection = if !join.nested {
+                        let mut where_conditions = Vec::new();
+                        let standard_where = match self.build_system_where_clause(to_alias) {
+                            Ok(clause) => clause,
+                            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                        };
+                        where_conditions.push(standard_where);
+                        let join_condition =
+                            self.build_join_condition_for_alias(to_alias, join, previous_join);
+                        where_conditions.push(join_condition);
+                        if !join.field_relation.to.filters.is_empty() {
+                            if let Ok(filter_expression) =
+                                self.build_infix_expression(&join.field_relation.to.filters)
+                            {
+                                if !filter_expression.is_empty() {
+                                    where_conditions.push(filter_expression);
+                                }
+                            }
+                        }
+                        let combined_where = where_conditions.join(" AND ");
+                        format!(
+                            "COALESCE( ( SELECT JSONB_AGG({}) FROM \"{}\" \"{}\" WHERE {} ), '[]' ) AS \"{}\"",
+                            base_expr, target_table, to_alias, combined_where, selection_alias
+                        )
+                    } else if let Some(prev_join) = previous_join {
+                        let (prev_alias, prev_table) = if prev_join.r#type == "self" {
+                            (
+                                prev_join
+                                    .field_relation
+                                    .from
+                                    .alias
+                                    .as_deref()
+                                    .unwrap_or(&prev_join.field_relation.from.entity),
+                                prev_join.field_relation.from.entity.as_str(),
+                            )
+                        } else {
+                            (
+                                prev_join
+                                    .field_relation
+                                    .to
+                                    .alias
+                                    .as_deref()
+                                    .unwrap_or(&prev_join.field_relation.to.entity),
+                                prev_join.field_relation.to.entity.as_str(),
+                            )
+                        };
+                        let parent_where = match self.build_system_where_clause(prev_alias) {
+                            Ok(clause) => clause,
+                            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", prev_alias),
+                        };
+                        let child_where = match self.build_system_where_clause(to_alias) {
+                            Ok(clause) => clause,
+                            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                        };
+                        let main_to_parent_correlation = format!(
+                            "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                            self.table,
+                            prev_join.field_relation.from.field,
+                            prev_alias,
+                            prev_join.field_relation.to.field
+                        );
+                        let on_condition = format!(
+                            "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                            to_alias,
+                            join.field_relation.to.field,
+                            prev_alias,
+                            join.field_relation.from.field
+                        );
+                        let mut where_conditions =
+                            vec![child_where, parent_where, main_to_parent_correlation];
+                        if !join.field_relation.to.filters.is_empty() {
+                            if let Ok(filter_expression) =
+                                self.build_infix_expression(&join.field_relation.to.filters)
+                            {
+                                if !filter_expression.is_empty() {
+                                    where_conditions.push(filter_expression);
+                                }
+                            }
+                        }
+                        let combined_where = where_conditions.join(" AND ");
+                        format!(
+                            "COALESCE( ( SELECT JSONB_AGG({}) FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} ), '[]' ) AS \"{}\"",
+                            base_expr, prev_table, prev_alias, target_table, to_alias, on_condition, combined_where, selection_alias
+                        )
+                    } else {
+                        let mut where_conditions = Vec::new();
+                        let standard_where = match self.build_system_where_clause(to_alias) {
+                            Ok(clause) => clause,
+                            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                        };
+                        where_conditions.push(standard_where);
+                        let join_condition =
+                            self.build_join_condition_for_alias(to_alias, join, None);
+                        where_conditions.push(join_condition);
+                        let combined_where = where_conditions.join(" AND ");
+                        format!(
+                            "COALESCE( ( SELECT JSONB_AGG({}) FROM \"{}\" \"{}\" WHERE {} ), '[]' ) AS \"{}\"",
+                            base_expr, target_table, to_alias, combined_where, selection_alias
+                        )
+                    };
+                    selections.push(selection);
+                }
+            }
+        }
+        selections
+    }
+
+    // legacy: construct_pluck_group_items_selections and construct_pluck_group_ids_selections were used previously
+
+    fn find_join_by_alias<'a>(&'a self, alias: &str) -> Option<(usize, &'a Join)> {
+        self.request_body
+            .get_joins()
+            .iter()
+            .enumerate()
+            .find(|(_, j)| {
+                j.field_relation
+                    .to
+                    .alias
+                    .as_deref()
+                    .map(|a| a == alias)
+                    .unwrap_or_else(|| j.field_relation.to.entity.as_str() == alias)
+            })
+    }
+
+    fn find_previous_join<'a>(&'a self, idx: usize, join: &'a Join) -> Option<&'a Join> {
+        if join.nested && idx > 0 {
+            return self.request_body.get_joins().get(idx - 1);
+        }
+        let current_from_ref = join
+            .field_relation
+            .from
+            .alias
+            .as_deref()
+            .unwrap_or(&join.field_relation.from.entity);
+        self.request_body.get_joins().iter().find(|j| {
+            let j_to_ref = j
+                .field_relation
+                .to
+                .alias
+                .as_deref()
+                .unwrap_or(&j.field_relation.to.entity);
+            j_to_ref == current_from_ref
+        })
+    }
+
+    fn build_join_condition_for_alias(
+        &self,
+        alias: &str,
+        join: &Join,
+        previous_join: Option<&Join>,
+    ) -> String {
+        let is_nested = join.nested;
+        let from_field = &join.field_relation.from.field;
+        let to_field = &join.field_relation.to.field;
+        if is_nested {
+            if let Some(prev_join) = previous_join {
+                let prev_to_alias = if prev_join.r#type == "self" {
+                    prev_join
+                        .field_relation
+                        .from
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.to.entity)
+                } else {
+                    prev_join
+                        .field_relation
+                        .to
+                        .alias
+                        .as_deref()
+                        .unwrap_or(&prev_join.field_relation.to.entity)
+                };
+                return format!(
+                    "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                    alias, to_field, prev_to_alias, from_field
+                );
+            }
+        }
+        let from_table_ref = if let Some(from_alias) = &join.field_relation.from.alias {
+            from_alias.as_str()
+        } else {
+            let from_entity = &join.field_relation.from.entity;
+            let matching_alias = self.request_body.get_joins().iter().find_map(|j| {
+                if let Some(alias) = &j.field_relation.to.alias {
+                    if alias == from_entity {
+                        return Some(alias.as_str());
+                    }
+                }
+                None
+            });
+            matching_alias.unwrap_or_else(|| {
+                if from_entity == &self.table {
+                    self.table.as_str()
+                } else {
+                    from_entity
+                }
+            })
+        };
+        format!(
+            "\"{}\".\"{}\" = \"{}\".\"{}\"",
+            from_table_ref, from_field, alias, to_field
+        )
+    }
+
     /// Builds a COUNT(DISTINCT id) query using the same filter parsing as construct().
     /// Reuses WhereConstructor and JoinsConstructor; no GROUP BY, ORDER BY, OFFSET, LIMIT.
     pub fn construct_count(&mut self) -> Result<String, String> {
@@ -351,7 +603,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
 
         let id_expr = format!("\"{}\".\"id\"", self.table);
         let mut sql = format!("SELECT COUNT(DISTINCT {}) FROM ", id_expr);
-        sql.push_str(&self.table);
+        sql.push_str(&format!("\"{}\" \"{}\"", self.table, self.table));
 
         sql.push_str(&JoinsConstructor::construct_joins(
             &self.request_body,
@@ -605,7 +857,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
     pub fn build_system_where_clause(&self, table_alias: &str) -> Result<String, String> {
         // For root access, only check tombstone
         if self.is_root {
-            return Ok(format!("({}.tombstone = 0)", table_alias));
+            return Ok(format!("(\"{}\".\"tombstone\" = 0)", table_alias));
         }
 
         // For non-root access, check organization constraints
@@ -618,7 +870,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         };
 
         Ok(format!(
-            "({}.tombstone = 0 AND {}.organization_id IS NOT NULL AND {}.organization_id = {})",
+            "(\"{}\".\"tombstone\" = 0 AND \"{}\".\"organization_id\" IS NOT NULL AND \"{}\".\"organization_id\" = {})",
             table_alias, table_alias, table_alias, organization_id
         ))
     }
@@ -877,58 +1129,68 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         case_sensitive: Option<bool>,
         match_pattern: Option<&MatchPattern>,
     ) -> String {
-        let (_table_name, field_name, field_with_table) =
-            // Check if field_name contains complex expressions (like COALESCE)
-            if field_name.contains("COALESCE") || field_name.contains("(") {
-                // This is already a complex expression, use it as-is
-                let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
-                    // Extract alias if present (e.g., "COALESCE(...) AS full_name" -> "full_name")
-                    field_name[start + 3..].trim().replace("\"", "")
-                } else {
-                    // Try to extract a meaningful name from the expression
-                    field_name.replace("\"", "")
-                };
-                (String::new(), extracted_field_name, field_name.to_string())
+        let (_table_name, field_name, field_with_table) = if field_name.contains("COALESCE")
+            || field_name.contains('(')
+            || field_name.contains("::")
+        {
+            let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
+                field_name[start + 3..].trim().replace("\"", "")
+            } else if field_name.contains("::") {
+                let base = field_name.splitn(2, "::").next().unwrap_or(field_name);
+                let field_part = base
+                    .rsplit('.')
+                    .next()
+                    .unwrap_or(base)
+                    .trim()
+                    .trim_matches('"')
+                    .to_string();
+                field_part
             } else {
-                // Handle simple field names with or without table prefix
-                let mut parts = field_name.split(".");
-                if let Some(first_part) = parts.next() {
-                    if let Some(second_part) = parts.next() {
-                        // Two parts: table.field
-                        let table_name = first_part.replace("\"", "");
-                        let field_name = second_part.replace("\"", "");
-                        let field_with_table = format!("{}.{}", table_name, field_name);
-                        (table_name, field_name, field_with_table)
-                    } else {
-                        // One part: just field_name - check if it's a concatenated field
-                        let field_name = first_part.replace("\"", "");
-                        // Check if this is a concatenated field that should be handled specially
-                        let is_concatenated_field = self.request_body.get_concatenate_fields()
-                            .iter()
-                            .any(|concat_field| concat_field.field_name == field_name);
-                        if is_concatenated_field {
-                            // For concatenated fields, generate the full concatenated expression
-                            let field_with_table = self.get_field_with_concatenation(
-                                &self.table,
-                                &field_name,
-                                self.request_body.get_date_format(),
-                                None,
-                                self.timezone.as_deref(),
-                                true,
-                                self.request_body.get_time_format(),
-                            );
-                            (String::new(), field_name, field_with_table)
-                        } else {
-                            // For regular fields without table prefix, assume main table
-                            let field_with_table = format!("{}.{}", &self.table, field_name);
-                            (self.table.clone(), field_name, field_with_table)
-                        }
-                    }
-                } else {
-                    // No parts (shouldn't happen, but handle gracefully)
-                    (String::new(), String::new(), String::new())
-                }
+                field_name.replace('"', "")
             };
+            (String::new(), extracted_field_name, field_name.to_string())
+        } else {
+            // Handle simple field names with or without table prefix
+            let mut parts = field_name.split(".");
+            if let Some(first_part) = parts.next() {
+                if let Some(second_part) = parts.next() {
+                    // Two parts: table.field
+                    let table_name = first_part.replace('"', "");
+                    let field_name = second_part.replace('"', "");
+                    let field_with_table = format!("\"{}\".\"{}\"", table_name, field_name);
+                    (table_name, field_name, field_with_table)
+                } else {
+                    // One part: just field_name - check if it's a concatenated field
+                    let field_name = first_part.replace('"', "");
+                    // Check if this is a concatenated field that should be handled specially
+                    let is_concatenated_field = self
+                        .request_body
+                        .get_concatenate_fields()
+                        .iter()
+                        .any(|concat_field| concat_field.field_name == field_name);
+                    if is_concatenated_field {
+                        // For concatenated fields, generate the full concatenated expression
+                        let field_with_table = self.get_field_with_concatenation(
+                            &self.table,
+                            &field_name,
+                            self.request_body.get_date_format(),
+                            None,
+                            self.timezone.as_deref(),
+                            true,
+                            self.request_body.get_time_format(),
+                        );
+                        (String::new(), field_name, field_with_table)
+                    } else {
+                        // For regular fields without table prefix, assume main table
+                        let field_with_table = format!("\"{}\".\"{}\"", &self.table, field_name);
+                        (self.table.clone(), field_name, field_with_table)
+                    }
+                }
+            } else {
+                // No parts (shouldn't happen, but handle gracefully)
+                (String::new(), String::new(), String::new())
+            }
+        };
         let plural_form = pluralizer::pluralize(&field_name, 2, false);
         let is_plural = plural_form == field_name;
         let values_str = values
@@ -978,9 +1240,14 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                 };
 
                 if is_plural {
+                    let expr = if field_with_table.contains("::text") {
+                        field_with_table.clone()
+                    } else {
+                        format!("{}::text", field_with_table)
+                    };
                     return format!(
-                        "{}::text {} '%{}%'",
-                        field_with_table,
+                        "{} {} '%{}%'",
+                        expr,
                         like_op,
                         values_str[0].trim_matches('\'')
                     );
@@ -1001,9 +1268,14 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                 };
 
                 if is_plural {
+                    let expr = if field_with_table.contains("::text") {
+                        field_with_table.clone()
+                    } else {
+                        format!("{}::text", field_with_table)
+                    };
                     return format!(
-                        "{}::text {} '%{}%'",
-                        field_with_table,
+                        "{} {} '%{}%'",
+                        expr,
                         like_op,
                         values_str[0].trim_matches('\'')
                     );
@@ -1046,7 +1318,12 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                 };
                 let pattern = self.build_like_pattern(&values_str[0], match_pattern);
                 if is_plural {
-                    return format!("{}::text {} {}", field_with_table, like_op, pattern);
+                    let expr = if field_with_table.contains("::text") {
+                        field_with_table.clone()
+                    } else {
+                        format!("{}::text", field_with_table)
+                    };
+                    return format!("{} {} {}", expr, like_op, pattern);
                 }
                 format!("{} {} {}", field_with_table, like_op, pattern)
             }

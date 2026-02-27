@@ -1,0 +1,3 @@
+-- This file should undo anything in `up.sql`
+
+ALTER TABLE "courses" DROP COLUMN IF EXISTS "name";

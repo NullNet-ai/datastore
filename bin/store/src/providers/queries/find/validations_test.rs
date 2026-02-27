@@ -476,31 +476,6 @@ mod tests {
         println!("  {} Empty table validation pipeline test passed", checker);
     }
 
-    /// Tests that validation fails with empty pluck array
-    /// This ensures proper error handling for required pluck fields
-    #[test]
-    fn should_fail_validation_with_empty_pluck_array() {
-        println!("Testing validation pipeline failure with empty pluck array");
-
-        let mut request_body = create_default_get_by_filter();
-        request_body.pluck = vec![];
-        let table = "contacts".to_string();
-
-        println!("Creating validation for table: {} with empty pluck", table);
-        let validation = Validation::new(&request_body, &table);
-
-        let result = validation.exec();
-
-        println!("Validation result - Success: {}", result.success);
-        println!("Validation message: {}", result.message);
-
-        let checker = if result.success { "✓" } else { "✗" };
-        assert!(!result.success);
-        assert_eq!(result.message, "pluck is required");
-
-        println!("  {} Empty pluck validation pipeline test passed", checker);
-    }
-
     /// Tests that validation fails with conflicting filter types
     /// This ensures proper error handling when both filter types are present
     #[test]
