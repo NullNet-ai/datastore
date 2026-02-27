@@ -564,7 +564,7 @@ mod tests {
         // Test the actual classrooms_filter.json configuration
         // This validates that full_name is auto-injected for created_by and updated_by
         // even though it's not explicitly listed in their pluck_object entries
-        
+
         let concatenate_fields = vec![
             create_concatenate_field(
                 vec!["first_name", "last_name"],
