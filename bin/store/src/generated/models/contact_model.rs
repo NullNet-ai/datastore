@@ -1,3 +1,4 @@
+use crate::database::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -21,11 +22,12 @@ pub struct ContactModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
     pub id: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
+    #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
@@ -34,14 +36,5 @@ pub struct ContactModel {
     pub middle_name: Option<String>,
     pub last_name: Option<String>,
     pub date_of_birth: Option<String>,
-    pub username: Option<String>,
-    pub address_id: Option<String>,
     pub account_id: Option<String>,
-    pub department_id: Option<String>,
-    pub district_id: Option<String>,
-    pub school_id: Option<String>,
-    pub grade_level: Option<String>,
-    pub school_year: Option<String>,
-    pub teacher_id: Option<String>,
-    pub last_assistant_toggle_option_value: Option<bool>,
 }

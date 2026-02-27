@@ -45,6 +45,5 @@ pub struct NotificationModel {
     pub priority_label: Option<String>,
     pub priority_level: Option<i32>,
     pub expiry_date: Option<String>,
-    pub expiry_time: Option<String>,
     pub metadata: Option<String>,
 }

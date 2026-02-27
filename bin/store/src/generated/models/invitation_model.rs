@@ -34,5 +34,4 @@ pub struct InvitationModel {
     pub expiration_date: Option<String>,
     pub expiration_time: Option<String>,
     pub account_organization_id: Option<String>,
-    pub related_contact_id: Option<String>,
 }
