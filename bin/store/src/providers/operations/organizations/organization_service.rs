@@ -89,20 +89,38 @@ pub async fn register(
     let contact_categories = params.contact_categories.clone();
     let device_categories = params.device_categories.clone();
     let responsible_account_organization_id = params.responsible_account_organization_id.clone();
-
     let _personal_organization_id: Option<String> = None;
+    let now = chrono::Utc::now();
+    let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
+    let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
 
     // Determine a concrete account_organization_id to use everywhere (created_by and AO id)
     let default_account_organization_id = if !account_organization_id.is_empty() {
         account_organization_id.clone()
     } else {
-        Ulid::new().to_string()
+        "01KJFDY4VY82DE3B4FTH5C8C4K".to_string()
     };
     let created_by_override = Some(default_account_organization_id.clone());
+    let mut account_organization = AccountOrganizationModel {
+        id: Some(default_account_organization_id.clone()),
+        code: helpers::generate_code("account_organizations").await?,
+        tombstone: Some(0),
+        status: Some("Draft".to_string()),
+        created_date: Some(formatted_date.clone()),
+        created_time: Some(formatted_time.clone()),
+        updated_date: Some(formatted_date.clone()),
+        updated_time: Some(formatted_time.clone()),
+        created_by: created_by_override.clone(),
+        ..Default::default()
+    };
 
-    let now = chrono::Utc::now();
-    let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
-    let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
+    let account_organization_json_initial = serde_json::to_value(&account_organization)
+    .map_err(|e| ApiError::new(
+        StatusCode::INTERNAL_SERVER_ERROR,
+        format!("Failed to serialize account organization: {}", e)
+    ))?;
+
+    sync_service::insert(&"account_organizations".to_string(), account_organization_json_initial.clone()).await?;
 
     let mut _account_id = if is_request {
         Ulid::new().to_string()
@@ -340,7 +358,7 @@ pub async fn register(
                 sync_service::insert(&"contact_emails".to_string(), contact_email_json).await?;
 
                 // Create Account Organization using AccountOrganizationModel
-                let account_organization = AccountOrganizationModel {
+                account_organization = AccountOrganizationModel {
                     id: Some(default_account_organization_id.clone()),
                     email: Some(account_id.clone()),
                     categories: Some(account_organization_categories.clone().unwrap_or_else(|| vec!["Internal User".to_string()])),
@@ -368,7 +386,11 @@ pub async fn register(
                         format!("Failed to serialize account organization: {}", e)
                     ))?;
 
-                sync_service::insert(&"account_organizations".to_string(), account_organization_json.clone()).await?;
+                sync_service::update(
+                    &"account_organizations".to_string(),
+                    account_organization_json,
+                    &default_account_organization_id
+                ).await?;
 
                 log::info!(
                     "Signed up Account ({}) {} with email: {} successfully linked to Team Organization {}",
@@ -421,12 +443,7 @@ pub async fn register(
         // Handle invited contact accounts
         match async
         {
-            if is_invited && account_organization_id.is_empty() {
-                return Err(ApiError::new(
-                    StatusCode::BAD_REQUEST,
-                    "Account Organization ID is required if Account is invited".to_string(),
-                ));
-            }
+            // No need to require provided account_organization_id; we pre-created a draft AO
 
             let mut device_id: Option<String> = Some(_account_id.clone());
             let mut device_code: Option<String> = None;
@@ -487,7 +504,7 @@ pub async fn register(
             };
 
             // Create AccountOrganizationModel
-            let account_organization = AccountOrganizationModel {
+            account_organization = AccountOrganizationModel {
                 id: Some(default_account_organization_id.clone()),
                 email: Some(account_id.clone()),
                 account_id: Some(_account_id.clone()),
@@ -523,12 +540,11 @@ pub async fn register(
                     format!("Failed to serialize account organization: {}", e)
                 ))?;
 
-            // Insert or update account organization
-            let _created_account_organization = if account_organization_id.is_empty() {
-                sync_service::insert(&"account_organizations".to_string(), account_organization_json).await?
-            } else {
-                sync_service::update(&"account_organizations".to_string(), account_organization_json, &account_organization_id).await?
-            };
+            sync_service::update(
+                &"account_organizations".to_string(),
+                account_organization_json,
+                &default_account_organization_id
+            ).await?;
 
             log::info!(
                 "Invited Account ({}) {} with email: {} successfully linked to Team Organization {}",
