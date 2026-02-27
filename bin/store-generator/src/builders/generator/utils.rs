@@ -164,3 +164,100 @@ impl FieldTypeParser {
         Ok(inner.to_string())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::FieldTypeParser;
+
+    #[test]
+    fn test_parse_diesel_type_timestamp() {
+        assert_eq!(
+            FieldTypeParser::parse_diesel_type("timestamp()").unwrap(),
+            "Timestamp"
+        );
+    }
+
+    #[test]
+    fn test_parse_diesel_type_timestamptz() {
+        assert_eq!(
+            FieldTypeParser::parse_diesel_type("timestamptz()").unwrap(),
+            "Timestamptz"
+        );
+    }
+
+    #[test]
+    fn test_parse_diesel_type_nullable_timestamp() {
+        assert_eq!(
+            FieldTypeParser::parse_diesel_type("nullable(timestamp())").unwrap(),
+            "Nullable<Timestamp>"
+        );
+    }
+
+    #[test]
+    fn test_parse_diesel_type_nullable_timestamptz() {
+        assert_eq!(
+            FieldTypeParser::parse_diesel_type("nullable(timestamptz())").unwrap(),
+            "Nullable<Timestamptz>"
+        );
+    }
+
+    #[test]
+    fn test_diesel_to_rust_type_timestamp() {
+        assert_eq!(
+            FieldTypeParser::diesel_to_rust_type("Timestamp").unwrap(),
+            "chrono::NaiveDateTime"
+        );
+    }
+
+    #[test]
+    fn test_diesel_to_rust_type_timestamptz() {
+        assert_eq!(
+            FieldTypeParser::diesel_to_rust_type("Timestamptz").unwrap(),
+            "chrono::DateTime<chrono::Utc>"
+        );
+    }
+
+    #[test]
+    fn test_diesel_to_rust_type_nullable_timestamp() {
+        assert_eq!(
+            FieldTypeParser::diesel_to_rust_type("Nullable<Timestamp>").unwrap(),
+            "Option<chrono::NaiveDateTime>"
+        );
+    }
+
+    #[test]
+    fn test_diesel_to_rust_type_nullable_timestamptz() {
+        assert_eq!(
+            FieldTypeParser::diesel_to_rust_type("Nullable<Timestamptz>").unwrap(),
+            "Option<chrono::DateTime<chrono::Utc>>"
+        );
+    }
+
+    #[test]
+    fn test_diesel_to_rust_type_from_raw_timestamp() {
+        let diesel = FieldTypeParser::parse_diesel_type("timestamp()").unwrap();
+        assert_eq!(
+            FieldTypeParser::diesel_to_rust_type(&diesel).unwrap(),
+            "chrono::NaiveDateTime"
+        );
+    }
+
+    #[test]
+    fn test_diesel_to_rust_type_from_raw_timestamptz() {
+        let diesel = FieldTypeParser::parse_diesel_type("timestamptz()").unwrap();
+        assert_eq!(
+            FieldTypeParser::diesel_to_rust_type(&diesel).unwrap(),
+            "chrono::DateTime<chrono::Utc>"
+        );
+    }
+
+    #[test]
+    fn test_diesel_to_rust_type_from_raw_nullable_timestamptz() {
+        let diesel =
+            FieldTypeParser::parse_diesel_type("nullable(timestamptz())").unwrap();
+        assert_eq!(
+            FieldTypeParser::diesel_to_rust_type(&diesel).unwrap(),
+            "Option<chrono::DateTime<chrono::Utc>>"
+        );
+    }
+}

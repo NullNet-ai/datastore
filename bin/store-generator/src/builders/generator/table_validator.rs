@@ -417,12 +417,40 @@ pub fn validate_table_file(
         result.add_error(e);
     }
 
-    // 6. Validate index names (format)
-    for (index_name, columns, _, _, _) in indexes {
+    // 6. Validate index names and that index/where columns exist in the table
+    let field_set: std::collections::HashSet<&str> =
+        field_names.iter().map(String::as_str).collect();
+    for (index_name, columns, _, _, where_clause) in indexes {
         if columns.is_empty() {
             result.add_error(format!("Index '{}' has no columns", index_name));
-        } else if let Err(e) = validate_index_name(index_name, table_name, columns) {
-            result.add_error(e);
+        } else {
+            if let Err(e) = validate_index_name(index_name, table_name, columns) {
+                result.add_error(e);
+            }
+            for col in columns {
+                if !field_set.contains(col.as_str()) {
+                    result.add_error(format!(
+                        "Index '{}' references column '{}' which is not found in table '{}'. Table columns: {}",
+                        index_name,
+                        col,
+                        table_name,
+                        field_names.join(", ")
+                    ));
+                }
+            }
+            if let Some(ref w) = where_clause {
+                for col in w.column_names() {
+                    if !field_set.contains(col.as_str()) {
+                        result.add_error(format!(
+                            "Index '{}' where clause references column '{}' which is not found in table '{}'. Table columns: {}",
+                            index_name,
+                            col,
+                            table_name,
+                            field_names.join(", ")
+                        ));
+                    }
+                }
+            }
         }
     }
 
@@ -785,6 +813,117 @@ mod tests {
             &foreign_keys,
         );
         assert!(result.is_ok());
+    }
+
+    /// Partial index with where clause: when table has the where-clause column, validation passes.
+    #[test]
+    fn test_validate_index_with_where_clause_columns_found() {
+        use crate::builders::generator::diesel_schema_definition::WhereExpr;
+
+        let content = r#"system_indexes!("school_admins")"#;
+        let field_names = vec![
+            "id".to_string(),
+            "school_id".to_string(),
+            "school_admin_id".to_string(),
+            "status".to_string(),
+        ];
+        let where_clause = Some(WhereExpr::Pred {
+            op: "=".to_string(),
+            column: "status".to_string(),
+            value: Some(serde_json::Value::String("Active".to_string())),
+        });
+        let indexes: Vec<TableFileIndex> = vec![(
+            "idx_school_admins_school_id_school_admin_id".to_string(),
+            vec!["school_id".to_string(), "school_admin_id".to_string()],
+            true,
+            Some("btree".to_string()),
+            where_clause,
+        )];
+        let foreign_keys: Vec<(String, String)> = vec![];
+
+        let result = validate_table_file(
+            "school_admins",
+            content,
+            "school_admins",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
+        assert!(result.is_ok(), "expected ok when table has status column, got: {:?}", result);
+    }
+
+    /// Partial index with where clause: when table does not have the where-clause column, validation fails.
+    #[test]
+    fn test_validate_index_with_where_clause_column_not_found() {
+        use crate::builders::generator::diesel_schema_definition::WhereExpr;
+
+        let content = r#"system_indexes!("school_admins")"#;
+        // Table has school_id, school_admin_id but NOT "status"
+        let field_names = vec![
+            "id".to_string(),
+            "school_id".to_string(),
+            "school_admin_id".to_string(),
+        ];
+        let where_clause = Some(WhereExpr::Pred {
+            op: "=".to_string(),
+            column: "status".to_string(),
+            value: Some(serde_json::Value::String("Active".to_string())),
+        });
+        let indexes: Vec<TableFileIndex> = vec![(
+            "idx_school_admins_school_id_school_admin_id".to_string(),
+            vec!["school_id".to_string(), "school_admin_id".to_string()],
+            true,
+            Some("btree".to_string()),
+            where_clause,
+        )];
+        let foreign_keys: Vec<(String, String)> = vec![];
+
+        let result = validate_table_file(
+            "school_admins",
+            content,
+            "school_admins",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("not found") && err.contains("status"),
+            "error should mention column 'status' not found, got: {}",
+            err
+        );
+    }
+
+    /// Index with where clause: index column not in table fails.
+    #[test]
+    fn test_validate_index_column_not_found() {
+        let content = r#"system_indexes!("school_admins")"#;
+        let field_names = vec!["id".to_string(), "school_id".to_string()]; // no school_admin_id
+        let indexes: Vec<TableFileIndex> = vec![(
+            "idx_school_admins_school_id_school_admin_id".to_string(),
+            vec!["school_id".to_string(), "school_admin_id".to_string()],
+            true,
+            Some("btree".to_string()),
+            None,
+        )];
+        let foreign_keys: Vec<(String, String)> = vec![];
+
+        let result = validate_table_file(
+            "school_admins",
+            content,
+            "school_admins",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("not found") && err.contains("school_admin_id"),
+            "error should mention column 'school_admin_id' not found, got: {}",
+            err
+        );
     }
 
     #[test]
