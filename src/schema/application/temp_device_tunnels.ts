@@ -29,6 +29,7 @@ export const table = pgTable(
     service_id: text('service_id'),
     tunnel_status: text('tunnel_status'),
     last_accessed: integer('last_accessed').default(0),
+    created_timestamp: integer('created_timestamp').default(0),
   },
   config,
 );
