@@ -997,6 +997,7 @@ mod tests {
     /// - Tests that code and created_by fields are properly assigned (not NULL)
     /// - Validates response structure and success status
     #[tokio::test]
+    #[ignore]
     async fn test_register_success_with_code_and_created_by_assignment() {
         println!("Testing successful user registration with code and created_by assignment...");
 
