@@ -452,7 +452,7 @@ mod tests {
         // Test that concatenated fields are automatically injected even when not in pluck_object
         // This simulates the classrooms_filter.json scenario where full_name is defined in
         // concatenate_fields but not explicitly listed in pluck_object for created_by/updated_by
-        
+
         let concatenate_fields = vec![
             create_concatenate_field(
                 vec!["first_name", "last_name"],
@@ -556,6 +556,91 @@ mod tests {
         assert!(
             !contacts_result.contains("full_name"),
             "Should NOT contain full_name for contacts entity (not an aliased_entity)"
+        );
+    }
+
+    #[test]
+    fn test_classrooms_filter_concatenated_fields_auto_injection() {
+        // Test the actual classrooms_filter.json configuration
+        // This validates that full_name is auto-injected for created_by and updated_by
+        // even though it's not explicitly listed in their pluck_object entries
+        
+        let concatenate_fields = vec![
+            create_concatenate_field(
+                vec!["first_name", "last_name"],
+                "full_name",
+                " ",
+                "contacts",
+                Some("created_by"),
+            ),
+            create_concatenate_field(
+                vec!["first_name", "last_name"],
+                "full_name",
+                " ",
+                "contacts",
+                Some("updated_by"),
+            ),
+        ];
+
+        // Simulate the actual classrooms_filter.json pluck_object configuration
+        let mut pluck_object = HashMap::new();
+        pluck_object.insert(
+            "created_by".to_string(),
+            vec!["id", "first_name", "last_name"], // Note: full_name is NOT included
+        );
+        pluck_object.insert(
+            "updated_by".to_string(),
+            vec!["id", "first_name", "last_name"], // Note: full_name is NOT included
+        );
+        pluck_object.insert(
+            "classrooms".to_string(),
+            vec!["id", "code", "name", "description"],
+        );
+
+        let filter = create_test_filter(
+            vec![], // empty pluck to trigger pluck_object path
+            pluck_object,
+            concatenate_fields,
+        );
+
+        // Test created_by - should get full_name even though it's not in pluck_object
+        let created_by_result = SelectionsConstructor::construct_selections(
+            &filter,
+            "created_by",
+            None,
+            mock_normalize_entity_name,
+            mock_get_field,
+            mock_get_field_with_parse_as,
+            mock_build_system_where_clause,
+            mock_build_infix_expression,
+        );
+
+        println!("Created by result: {}", created_by_result);
+
+        // The result should contain the concatenated full_name field even though it's not in pluck_object
+        assert!(
+            created_by_result.contains("full_name"),
+            "Should contain full_name concatenated field for created_by even when not in pluck_object"
+        );
+
+        // Test updated_by - should get full_name even though it's not in pluck_object
+        let updated_by_result = SelectionsConstructor::construct_selections(
+            &filter,
+            "updated_by",
+            None,
+            mock_normalize_entity_name,
+            mock_get_field,
+            mock_get_field_with_parse_as,
+            mock_build_system_where_clause,
+            mock_build_infix_expression,
+        );
+
+        println!("Updated by result: {}", updated_by_result);
+
+        // The result should contain the concatenated full_name field even though it's not in pluck_object
+        assert!(
+            updated_by_result.contains("full_name"),
+            "Should contain full_name concatenated field for updated_by even when not in pluck_object"
         );
     }
 }
