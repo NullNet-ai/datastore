@@ -1,9 +1,7 @@
-use crate::constants::paths;
 use crate::database::schema::reserved_keywords;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
+
 const SCHEMA_CONTENT: &str = include_str!("../../generated/schema.rs");
 
 pub fn field_exists_in_table(table_name: &str, field_name: &str) -> bool {
@@ -22,24 +20,9 @@ pub struct FieldTypeInfo {
 }
 
 pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTypeInfo> {
-    // Path to schema.rs file
-    let possible_paths = vec![
-        Path::new(paths::database::SCHEMA_FILE),
-        Path::new(paths::LEGACY_SCHEMA_FILE),
-    ];
-    // Read the schema file
-    let mut schema_content = String::new();
-    for path in possible_paths {
-        if let Ok(content) = fs::read_to_string(&path) {
-            schema_content = content;
-            break;
-        }
-    }
-
-    if schema_content.is_empty() {
-        log::error!("Could not find schema file");
-        schema_content = SCHEMA_CONTENT.to_string();
-    }
+    // Always use the embedded schema content compiled into the binary.
+    // This works in both debug and release builds, without relying on filesystem paths.
+    let schema_content = SCHEMA_CONTENT;
 
     // Create a regex pattern to find the table definition
     let table_pattern = format!(
@@ -155,24 +138,9 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
 /// * `Option<Vec<String>>` - Vector of field names if table exists, None otherwise
 ///
 pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
-    // Path to schema.rs file
-    let possible_paths = vec![
-        Path::new(paths::database::SCHEMA_FILE),
-        Path::new(paths::LEGACY_SCHEMA_FILE),
-    ];
-    // Read the schema file
-    let mut schema_content = String::new();
-    for path in possible_paths {
-        if let Ok(content) = fs::read_to_string(&path) {
-            schema_content = content;
-            break;
-        }
-    }
-
-    if schema_content.is_empty() {
-        log::error!("Could not find schema file");
-        schema_content = SCHEMA_CONTENT.to_string();
-    }
+    // Always use the embedded schema content compiled into the binary.
+    // This avoids relying on source file paths at runtime (important in release).
+    let schema_content = SCHEMA_CONTENT;
 
     // Create a regex pattern to find the table definition
     let table_pattern = format!(

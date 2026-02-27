@@ -5,6 +5,22 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.39
+
+### Author
+Kashan
+
+### Fixed
+  - ***Schema in release builds***:
+    - `database/schema/verify.rs` now always uses the embedded `SCHEMA_CONTENT` (`include_str!("../../generated/schema.rs")`) instead of reading `schema.rs` from disk at runtime, so `field_exists_in_table`, `field_type_in_table`, and `get_table_fields` work in release builds where source paths are not present.
+  - ***Account login deserialization***:
+    - `AccountModel.timestamp` changed from `Option<NaiveDateTime>` to `Option<DateTime<Utc>>` for correct `timestamptz` handling; `auth_service::get_account_with_org` now uses `row_to_json(a.*)` for the account object so `timestamp` is serialized as RFC3339 and deserializes without "premature end of input" on login.
+
+### Changed
+  - ***Unused code removed***:
+    - Removed unused imports from `database/schema/verify.rs` (`paths`, `std::fs`, `Path`).
+    - Removed unused path constants from `constants/paths.rs`: `GENERATED_DIR`, `SCHEMA_FILE`, `LEGACY_SCHEMA_FILE` (schema is now embedded; only `INIT_SQL_FILE` and `CLEANUP_SQL_FILE` remain in `database`).
+
 ## 0.2.38
 
 ### Author
