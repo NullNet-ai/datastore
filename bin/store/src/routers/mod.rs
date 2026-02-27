@@ -5,3 +5,4 @@ pub mod organizations_router;
 pub mod root_store_router;
 pub mod store_router;
 pub mod sync_router;
+pub mod system_router;

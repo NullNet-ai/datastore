@@ -1,6 +1,6 @@
 use crate::config::core::EnvConfig;
 use crate::database::db;
-use crate::initializers::system_initialization::init::initialize;
+use crate::initializers::system_initialization::init::{initialize, initialize_all};
 use crate::initializers::system_initialization::structs::EInitializer;
 use crate::lifecycle::logging::{LogCategory, LogLevel};
 use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
@@ -144,6 +144,40 @@ impl StartupManager {
                 "Schema generation completed successfully",
             )
             .await;
+
+        let run_initializers = std::env::var("RUN_INITIALIZERS_ON_STARTUP")
+            .unwrap_or_else(|_| "false".to_string())
+            .to_lowercase()
+            == "true";
+        if run_initializers {
+            self.logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Startup,
+                    "StartupManager",
+                    "Running initialize_all during startup",
+                )
+                .await;
+            if let Err(e) = initialize_all(None).await {
+                self.logger
+                    .log(
+                        LogLevel::Error,
+                        LogCategory::Startup,
+                        "StartupManager",
+                        &format!("initialize_all failed: {}", e),
+                    )
+                    .await;
+                return Err(e.into());
+            }
+            self.logger
+                .log(
+                    LogLevel::Info,
+                    LogCategory::Startup,
+                    "StartupManager",
+                    "initialize_all completed successfully",
+                )
+                .await;
+        }
 
         // Phase 4: Background services initialization
         self.logger

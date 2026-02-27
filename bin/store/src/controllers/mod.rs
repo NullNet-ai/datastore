@@ -6,6 +6,7 @@ pub mod pg_functions;
 pub mod root_controller;
 pub mod store_controller;
 pub mod sync_endpoints_controller;
+pub mod initializer_controller;
 
 mod filter_scenarios_test;
 mod health_controller_test;

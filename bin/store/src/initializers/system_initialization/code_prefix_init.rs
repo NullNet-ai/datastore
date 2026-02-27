@@ -15,51 +15,216 @@ impl CodePrefixInitializer {
     pub fn new() -> Self {
         let mut prefixes = HashMap::new();
 
-        // Initialize with the example provided
+        prefixes.insert(
+            "contacts".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "CO".to_string(),
+                counter: 0,
+                entity: "contacts".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "user_roles".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "RO".to_string(),
+                counter: 0,
+                entity: "user_roles".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "organizations".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "OR".to_string(),
+                counter: 0,
+                entity: "organizations".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "notifications".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "NO".to_string(),
+                counter: 0,
+                entity: "notifications".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "communication_templates".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "CT".to_string(),
+                counter: 0,
+                entity: "communication_templates".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "account_organizations".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "AC".to_string(),
+                counter: 0,
+                entity: "account_organizations".to_string(),
+                digits_number: 6,
+            },
+        );
         prefixes.insert(
             "devices".to_string(),
             CounterModel {
-                default_code: 10000,
+                default_code: 100000,
                 prefix: "DV".to_string(),
                 counter: 0,
                 entity: "devices".to_string(),
                 digits_number: 6,
             },
         );
-
         prefixes.insert(
-            "sessions".to_string(),
+            "courses".to_string(),
             CounterModel {
-                default_code: 10000,
-                prefix: "SE".to_string(),
+                default_code: 100000,
+                prefix: "CS".to_string(),
                 counter: 0,
-                entity: "sessions".to_string(),
+                entity: "courses".to_string(),
                 digits_number: 6,
             },
         );
-
         prefixes.insert(
-            "signed_in_activities".to_string(),
+            "classrooms".to_string(),
             CounterModel {
-                default_code: 10000,
-                prefix: "SIA".to_string(),
+                default_code: 100000,
+                prefix: "CL".to_string(),
                 counter: 0,
-                entity: "signed_in_activities".to_string(),
+                entity: "classrooms".to_string(),
                 digits_number: 6,
             },
         );
-
-        // Add more table configurations as needed
-        // Example:
-        // prefixes.insert(
-        //     "devices".to_string(),
-        //     CounterModel {
-        //         default_code: 20000,
-        //         prefix: "DV".to_string(),
-        //         counter: 0,
-        //         entity: "devices".to_string(),
-        //     },
-        // );
+        prefixes.insert(
+            "faqs".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "FAQ".to_string(),
+                counter: 0,
+                entity: "faqs".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "conversation_topics".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "CT".to_string(),
+                counter: 0,
+                entity: "conversation_topics".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "conversations".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "INT".to_string(),
+                counter: 0,
+                entity: "conversations".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "smtp_payloads".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "CM".to_string(),
+                counter: 0,
+                entity: "smtp_payloads".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "smtp_transactions".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "TR".to_string(),
+                counter: 0,
+                entity: "smtp_transactions".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "sponsorships".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "SP".to_string(),
+                counter: 0,
+                entity: "sponsorships".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "game_stats".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "GS".to_string(),
+                counter: 0,
+                entity: "game_stats".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "stories".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "ST".to_string(),
+                counter: 0,
+                entity: "stories".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "episodes".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "EP".to_string(),
+                counter: 0,
+                entity: "episodes".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "reports".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "RP".to_string(),
+                counter: 0,
+                entity: "reports".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "game_questions".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "QU".to_string(),
+                counter: 0,
+                entity: "game_questions".to_string(),
+                digits_number: 6,
+            },
+        );
+        prefixes.insert(
+            "game_choices".to_string(),
+            CounterModel {
+                default_code: 100000,
+                prefix: "CH".to_string(),
+                counter: 0,
+                entity: "game_choices".to_string(),
+                digits_number: 6,
+            },
+        );
 
         CodePrefixInitializer { prefixes }
     }
@@ -79,6 +244,8 @@ impl CodePrefixInitializer {
                 .set((
                     counters::prefix.eq(diesel::upsert::excluded(counters::prefix)),
                     counters::default_code.eq(diesel::upsert::excluded(counters::default_code)),
+                    counters::digits_number
+                        .eq(diesel::upsert::excluded(counters::digits_number)),
                 ))
                 .execute(&mut conn)
                 .await

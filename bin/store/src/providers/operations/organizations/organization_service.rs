@@ -74,7 +74,7 @@ pub async fn register(
     let (_, _, _, _, _, _, _, super_admin_id, system_device_ulid) = get_defaults();
 
     let account_type = params.account_type.clone().unwrap_or(AccountType::Contact);
-    let account_id = &params.account_id;
+    let account_id = params.account_id.to_lowercase();
     let team_organization_name = params.organization_name.as_ref();
     let account_secret = &params.account_secret;
     let is_new_user = params.is_new_user.unwrap_or(true);
@@ -110,7 +110,7 @@ pub async fn register(
     let query_result = accounts::table
         .filter(
             accounts::account_id
-                .eq(account_id)
+                .eq(&account_id)
                 .and(accounts::tombstone.eq(0)),
         )
         .first::<AccountModel>(&mut conn)
@@ -224,12 +224,12 @@ pub async fn register(
             formatted_time.clone(),
             first_name.to_string(),
             last_name.to_string(),
-            if !is_contact_account {
+            if !is_contact_account && is_request {
                 Some("Inactive".to_string())
             } else {
                 None
             },
-            if !is_contact_account {
+            if !is_contact_account && is_request {
                 Some("Draft".to_string())
             } else {
                 None
@@ -283,10 +283,10 @@ pub async fn register(
                     last_name: Some(last_name.clone()),
                     categories: Some(contact_categories.clone().unwrap_or_else(|| vec!["Contact".to_string()])),
                     account_id: Some(_account_id.clone()),
-                    code: if organizations_counter.is_some() {
-                        helpers::generate_code("organizations").await?
+                    code: if _contacts_counter.is_some() {
+                        helpers::generate_code("contacts").await?
                     } else {
-                        None
+                        Some(format!("C{}", Ulid::new().to_string().chars().take(8).collect::<String>()))
                     },
                     tombstone: Some(0),
                     status: Some("Active".to_string()),
@@ -347,7 +347,7 @@ pub async fn register(
                     code: if account_organizations_counter.is_some() {
                         helpers::generate_code("account_organizations").await?
                     } else {
-                        None
+                        Some(format!("ACCT-ORG-{}", Ulid::new().to_string().chars().take(8).collect::<String>()))
                     },
                     tombstone: Some(0),
                     status: Some("Active".to_string()),
@@ -375,6 +375,23 @@ pub async fn register(
                     account_id,
                     team_organization_id
                 );
+
+                // Update the organization with the correct created_by value (the account organization ID)
+                let account_org_id = account_organization.id.clone().unwrap_or_default();
+                if !account_org_id.is_empty() {
+                    // Update the organization's created_by field
+                    let update_result = diesel::update(
+                        organizations::table.filter(organizations::id.eq(&team_organization_id))
+                    )
+                    .set(organizations::created_by.eq(&account_org_id))
+                    .execute(&mut conn)
+                    .await;
+
+                    match update_result {
+                        Ok(_) => log::info!("Successfully updated organization {} with created_by: {}", team_organization_id, account_org_id),
+                        Err(e) => log::warn!("Failed to update organization created_by: {}", e),
+                    }
+                }
 
                 Ok::<_, ApiError>(json!({
                     "organization_id": team_organization_id,
@@ -433,11 +450,11 @@ pub async fn register(
                 // Create device using DeviceModel
                 let device = DeviceModel {
                     id: Some(device_id_value.clone()),
-                    organization_id: params.organization_id.clone(),
+                    organization_id: team_organization_id.clone(),
                     categories: device_categories.clone(),
                     code: code.clone(),
                     tombstone: Some(0),
-                    status: Some(if is_request { "Draft" } else { "Active" }.to_string()),
+                    status: Some("Draft".to_string()),
                     created_date: Some(formatted_date.clone()),
                     created_time: Some(formatted_time.clone()),
                     updated_date: Some(formatted_date.clone()),
@@ -516,6 +533,23 @@ pub async fn register(
                 params.organization_id.clone().unwrap_or_else(|| "unknown".to_string())
             );
 
+            // Update the organization with the correct created_by value (the account organization ID)
+            let account_org_id = account_organization.id.clone().unwrap_or_default();
+            if !account_org_id.is_empty() {
+                // Update the organization's created_by field
+                let update_result = diesel::update(
+                    organizations::table.filter(organizations::id.eq(&params.organization_id.clone().unwrap_or_default()))
+                )
+                .set(organizations::created_by.eq(&account_org_id))
+                .execute(&mut conn)
+                .await;
+
+                match update_result {
+                    Ok(_) => log::info!("Successfully updated organization {} with created_by: {}", params.organization_id.clone().unwrap_or_default(), account_org_id),
+                    Err(e) => log::warn!("Failed to update organization created_by: {}", e),
+                }
+            }
+
             // Create response JSON
             let mut result = json!({
                 "organization_id": params.organization_id.clone().unwrap_or_default(),
@@ -574,6 +608,16 @@ pub async fn create_new_organization(
 
     let id = organization_id.unwrap_or_else(|| Ulid::new().to_string());
 
+    // Ensure code is not NULL by generating one if not provided
+    let final_code = code.unwrap_or_else(|| {
+        // Generate a default code if none provided
+        format!("CTR{}", Ulid::new().to_string().chars().take(8).collect::<String>())
+    });
+
+    // For now, we'll set created_by to None and update it later after creating the account organization
+    // This avoids the foreign key constraint violation
+    let final_created_by = responsible_account_organization_id;
+
     // Create organization object
     let organization = OrganizationModel {
         id: Some(id.clone()),
@@ -587,8 +631,8 @@ pub async fn create_new_organization(
         created_time: Some(formatted_time.clone()),
         updated_date: Some(formatted_date),
         updated_time: Some(formatted_time),
-        code: code, // This will be None if code is None
-        created_by: responsible_account_organization_id, // This will be None if responsible_id is None
+        code: Some(final_code), // Always provide a code
+        created_by: final_created_by, // Already Option<String>, no need for Some() wrapper
         // Set default values for other required fields
         ..Default::default()
     };
