@@ -95,26 +95,7 @@ pub async fn register(
     let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
     let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
 
-    // If the request explicitly provides an organization_id that already exists, return it
-    if let Some(org_id_param) = params.organization_id.clone() {
-        if !org_id_param.is_empty() {
-            let existing_org = organizations::table
-                .filter(
-                    organizations::id
-                        .eq(&org_id_param)
-                        .and(organizations::tombstone.eq(0)),
-                )
-                .first::<OrganizationModel>(&mut conn)
-                .await
-                .optional()?;
-            if existing_org.is_some() {
-                return Ok(json!({
-                    "organization_id": org_id_param,
-                    "account_id": account_id,
-                }));
-            }
-        }
-    }
+    // Organization existence is handled later alongside existing account and membership checks
 
     // Determine a concrete account_organization_id to use everywhere (created_by and AO id)
     let default_account_organization_id = if !account_organization_id.is_empty() {
