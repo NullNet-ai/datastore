@@ -84,6 +84,7 @@ pub async fn register(
     let role_id = params.role_id.clone().unwrap_or_else(|| String::new());
     let account_organization_status = params.account_organization_status.clone();
     let account_organization_categories = params.account_organization_categories.clone();
+    let organization_categories = params.organization_categories.clone();
     let account_organization_id = params.account_organization_id.clone().unwrap_or_default();
     let contact_categories = params.contact_categories.clone();
     let device_categories = params.device_categories.clone();
@@ -128,13 +129,6 @@ pub async fn register(
 
     let _contacts_counter = counters::table
         .filter(counters::entity.eq("contacts"))
-        .first::<CounterModel>(&mut conn)
-        .await
-        .optional()?;
-
-    // Query for account_organizations counter
-    let account_organizations_counter = counters::table
-        .filter(counters::entity.eq("account_organizations"))
         .first::<CounterModel>(&mut conn)
         .await
         .optional()?;
@@ -196,9 +190,11 @@ pub async fn register(
         }
     } else {
         //create a personal organization (use static ID only when set by initializers, e.g. super admin / system device)
+        let personal_categories =
+            organization_categories.clone().unwrap_or_else(|| vec!["Personal".to_string()]);
         let personal_organization_id = create_new_organization(
             "Personal Organization".to_string(),
-            vec!["Personal".to_string()],
+            personal_categories,
             params.initial_personal_organization_id.clone(),
             if organizations_counter.is_some() {
                 match helpers::generate_code("organizations").await {
@@ -240,13 +236,15 @@ pub async fn register(
         .await?;
     }
 
+    let team_categories =
+        organization_categories.clone().unwrap_or_else(|| vec!["Team".to_string()]);
     team_organization_id = Some(
         create_new_organization(
             team_organization_name
                 .clone()
                 .unwrap_or(&String::new())
                 .to_string(),
-            vec!["Team".to_string()],
+            team_categories,
             params.organization_id.clone(),
             if organizations_counter.is_some() {
                 helpers::generate_code("organizations").await?
@@ -344,11 +342,7 @@ pub async fn register(
                     account_organization_status: Some(account_organization_status.clone().unwrap_or_else(|| "Active".to_string())),
                     role_id: Some(role_id.clone()),
                     is_invited: Some(is_invited),
-                    code: if account_organizations_counter.is_some() {
-                        helpers::generate_code("account_organizations").await?
-                    } else {
-                        Some(format!("ACCT-ORG-{}", Ulid::new().to_string().chars().take(8).collect::<String>()))
-                    },
+                    code: helpers::generate_code("account_organizations").await?,
                     tombstone: Some(0),
                     status: Some("Active".to_string()),
                     created_date: Some(formatted_date.clone()),
@@ -489,6 +483,7 @@ pub async fn register(
                 account_id: Some(_account_id.clone()),
                 organization_id: team_organization_id.clone(),
                 categories: account_organization_categories.clone(),
+                code: helpers::generate_code("account_organizations").await?,
                 is_invited: Some(is_invited),
                 tombstone: Some(0),
                 created_date: Some(formatted_date.clone()),
@@ -608,14 +603,18 @@ pub async fn create_new_organization(
 
     let id = organization_id.unwrap_or_else(|| Ulid::new().to_string());
 
-    // Ensure code is not NULL by generating one if not provided
-    let final_code = code.unwrap_or_else(|| {
-        // Generate a default code if none provided
-        format!(
-            "CTR{}",
-            Ulid::new().to_string().chars().take(8).collect::<String>()
-        )
-    });
+    // Ensure code is not NULL by generating one if not provided (prefer counters)
+    let final_code = if let Some(c) = code {
+        c
+    } else {
+        match helpers::generate_code("organizations").await {
+            Ok(Some(c)) => c,
+            _ => format!(
+                "O{}",
+                Ulid::new().to_string().chars().take(8).collect::<String>()
+            ),
+        }
+    };
 
     // For now, we'll set created_by to None and update it later after creating the account organization
     // This avoids the foreign key constraint violation
@@ -688,6 +687,7 @@ pub async fn create_account(
         id: Some(id.clone()),
         account_id: Some(account_id.clone()),
         account_secret: Some(hashed_password),
+        code: helpers::generate_code("accounts").await?,
         organization_id: Some(personal_organization_id.clone()),
         account_status: Some(account_status.unwrap_or_else(|| "Active".to_string())),
         is_new_user: Some(is_new_user),
@@ -780,6 +780,7 @@ pub async fn initialize(data: Option<Register>) -> Result<(), ApiError> {
         parent_organization_id: None,
         code: None,
         categories: None,
+        organization_categories: None,
         account_status: None,
         is_new_user: None,
         is_invited: None,

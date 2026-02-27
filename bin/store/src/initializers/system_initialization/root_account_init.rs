@@ -8,6 +8,7 @@ use crate::generated::models::counter_model::CounterModel;
 use crate::generated::models::organization_model::OrganizationModel;
 use crate::generated::schema;
 use crate::initializers::system_initialization::structs::InitializerParams;
+use crate::utils::helpers;
 use actix_web::http::StatusCode;
 use chrono::Utc;
 use diesel::prelude::*;
@@ -59,12 +60,6 @@ impl RootAccountInitializer {
         // Get counters for code generation
         let organizations_counter = schema::counters::table
             .filter(schema::counters::dsl::entity.eq("organizations"))
-            .first::<CounterModel>(&mut conn)
-            .await
-            .optional()?;
-
-        let account_organizations_counter = schema::counters::table
-            .filter(schema::counters::dsl::entity.eq("account_organizations"))
             .first::<CounterModel>(&mut conn)
             .await
             .optional()?;
@@ -147,6 +142,12 @@ impl RootAccountInitializer {
             categories: Some(vec!["Root".to_string()]),
             account_id: Some(account_id.clone()),
             account_secret: Some(hashed_password),
+            code: helpers::generate_code("accounts").await.map_err(|e| {
+                ApiError::new(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to generate account code: {}", e),
+                )
+            })?,
             organization_id: Some(personal_organization_id.clone()),
             account_status: Some("Active".to_string()),
             tombstone: Some(system_fields.0),
@@ -193,10 +194,14 @@ impl RootAccountInitializer {
             ..Default::default()
         };
 
-        // Add code if counter exists
-        if let Some(counter) = &account_organizations_counter {
-            root_account_organization.code = Some(generate_root_account_code(counter));
-        }
+        root_account_organization.code = helpers::generate_code("account_organizations")
+            .await
+            .map_err(|e| {
+                ApiError::new(
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Failed to generate account organization code: {}", e),
+                )
+            })?;
 
         // Start a transaction
         let result = conn

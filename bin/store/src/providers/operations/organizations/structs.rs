@@ -13,6 +13,7 @@ pub struct Register {
     pub parent_organization_id: Option<String>,
     pub code: Option<String>,
     pub categories: Option<Vec<String>>,
+    pub organization_categories: Option<Vec<String>>,
     pub account_status: Option<String>,
 
     pub account_type: Option<AccountType>, // Replace with enum if AccountType is defined
