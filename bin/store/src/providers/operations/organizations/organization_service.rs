@@ -12,9 +12,9 @@ use crate::generated::models::organization_account_model::OrganizationAccountMod
 use crate::generated::models::organization_model::OrganizationModel;
 use crate::generated::schema::account_organizations;
 use crate::generated::schema::accounts;
+use crate::generated::schema::contact_emails;
 use crate::generated::schema::counters;
 use crate::generated::schema::devices;
-use crate::generated::schema::contact_emails;
 use crate::generated::schema::organizations;
 use crate::providers::operations::auth::auth_service;
 use crate::providers::operations::organizations::structs::AccountType;
