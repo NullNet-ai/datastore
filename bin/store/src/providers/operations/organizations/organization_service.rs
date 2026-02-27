@@ -13,6 +13,7 @@ use crate::generated::models::organization_model::OrganizationModel;
 use crate::generated::schema::account_organizations;
 use crate::generated::schema::accounts;
 use crate::generated::schema::counters;
+use crate::generated::schema::devices;
 use crate::generated::schema::organizations;
 use crate::providers::operations::auth::auth_service;
 use crate::providers::operations::organizations::structs::AccountType;
@@ -93,6 +94,27 @@ pub async fn register(
     let now = chrono::Utc::now();
     let formatted_date = now.format("%Y-%m-%d").to_string(); // Format date
     let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
+
+    // If the request explicitly provides an organization_id that already exists, return it
+    if let Some(org_id_param) = params.organization_id.clone() {
+        if !org_id_param.is_empty() {
+            let existing_org = organizations::table
+                .filter(
+                    organizations::id
+                        .eq(&org_id_param)
+                        .and(organizations::tombstone.eq(0)),
+                )
+                .first::<OrganizationModel>(&mut conn)
+                .await
+                .optional()?;
+            if existing_org.is_some() {
+                return Ok(json!({
+                    "organization_id": org_id_param,
+                    "account_id": account_id,
+                }));
+            }
+        }
+    }
 
     // Determine a concrete account_organization_id to use everywhere (created_by and AO id)
     let default_account_organization_id = if !account_organization_id.is_empty() {
@@ -470,6 +492,20 @@ pub async fn register(
                             "Device ID is required but not available.",
                         )
                     })?;
+                // If device already exists, return it to client
+                if let Some(_) = devices::table
+                    .filter(devices::id.eq(&device_id_value))
+                    .first::<DeviceModel>(&mut conn)
+                    .await
+                    .optional()?
+                {
+                    return Ok(json!({
+                        "device_id": device_id_value,
+                        "organization_id": params.organization_id.clone().unwrap_or_default(),
+                        "account_id": _account_id,
+                        "email": account_id
+                    }));
+                }
                 let code = if devices_counter.is_some() {
                     helpers::generate_code("devices").await?
                 } else {
