@@ -1,0 +1,58 @@
+use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(
+    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
+)]
+#[diesel(table_name = crate::generated::schema::publications)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[serde(default)]
+pub struct PublicationModel {
+    pub tombstone: Option<i32>,
+    pub status: Option<String>,
+    pub previous_status: Option<String>,
+    pub version: Option<i32>,
+    pub created_date: Option<String>,
+    pub created_time: Option<String>,
+    pub updated_date: Option<String>,
+    pub updated_time: Option<String>,
+    pub organization_id: Option<String>,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
+    pub deleted_by: Option<String>,
+    pub requested_by: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub tags: Option<Vec<String>>,
+    pub categories: Option<Vec<String>>,
+    pub code: Option<String>,
+    pub id: Option<String>,
+    pub sensitivity_level: Option<i32>,
+    pub sync_status: Option<String>,
+    pub is_batch: Option<bool>,
+    pub image_url: Option<String>,
+    pub website_id: Option<String>,
+    pub published_url: Option<String>,
+    pub published_scope: Option<String>,
+    pub published_start_date: Option<String>,
+    pub published_start_time: Option<String>,
+    pub published_end_date: Option<String>,
+    pub published_end_time: Option<String>,
+    pub published_schedule_type: Option<String>,
+    pub published_status: Option<String>,
+    pub published_auto_fixes: Option<bool>,
+    pub published_wcag_standards: Option<Vec<String>>,
+    pub published_accessibility_score: Option<i32>,
+    pub published_type: Option<String>,
+    pub published_protocol: Option<String>,
+    pub published_hostname: Option<String>,
+    pub published_page_id: Option<String>,
+    pub published_file_id: Option<String>,
+    pub published_page: Option<String>,
+    pub published_pages_count: Option<i32>,
+    pub published_external_links_count: Option<i32>,
+    pub published_broken_links_count: Option<i32>,
+    pub website_url: Option<String>,
+    pub page_version_id: Option<String>,
+    pub audit_id: Option<String>,
+    pub file_published_url: Option<String>,
+}

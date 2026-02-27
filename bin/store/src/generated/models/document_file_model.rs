@@ -1,0 +1,56 @@
+use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(
+    Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
+)]
+#[diesel(table_name = crate::generated::schema::document_files)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+#[serde(default)]
+pub struct DocumentFileModel {
+    pub tombstone: Option<i32>,
+    pub status: Option<String>,
+    pub previous_status: Option<String>,
+    pub version: Option<i32>,
+    pub created_date: Option<String>,
+    pub created_time: Option<String>,
+    pub updated_date: Option<String>,
+    pub updated_time: Option<String>,
+    pub organization_id: Option<String>,
+    pub created_by: Option<String>,
+    pub updated_by: Option<String>,
+    pub deleted_by: Option<String>,
+    pub requested_by: Option<String>,
+    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub tags: Option<Vec<String>>,
+    pub categories: Option<Vec<String>>,
+    pub code: Option<String>,
+    pub id: Option<String>,
+    pub sensitivity_level: Option<i32>,
+    pub sync_status: Option<String>,
+    pub is_batch: Option<bool>,
+    pub image_url: Option<String>,
+    pub file_url: Option<String>,
+    pub file_name: Option<String>,
+    pub file_creation_option: Option<String>,
+    pub audit_validation_profiles: Option<Vec<String>>,
+    pub file_last_audit_date: Option<String>,
+    pub file_last_audit_time: Option<String>,
+    pub file_status: Option<String>,
+    pub auto_audit: Option<String>,
+    pub audit_scope: Option<String>,
+    pub audit_type: Option<String>,
+    pub audit_schedule_type: Option<String>,
+    pub auto_publish_latest_scan: Option<bool>,
+    pub auto_accept_for_review: Option<bool>,
+    pub auto_publish: Option<bool>,
+    pub enable_autofix: Option<bool>,
+    pub website_id: Option<String>,
+    pub audit_id: Option<String>,
+    pub page_id: Option<String>,
+    pub status_code: Option<String>,
+    pub headers: Option<String>,
+    pub title: Option<String>,
+    pub content_type: Option<String>,
+    pub document_type: Option<String>,
+}
