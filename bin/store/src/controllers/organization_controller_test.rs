@@ -1001,9 +1001,10 @@ mod tests {
         println!("Testing successful user registration with code and created_by assignment...");
 
         // Create test application
-        let app = test::init_service(
-            App::new().route("/register", web::post().to(OrganizationsController::register)),
-        )
+        let app = test::init_service(App::new().route(
+            "/register",
+            web::post().to(OrganizationsController::register),
+        ))
         .await;
 
         // Create a test request with the provided parameters
@@ -1045,18 +1046,20 @@ mod tests {
         assert_eq!(status, StatusCode::OK, "Registration should succeed");
 
         // Parse response to verify structure
-        let response_json: serde_json::Value = serde_json::from_str(&body_str)
-            .expect("Response should be valid JSON");
+        let response_json: serde_json::Value =
+            serde_json::from_str(&body_str).expect("Response should be valid JSON");
 
         // Verify response contains expected structure
         assert!(
-            response_json.get("personal_organization_id").is_some() ||
-            response_json.get("team_organization_id").is_some(),
+            response_json.get("personal_organization_id").is_some()
+                || response_json.get("team_organization_id").is_some(),
             "Response should contain organization ID"
         );
 
         // Log success message for verification
-        println!("Registration test completed successfully - code and created_by should be assigned");
+        println!(
+            "Registration test completed successfully - code and created_by should be assigned"
+        );
         println!("To verify in database, run: SELECT code, created_by FROM organizations WHERE organization_id IN (SELECT organization_id FROM accounts WHERE account_id = 'charlyn3344@dnamicro.com');");
     }
 }

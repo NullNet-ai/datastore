@@ -52,14 +52,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         .or_else(|_| env::var("MIGRATE_FROM_DATABASE_URL"))
         .map_err(|_| "MIGRATE_FROM_DATABASE_URL or MIGRATE_ORDER_DATABASE_URL required")?;
     let schema = env::var("MIGRATE_ORDER_SCHEMA").unwrap_or_else(|_| "public".to_string());
-    let output_path = env::var("MIGRATE_ORDER_OUTPUT")
-        .unwrap_or_else(|_| "migrate_tables_order.rs".to_string());
+    let output_path =
+        env::var("MIGRATE_ORDER_OUTPUT").unwrap_or_else(|_| "migrate_tables_order.rs".to_string());
 
     // Force no TLS so local Postgres without SSL works (avoids "server does not support TLS")
     let connect_url = ensure_sslmode_disable(&database_url);
 
-    let (client, connection) =
-        tokio_postgres::connect(&connect_url, tokio_postgres::NoTls).await?;
+    let (client, connection) = tokio_postgres::connect(&connect_url, tokio_postgres::NoTls).await?;
     tokio::spawn(async move {
         let _ = connection.await;
     });
@@ -111,7 +110,10 @@ async fn fetch_tables_in_schema(
             &[&schema],
         )
         .await?;
-    Ok(rows.iter().map(|r| r.get::<_, String>("table_name")).collect())
+    Ok(rows
+        .iter()
+        .map(|r| r.get::<_, String>("table_name"))
+        .collect())
 }
 
 /// Returns (from_table, to_table, from_column): from_table.from_column FK → to_table.
@@ -237,7 +239,16 @@ fn topological_sort(
 
     for t in tables.iter().map(String::as_str) {
         if !indices.contains_key(t) {
-            strong_connect(t, &adj, &mut index, &mut stack, &mut indices, &mut lowlinks, &mut on_stack, &mut sccs);
+            strong_connect(
+                t,
+                &adj,
+                &mut index,
+                &mut stack,
+                &mut indices,
+                &mut lowlinks,
+                &mut on_stack,
+                &mut sccs,
+            );
         }
     }
 
@@ -303,10 +314,7 @@ fn topological_sort(
     }
 
     // Collect which tables have any FK at all (as from_table)
-    let tables_with_fk: HashSet<&str> = fk_edges
-        .iter()
-        .map(|(from, _, _)| from.as_str())
-        .collect();
+    let tables_with_fk: HashSet<&str> = fk_edges.iter().map(|(from, _, _)| from.as_str()).collect();
 
     // Start with SCCs that have no incoming edges (dependency roots). Sort: (0) truly
     // independent (no FKs in or out), (1) referenced roots (others depend on them), (2) rest.
@@ -386,7 +394,11 @@ fn format_rust_output(
             .map(|c| format!("\"{}\"", escape_rust_str(c)))
             .collect::<Vec<_>>()
             .join(", ");
-        out.push_str(&format!("    (\"{}\", &[{}]),\n", escape_rust_str(table), cols_str));
+        out.push_str(&format!(
+            "    (\"{}\", &[{}]),\n",
+            escape_rust_str(table),
+            cols_str
+        ));
     }
     out.push_str("];\n");
     out

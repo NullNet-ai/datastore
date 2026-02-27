@@ -611,7 +611,10 @@ pub async fn create_new_organization(
     // Ensure code is not NULL by generating one if not provided
     let final_code = code.unwrap_or_else(|| {
         // Generate a default code if none provided
-        format!("CTR{}", Ulid::new().to_string().chars().take(8).collect::<String>())
+        format!(
+            "CTR{}",
+            Ulid::new().to_string().chars().take(8).collect::<String>()
+        )
     });
 
     // For now, we'll set created_by to None and update it later after creating the account organization
@@ -631,7 +634,7 @@ pub async fn create_new_organization(
         created_time: Some(formatted_time.clone()),
         updated_date: Some(formatted_date),
         updated_time: Some(formatted_time),
-        code: Some(final_code), // Always provide a code
+        code: Some(final_code),       // Always provide a code
         created_by: final_created_by, // Already Option<String>, no need for Some() wrapper
         // Set default values for other required fields
         ..Default::default()
