@@ -190,8 +190,9 @@ pub async fn register(
         }
     } else {
         //create a personal organization (use static ID only when set by initializers, e.g. super admin / system device)
-        let personal_categories =
-            organization_categories.clone().unwrap_or_else(|| vec!["Personal".to_string()]);
+        let personal_categories = organization_categories
+            .clone()
+            .unwrap_or_else(|| vec!["Personal".to_string()]);
         let personal_organization_id = create_new_organization(
             "Personal Organization".to_string(),
             personal_categories,
@@ -236,8 +237,9 @@ pub async fn register(
         .await?;
     }
 
-    let team_categories =
-        organization_categories.clone().unwrap_or_else(|| vec!["Team".to_string()]);
+    let team_categories = organization_categories
+        .clone()
+        .unwrap_or_else(|| vec!["Team".to_string()]);
     team_organization_id = Some(
         create_new_organization(
             team_organization_name
