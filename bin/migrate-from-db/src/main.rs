@@ -80,7 +80,12 @@ impl ErrorLog {
 fn build_circular_fk_map() -> HashMap<String, Vec<String>> {
     MIGRATE_CIRCULAR_FK_COLS
         .iter()
-        .map(|&(table, cols)| (table.to_string(), cols.iter().map(|s| s.to_string()).collect()))
+        .map(|&(table, cols)| {
+            (
+                table.to_string(),
+                cols.iter().map(|s| s.to_string()).collect(),
+            )
+        })
         .collect()
 }
 
@@ -202,13 +207,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                     Err(e) => {
                         let msg = e.to_string();
                         eprintln!("  error inserting row {}: {}", i + 1, msg);
-                        error_log.log(
-                            table,
-                            i + 1,
-                            row_id.as_deref(),
-                            &msg,
-                            Some(&row_json),
-                        );
+                        error_log.log(table, i + 1, row_id.as_deref(), &msg, Some(&row_json));
                         error_count += 1;
                     }
                 }

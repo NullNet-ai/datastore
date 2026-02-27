@@ -444,28 +444,33 @@ mod tests {
     #[test]
     fn should_detect_timestamp_columns_by_type_for_order_by_constructor() {
         // account_profiles.date_of_birth -> Timestamp, field name is not "timestamp"
-        assert!(OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
-            "account_profiles",
-            "date_of_birth"
-        ));
+        assert!(
+            OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
+                "account_profiles",
+                "date_of_birth"
+            )
+        );
 
         // account_profiles.timestamp -> Timestamp, classic timestamp column
-        assert!(OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
-            "account_profiles",
-            "timestamp"
-        ));
+        assert!(
+            OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
+                "account_profiles",
+                "timestamp"
+            )
+        );
 
         // accounts.timestamp -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
-        assert!(OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
-            "accounts",
-            "timestamp"
-        ));
+        assert!(
+            OrderByConstructor::<MockOrderByFilter>::is_timestamp_column("accounts", "timestamp")
+        );
 
         // Non-timestamp column should not be treated as timestamp
-        assert!(!OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
-            "account_profiles",
-            "code"
-        ));
+        assert!(
+            !OrderByConstructor::<MockOrderByFilter>::is_timestamp_column(
+                "account_profiles",
+                "code"
+            )
+        );
     }
 }
 

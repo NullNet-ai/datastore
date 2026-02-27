@@ -1,13 +1,13 @@
 use serde_json::Value;
 use std::collections::BTreeMap;
 
+use crate::database::schema::verify::field_type_in_table;
 use crate::providers::queries::find::sql_constructor::QueryFilter;
 use crate::providers::queries::find::sql_constructor::SQLConstructor as FindSQLConstructor;
 use crate::providers::queries::search_suggestion::{
     structs::{ConcatenatedExpressions, FieldFiltersResult},
     utils::get_field_filters,
 };
-use crate::database::schema::verify::field_type_in_table;
 use crate::structs::core::{
     ConcatenateField, FilterCriteria, GroupAdvanceFilter, Join, SearchSuggestionParams,
 };

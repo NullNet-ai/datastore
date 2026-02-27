@@ -288,7 +288,10 @@ mod tests {
         ));
 
         // accounts.timestamp -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
-        assert!(GroupByConstructor::is_timestamp_column("accounts", "timestamp"));
+        assert!(GroupByConstructor::is_timestamp_column(
+            "accounts",
+            "timestamp"
+        ));
 
         // Non-timestamp column should not be treated as timestamp
         assert!(!GroupByConstructor::is_timestamp_column(

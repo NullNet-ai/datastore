@@ -11,9 +11,9 @@ use bytes::Bytes;
 use csv::WriterBuilder;
 use futures::{pin_mut, SinkExt};
 use serde_json::Value;
+use std::env;
 use tokio_postgres::Client;
 use tonic::Status;
-use std::env;
 
 use super::store_controller::ApiError;
 

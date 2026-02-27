@@ -922,7 +922,10 @@ mod tests {
         ));
 
         // accounts.timestamp -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
-        assert!(WhereConstructor::is_timestamp_column("accounts", "timestamp"));
+        assert!(WhereConstructor::is_timestamp_column(
+            "accounts",
+            "timestamp"
+        ));
 
         // Non-timestamp column should not be treated as timestamp
         assert!(!WhereConstructor::is_timestamp_column(

@@ -69,9 +69,10 @@ impl StoreClient {
     /// Login with the root account (if configured) and return a Bearer token.
     /// Falls back to normal login() if no separate root credentials are provided.
     pub async fn login_root(&self) -> Result<String, Box<dyn std::error::Error + Send + Sync>> {
-        if let (Some(root_id), Some(root_secret)) =
-            (self.root_account_id.as_ref(), self.root_account_secret.as_ref())
-        {
+        if let (Some(root_id), Some(root_secret)) = (
+            self.root_account_id.as_ref(),
+            self.root_account_secret.as_ref(),
+        ) {
             let url = format!("{}/api/organizations/auth?is_root=true", self.base_url);
             let body = serde_json::json!({
                 "data": {
@@ -142,10 +143,7 @@ impl StoreClient {
         patch_body: &Value,
         token: &str,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let url = format!(
-            "{}/api/store/root/{}/{}",
-            self.base_url, table, record_id
-        );
+        let url = format!("{}/api/store/root/{}/{}", self.base_url, table, record_id);
 
         let auth_value = format!("Bearer {}", token);
         let res = self
