@@ -14,6 +14,7 @@ use crate::generated::schema::account_organizations;
 use crate::generated::schema::accounts;
 use crate::generated::schema::counters;
 use crate::generated::schema::devices;
+use crate::generated::schema::contact_emails;
 use crate::generated::schema::organizations;
 use crate::providers::operations::auth::auth_service;
 use crate::providers::operations::organizations::structs::AccountType;
@@ -480,11 +481,21 @@ pub async fn register(
                     .await
                     .optional()?
                 {
+                    // Try to find existing contact by email for completeness
+                    let contact_id_opt = contact_emails::table
+                        .filter(contact_emails::email.eq(&account_id))
+                        .first::<ContactEmailModel>(&mut conn)
+                        .await
+                        .optional()?
+                        .and_then(|ce| ce.contact_id);
+
                     return Ok(json!({
                         "device_id": device_id_value,
-                        "organization_id": params.organization_id.clone().unwrap_or_default(),
+                        "organization_id": params.organization_id.clone(),
                         "account_id": _account_id,
-                        "email": account_id
+                        "email": account_id,
+                        "account_organization_id": default_account_organization_id,
+                        "contact_id": contact_id_opt
                     }));
                 }
                 let code = if devices_counter.is_some() {
@@ -600,10 +611,11 @@ pub async fn register(
 
             // Create response JSON
             let mut result = json!({
-                "organization_id": params.organization_id.clone().unwrap_or_default(),
+                "organization_id": params.organization_id.clone(),
                 "account_organization_id": account_org_id,
                 "account_id": _account_id,
-                "email": account_id
+                "email": account_id,
+                "contact_id": account_organization.contact_id.clone()
             });
 
             // Add device information if available
