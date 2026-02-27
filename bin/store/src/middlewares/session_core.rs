@@ -190,7 +190,7 @@ impl SessionManager {
                     .naive_utc(),
             ),
             application_accessed: None,
-            last_accessed: Some(Utc::now().naive_utc()),
+            last_accessed: Some(Utc::now()),
         }
     }
 
@@ -388,7 +388,7 @@ impl SessionManager {
                 Some(expires)
             },
             application_accessed: app_id,
-            last_accessed: Some(Utc::now().naive_utc()),
+            last_accessed: Some(Utc::now()),
         };
 
         // Convert session model to JSON for sync service

@@ -1,4 +1,5 @@
 use crate::database::schema::forbidden_tables;
+use crate::database::schema::verify::field_type_in_table;
 use crate::providers::operations::sync::hlc::mutable_timestamp::MutableTimestamp;
 use actix_web::{HttpResponse, ResponseError};
 use chrono::Utc;
@@ -91,6 +92,36 @@ pub struct SwitchAccountData {
     pub organization_id: String,
 }
 
+/// Ensure the string has an RFC3339 timezone so chrono accepts it.
+/// - "2026-02-27T10:30:00" or "2025-12-01 23:06:21.25" -> append "+00:00"
+/// - "...+00" or "...-05" -> append ":00" so offset is full (+00:00, -05:00)
+fn ensure_rfc3339_has_timezone(s: &str) -> String {
+    let s = s.trim();
+    if s.ends_with('Z') {
+        return s.to_string();
+    }
+    // Already has full offset (+HH:MM or -HH:MM)
+    if s.contains('+') || s.rfind('-').map_or(false, |i| i > 10) {
+        // Normalize short offset e.g. "+00" -> "+00:00"
+        if s.len() >= 3 {
+            let rest = &s[s.len() - 3..];
+            if (rest.starts_with('+') || rest.starts_with('-'))
+                && rest[1..].chars().all(|c| c.is_ascii_digit())
+            {
+                return format!("{}:00", s);
+            }
+        }
+        return s.to_string();
+    }
+    // No timezone: append +00:00 (and ensure space-separated has T for RFC3339)
+    let with_t = if s.contains(' ') && !s.contains('T') {
+        s.replace(' ', "T")
+    } else {
+        s.to_string()
+    };
+    format!("{}+00:00", with_t)
+}
+
 impl RequestBody {
     // Process record with common fields and return a Value directly
     pub fn process_record(
@@ -102,6 +133,9 @@ impl RequestBody {
     ) {
         // // Add common fields to the record
         self.add_common_fields(operation, auth, is_root_account, table);
+
+        // Normalize all timestamp/timestamptz fields to RFC3339 so model deserialization and sync succeed
+        self.normalize_timestamp_fields(table);
 
         if let Some(timestamp) = self.record.get_mut("timestamp") {
             if let Some(ts_str) = timestamp.as_str() {
@@ -131,6 +165,31 @@ impl RequestBody {
         }
     }
 
+    /// Ensure every timestamp/timestamptz field in the record has an RFC3339 timezone so chrono
+    /// deserialization and sync message parsing succeed (e.g. "2026-02-27T10:30:00" -> "...+00:00").
+    fn normalize_timestamp_fields(&mut self, table: &str) {
+        let obj = match self.record.as_object_mut() {
+            Some(o) => o,
+            None => return,
+        };
+        let keys: Vec<String> = obj.keys().cloned().collect();
+        for key in keys {
+            if let Some(info) = field_type_in_table(table, &key) {
+                if info.field_type != "timestamp" {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+            if let Some(Value::String(s)) = obj.get(&key) {
+                let normalized = ensure_rfc3339_has_timezone(s);
+                if normalized != *s {
+                    obj.insert(key, Value::String(normalized));
+                }
+            }
+        }
+    }
+
     /// True if record has no id or id is null/empty/whitespace — then a new ULID will be assigned.
     /// Pass `null` or `""` (or omit `id`) to get an auto-generated id.
     fn id_absent_or_empty(record: &Value) -> bool {
@@ -149,6 +208,19 @@ impl RequestBody {
         is_root_account: bool,
         table: &str,
     ) {
+        // When running migrations we must not touch system fields at all.
+        // MIGRATION_MODE=true (or "1") disables automatic system field assignment.
+        if std::env::var("MIGRATION_MODE")
+            .ok()
+            .map(|v| {
+                let v = v.trim();
+                v.eq_ignore_ascii_case("true") || v == "1"
+            })
+            .unwrap_or(false)
+        {
+            return;
+        }
+
         // Get current time for timestamps
         let now = Utc::now();
         let date_str = now.format("%Y-%m-%d").to_string();
@@ -854,6 +926,7 @@ pub struct SearchSuggestionParams {
 mod tests {
     use super::{Auth, RequestBody};
     use serde_json::json;
+    use std::env;
 
     fn test_auth() -> Auth {
         Auth {
@@ -870,6 +943,9 @@ mod tests {
 
     #[test]
     fn process_record_create_assigns_id_when_id_missing() {
+        // Ensure MIGRATION_MODE does not disable id generation
+        env::remove_var("MIGRATION_MODE");
+
         let mut body = RequestBody {
             record: json!({ "name": "Test" }),
         };
@@ -884,6 +960,8 @@ mod tests {
 
     #[test]
     fn process_record_create_assigns_id_when_id_null() {
+        env::remove_var("MIGRATION_MODE");
+
         let mut body = RequestBody {
             record: json!({ "id": null, "name": "Test" }),
         };
@@ -898,6 +976,8 @@ mod tests {
 
     #[test]
     fn process_record_create_assigns_id_when_id_empty_string() {
+        env::remove_var("MIGRATION_MODE");
+
         let mut body = RequestBody {
             record: json!({ "id": "", "name": "Test" }),
         };
@@ -912,6 +992,8 @@ mod tests {
 
     #[test]
     fn process_record_create_assigns_id_when_id_whitespace_only() {
+        env::remove_var("MIGRATION_MODE");
+
         let mut body = RequestBody {
             record: json!({ "id": "   ", "name": "Test" }),
         };
@@ -929,6 +1011,8 @@ mod tests {
 
     #[test]
     fn process_record_create_preserves_id_when_non_empty() {
+        env::remove_var("MIGRATION_MODE");
+
         let existing_id = "01ARZ3NDEKTSV4RRFFQ69G5FAV";
         let mut body = RequestBody {
             record: json!({ "id": existing_id, "name": "Test" }),
@@ -936,5 +1020,67 @@ mod tests {
         body.process_record("create", &test_auth(), true, "contacts");
         let id = body.record.get("id").and_then(|v| v.as_str()).unwrap();
         assert_eq!(id, existing_id, "existing id should be preserved");
+    }
+
+    #[test]
+    fn add_common_fields_sets_system_fields_for_create_when_migration_mode_disabled() {
+        // Ensure MIGRATION_MODE is not set to an enabled value
+        env::remove_var("MIGRATION_MODE");
+
+        let mut body = RequestBody {
+            record: json!({ "name": "Test" }),
+        };
+        let auth = test_auth();
+
+        body.process_record("create", &auth, false, "contacts");
+        let obj = body.record.as_object().expect("record should be an object");
+
+        assert_eq!(obj.get("status").unwrap(), "Active");
+        assert!(obj.get("created_date").is_some());
+        assert!(obj.get("created_time").is_some());
+        assert!(obj.get("updated_date").is_some());
+        assert!(obj.get("updated_time").is_some());
+        assert_eq!(obj.get("version").unwrap(), 1);
+        assert_eq!(obj.get("tombstone").unwrap(), 0);
+        assert_eq!(
+            obj.get("organization_id").unwrap(),
+            &json!(auth.organization_id)
+        );
+        assert_eq!(
+            obj.get("created_by").unwrap(),
+            &json!(auth.responsible_account)
+        );
+    }
+
+    #[test]
+    fn add_common_fields_skips_system_fields_when_migration_mode_enabled() {
+        env::set_var("MIGRATION_MODE", "true");
+
+        let mut body = RequestBody {
+            record: json!({ "name": "Test" }),
+        };
+        let auth = test_auth();
+
+        body.process_record("create", &auth, false, "contacts");
+        let obj = body.record.as_object().expect("record should be an object");
+
+        // System fields should not be injected when MIGRATION_MODE is enabled
+        assert!(obj.get("status").is_none());
+        assert!(obj.get("created_date").is_none());
+        assert!(obj.get("created_time").is_none());
+        assert!(obj.get("updated_date").is_none());
+        assert!(obj.get("updated_time").is_none());
+        assert!(obj.get("version").is_none());
+        assert!(obj.get("tombstone").is_none());
+        assert!(obj.get("organization_id").is_none());
+        assert!(obj.get("created_by").is_none());
+        assert!(obj.get("updated_by").is_none());
+        assert!(obj.get("deleted_by").is_none());
+
+        // Original fields should be preserved
+        assert_eq!(obj.get("name").unwrap(), "Test");
+
+        // Clean up for other tests
+        env::remove_var("MIGRATION_MODE");
     }
 }

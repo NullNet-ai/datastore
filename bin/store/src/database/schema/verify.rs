@@ -17,6 +17,8 @@ pub struct FieldTypeInfo {
     pub field_type: String,
     pub nullable: bool,
     pub is_json: bool,
+    /// True when the DB type is timestamptz (with time zone). Used to serialize for DateTime<Utc> vs NaiveDateTime.
+    pub is_timestamptz: bool,
 }
 
 pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTypeInfo> {
@@ -110,7 +112,9 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
                         }
 
                         // Simplify the base type
-                        let simplified_type = match processed_type.to_lowercase().as_str() {
+                        let lower = processed_type.to_lowercase();
+                        let is_timestamptz = lower == "timestamptz";
+                        let simplified_type = match lower.as_str() {
                             "int4" | "integer" => "integer".to_string(),
                             "text" | "varchar" | "char" => "text".to_string(),
                             "float" | "float4" | "float8" | "double" => "float".to_string(),
@@ -129,6 +133,7 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
                             field_type: simplified_type,
                             nullable: is_nullable,
                             is_json,
+                            is_timestamptz,
                         });
                     }
                 }

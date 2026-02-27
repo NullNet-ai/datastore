@@ -5,6 +5,49 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.38
+
+### Author
+Kashan
+
+### Changed
+  - ***Code generation behavior for migrations***:
+    - Updated `process_and_insert_record` in `controllers/common_controller.rs` to respect `MIGRATION_MODE`. When `MIGRATION_MODE=true` (or `1`), the store no longer auto-generates or overwrites the `code` field for generic insert requests and instead preserves whatever `code` is provided in the request body.
+
+### Added
+  - ***Tests for code generation vs. migration mode***:
+    - Added async tests in `common_controller.rs` to ensure `process_and_insert_record` succeeds when `MIGRATION_MODE` is disabled (normal auto-generated code path) and also when it is enabled while trusting body-provided `code` values.
+
+## 0.2.37
+
+### Author
+Kashan
+
+### Changed
+  - ***System fields handling for migrations***:
+    - Updated `RequestBody::add_common_fields` in `structs/core.rs` to respect a `MIGRATION_MODE` environment flag. When `MIGRATION_MODE=true` (or `1`), the store now skips assigning all system fields (`status`, `tombstone`, `created_*`, `updated_*`, `deleted_*`, `organization_id`, `version`) regardless of operation (`create`, `update`, `delete`), so migration tooling can insert raw records without automatic metadata changes.
+
+### Added
+  - ***Tests for common/system fields and migration mode***:
+    - Added unit tests in `structs/core.rs` to verify that `process_record`/`add_common_fields` populate system fields correctly for creates when `MIGRATION_MODE` is disabled, and that the same fields are **not** added when `MIGRATION_MODE` is enabled.
+
+## 0.2.36
+
+### Author
+Kashan
+
+### Fixed
+  - ***Timestamp and timestamptz handling in queries and sync***:
+    - Updated `FieldTypeInfo` in `database/schema/verify.rs` to track `is_timestamptz` so we can distinguish `timestamp` vs `timestamptz` while still simplifying both to the `"timestamp"` logical type for query constructors.
+    - Adjusted sync message parsing in `providers/operations/sync/store/store_driver.rs` to serialize `timestamp` fields as naive datetimes (no timezone, for `NaiveDateTime`) and `timestamptz` fields as RFC3339 with timezone (for `DateTime<Utc>`), fixing “trailing input” deserialization errors.
+    - Normalized API request and sync payloads for timestamp/timestamptz fields in `structs/core.rs` so they are always parsed as valid RFC3339 before being stored or sent.
+    - Updated `sample_checks` and `sessions` models to use correct chrono types for `timestamp` and `timestamptz` columns (e.g. `last_accessed: DateTime<Utc>`), ensuring round-trip sync works both on create and when bootstrapping from the server.
+
+### Added
+  - ***Timestamp-aware query constructors tests***:
+    - Added unit tests for `GroupByConstructor`, `WhereConstructor`, `OrderByConstructor`, and search suggestion SQL to assert that `field_type_in_table` treats both `timestamp` and `timestamptz` columns as timestamp types and leaves non-timestamp fields untouched.
+    - These tests cover the new behavior using the `sample_checks` table (`some_test_field` as `timestamp`, `timestamp2` as `timestamptz`) so that future schema or constructor changes don’t regress timestamp handling.
+
 ## 0.2.35
 ### Author
 Bert
