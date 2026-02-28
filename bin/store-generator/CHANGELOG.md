@@ -5,6 +5,13 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.14
+### Author
+Kashan
+
+### Fixed
+- **Index definition comparison vs existing migrations**: When an index already exists in migrations, the generator compares the table definition’s index SQL with the existing migration SQL. Existing migrations sometimes use unquoted column names (e.g. `btree(tombstone)`) while the generator emits quoted names (e.g. `btree("tombstone")`). In `schema_generator.rs`, `normalize_index_sql_for_compare` now normalizes the column list inside `USING btree(...)` to a single form (unquoted), so both styles compare equal and the generator no longer errors with "Index '...' was already created with a different definition" when the only difference is column quoting.
+
 ## 0.1.13
 ### Author
 Kashan

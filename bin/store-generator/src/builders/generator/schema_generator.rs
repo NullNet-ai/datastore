@@ -422,10 +422,23 @@ impl SchemaGenerator {
     }
 
     /// Normalize CREATE INDEX SQL for comparison (lowercase, collapse whitespace, no trailing semicolon).
+    /// Column names in the index definition are normalized to unquoted form so that
+    /// btree(tombstone) and btree("tombstone") from migrations are treated as equal.
     fn normalize_index_sql_for_compare(sql: &str) -> String {
         let s = sql.trim().trim_end_matches(';');
         let s = s.to_lowercase();
-        s.split_whitespace().collect::<Vec<_>>().join(" ")
+        let s = s.split_whitespace().collect::<Vec<_>>().join(" ");
+        // Normalize column list: ("col") or (col) -> (col) so existing migrations match generator output
+        if let Ok(re) = regex::Regex::new(r"using btree\(([^)]+)\)") {
+            let s = re.replace_all(&s, |caps: &regex::Captures<'_>| {
+                let inner = &caps[1];
+                let unquoted = inner.replace('"', "");
+                format!("using btree({})", unquoted)
+            });
+            s.into_owned()
+        } else {
+            s
+        }
     }
 
     /// For reserved keywords, use a different Rust identifier and #[sql_name] to avoid clashes.
