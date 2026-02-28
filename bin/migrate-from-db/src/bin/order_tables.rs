@@ -118,6 +118,8 @@ async fn fetch_tables_in_schema(
 
 /// Returns (from_table, to_table, from_column): from_table.from_column FK → to_table.
 /// So to_table must be inserted before from_table.
+/// Uses pg_constraint directly so every FK is found (information_schema joins can drop rows
+/// when constraint_column_usage reports schema differently).
 async fn fetch_fk_relations(
     client: &tokio_postgres::Client,
     schema: &str,
@@ -126,19 +128,20 @@ async fn fetch_fk_relations(
         .query(
             r#"
             SELECT
-                tc.table_name   AS from_table,
-                ccu.table_name AS to_table,
-                kcu.column_name AS from_column
-            FROM information_schema.table_constraints tc
-            JOIN information_schema.key_column_usage kcu
-                ON tc.constraint_name = kcu.constraint_name
-                AND tc.table_schema = kcu.table_schema
-            JOIN information_schema.constraint_column_usage ccu
-                ON ccu.constraint_name = tc.constraint_name
-                AND ccu.table_schema = tc.table_schema
-            WHERE tc.constraint_type = 'FOREIGN KEY'
-              AND tc.table_schema = $1
-              AND ccu.table_schema = $1
+                src.relname   AS from_table,
+                tgt.relname   AS to_table,
+                att.attname   AS from_column
+            FROM pg_constraint con
+            JOIN pg_class src ON src.oid = con.conrelid
+            JOIN pg_class tgt ON tgt.oid = con.confrelid
+            JOIN pg_namespace nsp ON nsp.oid = src.relnamespace
+            JOIN pg_attribute att
+                ON att.attrelid = con.conrelid
+                AND att.attnum = ANY(con.conkey)
+                AND att.attnum > 0
+                AND NOT att.attisdropped
+            WHERE con.contype = 'f'
+              AND nsp.nspname = $1
             "#,
             &[&schema],
         )
