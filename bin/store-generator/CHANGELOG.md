@@ -5,6 +5,13 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.15
+### Author
+Kashan
+
+### Changed
+- **JSONB default validation**: `validate_jsonb_default` in `table_validator.rs` now allows empty-array default `'[]'::jsonb`. JSONB columns (e.g. `allowed_grades`, `allowed_ages`) may use `default: "'[]'::jsonb"` in table definitions; the previous rule that rejected empty-array defaults has been removed. Validation still requires the `::jsonb` cast when a default is set.
+
 ## 0.1.14
 ### Author
 Kashan
