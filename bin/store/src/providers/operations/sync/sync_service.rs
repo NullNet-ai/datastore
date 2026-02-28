@@ -168,7 +168,7 @@ pub async fn insert(table: &String, row: Value) -> Result<(), DieselError> {
 }
 
 pub async fn update(table: &String, row: Value, id: &String) -> Result<(), DieselError> {
-    let operation = "Insert".to_string();
+    let operation = "Update".to_string();
 
     //insert id into the row
 
@@ -209,7 +209,7 @@ pub async fn update(table: &String, row: Value, id: &String) -> Result<(), Diese
         .await?;
 
     if messages.is_empty() {
-        log::warn!("No messages created for insert operation");
+        log::warn!("No messages created for update operation");
         return Ok(());
     }
 
