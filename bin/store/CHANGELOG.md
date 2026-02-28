@@ -5,6 +5,15 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.41
+
+### Author
+Kashan
+
+### Changed
+  - ***get_by_id in migration mode***:
+    - In `macros/table_enum/table_enum_macros.rs`, `generate_get_by_id_match` now respects `MIGRATION_MODE`. When `MIGRATION_MODE=true` (or `1`), `get_by_id` fetches the record by id only and skips tombstone and organization_id filters, so migration tooling can read any row regardless of soft-delete or tenant.
+
 ## 0.2.40
 
 ### Author
