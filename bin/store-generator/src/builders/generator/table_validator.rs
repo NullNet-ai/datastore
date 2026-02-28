@@ -469,7 +469,7 @@ pub fn validate_table_file(
 
 /// Validates JSONB column default value format.
 /// - If a default is set, it must include `::jsonb` (e.g. `default: "'[]'::jsonb"` or `default: "'{\"k\":1}'::jsonb"`).
-/// - Empty array default is not allowed: omit default (array is empty by default when no value).
+/// - Empty array default `'[]'::jsonb` is allowed.
 pub fn validate_jsonb_default(field_name: &str, default_value: Option<&str>) -> Result<(), String> {
     let d = match default_value {
         None => return Ok(()),
@@ -483,20 +483,6 @@ pub fn validate_jsonb_default(field_name: &str, default_value: Option<&str>) -> 
         return Err(format!(
             "JSONB column '{}' default must use format with '::jsonb' (e.g. default: \"'[]'::jsonb\"). Got: {}",
             field_name, d
-        ));
-    }
-    // Do not allow default empty array — omit default (array is empty by default when no value)
-    let before_cast = d
-        .split("::jsonb")
-        .next()
-        .unwrap_or("")
-        .trim()
-        .trim_matches('\'')
-        .trim();
-    if before_cast == "[]" {
-        return Err(format!(
-            "JSONB column '{}' must not have default empty array ('[]'::jsonb); omit default (array is empty by default when no value).",
-            field_name
         ));
     }
     Ok(())
@@ -1005,6 +991,7 @@ mod tests {
         assert!(validate_jsonb_default("tags", Some("'[1,2]'::jsonb")).is_ok());
         assert!(validate_jsonb_default("data", Some("'{\"a\": 1}'::jsonb")).is_ok());
         assert!(validate_jsonb_default("prefs", Some("'{}'::jsonb")).is_ok());
+        assert!(validate_jsonb_default("allowed_grades", Some("'[]'::jsonb")).is_ok());
     }
 
     #[test]
@@ -1018,31 +1005,6 @@ mod tests {
         assert!(
             err.contains("tags"),
             "error should mention field name: {}",
-            err
-        );
-    }
-
-    #[test]
-    fn test_validate_jsonb_default_err_empty_array_default() {
-        let err = validate_jsonb_default("tags", Some("'[]'::jsonb")).unwrap_err();
-        assert!(
-            err.contains("must not have default empty array"),
-            "error should reject empty array default: {}",
-            err
-        );
-        assert!(
-            err.contains("tags"),
-            "error should mention field name: {}",
-            err
-        );
-    }
-
-    #[test]
-    fn test_validate_jsonb_default_err_empty_array_no_quotes() {
-        let err = validate_jsonb_default("meta", Some("[]::jsonb")).unwrap_err();
-        assert!(
-            err.contains("must not have default empty array"),
-            "error should reject empty array default: {}",
             err
         );
     }
