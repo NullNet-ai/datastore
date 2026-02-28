@@ -30,8 +30,8 @@ pub mod stream_queue_item_model;
 pub mod stream_queue_model;
 pub mod sync_endpoint_model;
 pub mod system_config_field_model;
-pub mod test_hypertable_model;
 pub mod transaction_model;
+pub mod test_hypertable_model;
 pub mod user_role_model;
 
 // Removed unused import: crate::generated::schema::*

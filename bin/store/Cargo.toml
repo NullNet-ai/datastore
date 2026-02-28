@@ -84,3 +84,7 @@ tonic-build = "0.12.3"
 
 [profile.dev]
 panic = "unwind"
+
+[profile.release]
+lto = false
+codegen-units = 16
