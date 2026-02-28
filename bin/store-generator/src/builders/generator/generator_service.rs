@@ -2286,4 +2286,33 @@ indexes: {
             panic!("expected Pred");
         }
     }
+
+    /// Partial index like dx_school_admins_school_id_school_admin_id but with idx_ prefix.
+    /// Ensures where clause (status = 'Active') is parsed and column_names() can be used for validation.
+    #[test]
+    fn test_extract_index_with_where_clause_school_admins_style() {
+        let content = r#"
+        indexes: {
+            idx_school_admins_school_id_school_admin_id: {
+                columns: ["school_id", "school_admin_id"],
+                unique: true,
+                type: "btree",
+                where: {
+                    op: "=",
+                    column: "status",
+                    value: "Active"
+                }
+            },
+        }
+        "#;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert_eq!(indexes[0].0, "idx_school_admins_school_id_school_admin_id");
+        assert_eq!(indexes[0].1, vec!["school_id", "school_admin_id"]);
+        assert!(indexes[0].2);
+        assert!(indexes[0].4.is_some());
+        let mut where_cols = indexes[0].4.as_ref().unwrap().column_names();
+        where_cols.sort();
+        assert_eq!(where_cols, vec!["status".to_string()]);
+    }
 }

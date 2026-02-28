@@ -5,6 +5,23 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.13
+### Author
+Kashan
+
+### Added
+- **Model generator: timestamp/timestamptz types and chrono imports**:
+  - When any field uses `timestamp()` or `timestamptz()`, generated models now include `use chrono::{DateTime, NaiveDateTime, Utc};` and use short type names in the struct (`DateTime<Utc>`, `NaiveDateTime`) instead of fully qualified paths. `RUST_TYPE_MAPPINGS` already mapped `Timestamptz` → `chrono::DateTime<chrono::Utc>` and `Timestamp` → `chrono::NaiveDateTime`.
+  - New helpers: `ModelGenerator::chrono_import_line()`, `ModelGenerator::rust_type_for_display()`.
+  - Unit tests in `utils.rs` for `parse_diesel_type` and `diesel_to_rust_type` (timestamp, timestamptz, nullable variants); unit tests in `model_generator.rs` for chrono import and type shortening.
+- **Index validation: index and where-clause columns must exist in table**:
+  - `WhereExpr::column_names()` in `diesel_schema_definition.rs` collects all column names referenced in a partial index WHERE expression.
+  - `validate_table_file` in `table_validator.rs` now checks that every index column and every column referenced in an index WHERE clause exists in the table’s field list; otherwise it returns a clear error (e.g. "Index '...' where clause references column 'status' which is not found in table '...'").
+  - Unit tests: `test_validate_index_with_where_clause_columns_found`, `test_validate_index_with_where_clause_column_not_found`, `test_validate_index_column_not_found`; `test_where_expr_column_names_*` in diesel_schema_definition; `test_extract_index_with_where_clause_school_admins_style` in generator_service.
+
+### Changed
+- **Makefile**: `STORE_GEN` now uses `cargo run -p store-generator --` so `store-generator-schema`, `store-generator-proto`, and `store-generator-all` run the local workspace package instead of a `store-generator` binary on PATH.
+
 ## 0.1.12
 ### Author
 Kashan
