@@ -90,10 +90,74 @@ pub const MIGRATE_TABLES_ORDER: &[&str] = &[
 // Columns that must be set to NULL on first insert (circular FK cycles).
 // After all tables are inserted, a second pass will restore these values.
 pub const MIGRATE_CIRCULAR_FK_COLS: &[(&str, &[&str])] = &[
-    ("account_organizations", &["account_id", "contact_id", "created_by", "deleted_by", "device_id", "organization_id", "requested_by", "updated_by"]),
-    ("accounts", &["created_by", "deleted_by", "organization_id", "requested_by", "updated_by"]),
-    ("addresses", &["created_by", "deleted_by", "organization_id", "requested_by", "updated_by"]),
-    ("contacts", &["account_id", "address_id", "created_by", "deleted_by", "district_id", "organization_id", "requested_by", "school_id", "teacher_id", "updated_by"]),
-    ("devices", &["address_id", "created_by", "deleted_by", "organization_id", "requested_by", "updated_by"]),
-    ("organizations", &["created_by", "deleted_by", "organization_id", "requested_by", "root_organization_id", "updated_by"]),
+    (
+        "account_organizations",
+        &[
+            "account_id",
+            "contact_id",
+            "created_by",
+            "deleted_by",
+            "device_id",
+            "organization_id",
+            "requested_by",
+            "updated_by",
+        ],
+    ),
+    (
+        "accounts",
+        &[
+            "created_by",
+            "deleted_by",
+            "organization_id",
+            "requested_by",
+            "updated_by",
+        ],
+    ),
+    (
+        "addresses",
+        &[
+            "created_by",
+            "deleted_by",
+            "organization_id",
+            "requested_by",
+            "updated_by",
+        ],
+    ),
+    (
+        "contacts",
+        &[
+            "account_id",
+            "address_id",
+            "created_by",
+            "deleted_by",
+            "district_id",
+            "organization_id",
+            "requested_by",
+            "school_id",
+            "teacher_id",
+            "updated_by",
+        ],
+    ),
+    (
+        "devices",
+        &[
+            "address_id",
+            "created_by",
+            "deleted_by",
+            "organization_id",
+            "requested_by",
+            "updated_by",
+        ],
+    ),
+    (
+        "organizations",
+        &[
+            "created_by",
+            "deleted_by",
+            "organization_id",
+            "requested_by",
+            "root_organization_id",
+            "updated_by",
+        ],
+    ),
 ];
