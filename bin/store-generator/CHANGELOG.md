@@ -5,6 +5,13 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.16
+### Author
+Kashan
+
+### Fixed
+- **Chrono imports in generated models**: The model generator now emits only the chrono types actually used by each model. Models with only `timestamp` (NaiveDateTime) fields get `use chrono::{NaiveDateTime};`; models with only `timestamptz` (DateTime<Utc>) get `use chrono::{DateTime, Utc};`; models with both get all three. This removes "unused imports: `DateTime` and `Utc`" warnings when a model has no timestamptz fields.
+
 ## 0.1.15
 ### Author
 Kashan
