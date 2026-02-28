@@ -178,17 +178,33 @@ impl ModelGenerator {
         Ok(field_names)
     }
 
-    /// Returns the chrono import line when any field uses timestamp or timestamptz.
-    /// Timestamptz is mapped to DateTime<Utc>, timestamp to NaiveDateTime.
+    /// Returns the chrono import line with only the types actually used by the model's fields.
+    /// Timestamptz uses DateTime<Utc> (needs DateTime, Utc); timestamp uses NaiveDateTime.
     pub(crate) fn chrono_import_line(fields: &[ParsedField]) -> Option<String> {
+        let mut use_naive = false;
+        let mut use_datetime_utc = false;
         for field in fields {
             if let Ok(rust_type) = FieldTypeParser::diesel_to_rust_type(&field.field_type) {
-                if rust_type.contains("chrono::") {
-                    return Some("use chrono::{DateTime, NaiveDateTime, Utc};".to_string());
+                if rust_type.contains("chrono::NaiveDateTime") {
+                    use_naive = true;
+                }
+                if rust_type.contains("chrono::DateTime<chrono::Utc>") {
+                    use_datetime_utc = true;
                 }
             }
         }
-        None
+        if !use_naive && !use_datetime_utc {
+            return None;
+        }
+        let imports: Vec<&str> = [
+            use_datetime_utc.then_some("DateTime"),
+            use_naive.then_some("NaiveDateTime"),
+            use_datetime_utc.then_some("Utc"),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
+        Some(format!("use chrono::{{{}}};", imports.join(", ")))
     }
 
     /// When chrono import is present, use short type names (DateTime<Utc>, NaiveDateTime) in the struct.
@@ -280,7 +296,7 @@ mod tests {
             parsed_field("timestamp", "Nullable<Timestamptz>"),
         ];
         let import = ModelGenerator::chrono_import_line(&fields).unwrap();
-        assert_eq!(import, "use chrono::{DateTime, NaiveDateTime, Utc};");
+        assert_eq!(import, "use chrono::{DateTime, Utc};");
     }
 
     #[test]
@@ -290,12 +306,23 @@ mod tests {
             parsed_field("created_at", "Timestamp"),
         ];
         let import = ModelGenerator::chrono_import_line(&fields).unwrap();
-        assert_eq!(import, "use chrono::{DateTime, NaiveDateTime, Utc};");
+        assert_eq!(import, "use chrono::{NaiveDateTime};");
     }
 
     #[test]
     fn test_chrono_import_line_some_when_nullable_timestamp_field() {
         let fields = vec![parsed_field("last_seen", "Nullable<Timestamp>")];
+        let import = ModelGenerator::chrono_import_line(&fields).unwrap();
+        assert_eq!(import, "use chrono::{NaiveDateTime};");
+    }
+
+    #[test]
+    fn test_chrono_import_line_includes_all_when_both_timestamp_and_timestamptz() {
+        let fields = vec![
+            parsed_field("id", "Text"),
+            parsed_field("created_at", "Timestamp"),
+            parsed_field("updated_at", "Nullable<Timestamptz>"),
+        ];
         let import = ModelGenerator::chrono_import_line(&fields).unwrap();
         assert_eq!(import, "use chrono::{DateTime, NaiveDateTime, Utc};");
     }
