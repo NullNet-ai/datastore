@@ -296,17 +296,16 @@ pub async fn register(
 
     // Ensure the account points to the team/default organization
     if let Some(ref team_org_id) = team_organization_id {
-        let update_result = diesel::update(
-            accounts::table.filter(accounts::id.eq(&_account_id)),
-        )
-        .set(accounts::organization_id.eq(team_org_id.clone()))
-        .execute(&mut conn)
-        .await;
+        let update_result = diesel::update(accounts::table.filter(accounts::id.eq(&_account_id)))
+            .set(accounts::organization_id.eq(team_org_id.clone()))
+            .execute(&mut conn)
+            .await;
 
         match update_result {
             Ok(_) => log::info!(
                 "Updated account {} organization_id to {}",
-                _account_id, team_org_id
+                _account_id,
+                team_org_id
             ),
             Err(e) => log::warn!("Failed to update account organization_id: {}", e),
         }
