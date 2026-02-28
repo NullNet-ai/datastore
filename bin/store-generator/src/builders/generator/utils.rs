@@ -253,8 +253,7 @@ mod tests {
 
     #[test]
     fn test_diesel_to_rust_type_from_raw_nullable_timestamptz() {
-        let diesel =
-            FieldTypeParser::parse_diesel_type("nullable(timestamptz())").unwrap();
+        let diesel = FieldTypeParser::parse_diesel_type("nullable(timestamptz())").unwrap();
         assert_eq!(
             FieldTypeParser::diesel_to_rust_type(&diesel).unwrap(),
             "Option<chrono::DateTime<chrono::Utc>>"

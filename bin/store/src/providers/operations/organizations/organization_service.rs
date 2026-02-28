@@ -102,7 +102,7 @@ pub async fn register(
     let default_account_organization_id = if !account_organization_id.is_empty() {
         account_organization_id.clone()
     } else {
-        "01KJFDY4VY82DE3B4FTH5C8C4K".to_string()
+        Ulid::new().to_string()
     };
     let created_by_override = Some(default_account_organization_id.clone());
     let mut account_organization = AccountOrganizationModel {
@@ -293,6 +293,24 @@ pub async fn register(
         )
         .await?,
     );
+
+    // Ensure the account points to the team/default organization
+    if let Some(ref team_org_id) = team_organization_id {
+        let update_result = diesel::update(
+            accounts::table.filter(accounts::id.eq(&_account_id)),
+        )
+        .set(accounts::organization_id.eq(team_org_id.clone()))
+        .execute(&mut conn)
+        .await;
+
+        match update_result {
+            Ok(_) => log::info!(
+                "Updated account {} organization_id to {}",
+                _account_id, team_org_id
+            ),
+            Err(e) => log::warn!("Failed to update account organization_id: {}", e),
+        }
+    }
 
     if is_contact_account && (!is_invited || !is_request) {
         match async {

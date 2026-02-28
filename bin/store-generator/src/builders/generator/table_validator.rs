@@ -849,7 +849,11 @@ mod tests {
             &indexes,
             &foreign_keys,
         );
-        assert!(result.is_ok(), "expected ok when table has status column, got: {:?}", result);
+        assert!(
+            result.is_ok(),
+            "expected ok when table has status column, got: {:?}",
+            result
+        );
     }
 
     /// Partial index with where clause: when table does not have the where-clause column, validation fails.
