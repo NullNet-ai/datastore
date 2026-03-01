@@ -14,6 +14,9 @@ mod routers;
 mod structs;
 mod utils;
 
+#[cfg(test)]
+mod test_init;
+
 // Re-export database module for use in other modules
 use crate::lifecycle::bootstrap;
 use crate::lifecycle::code_generation;

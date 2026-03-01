@@ -46,27 +46,33 @@ RUN --mount=type=secret,id=dnamicro_token,required=false sh -lc '\
     else \
         echo "No prebuilt binary found; building with cargo"; \
         cd bin/store && cargo build --release -j "$CARGO_BUILD_JOBS"; \
-        cp -f /usr/src/crdt-workspace/target/release/store /usr/src/crdt-workspace/store; \
-    fi'
+        echo "Build completed, checking for binary..."; \
+        find /usr/src/crdt-workspace/target -name "store" -type f; \
+        cp -f /usr/src/crdt-workspace/target/release/store /usr/src/crdt-workspace/store || \
+        cp -f /usr/src/crdt-workspace/target/*/release/store /usr/src/crdt-workspace/store || \
+        (echo "Binary not found in expected location, checking workspace target..." && \
+         find /usr/src/crdt-workspace/target -name "store" -type f -exec cp {} /usr/src/crdt-workspace/store \;); \
+    fi; \
+    # Verify the binary was created and is executable
+    ls -la /usr/src/crdt-workspace/store; \
+    file /usr/src/crdt-workspace/store'
 
 # Final runtime image — slim OS with only runtime deps
-FROM debian:bookworm-slim
+FROM rust:latest
 
 # Install runtime dependencies (libpq for Postgres), TZ and certs
 RUN apt-get update && \
     apt-get install -y libpq5 ca-certificates tzdata && \
     rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /usr/src/crdt-workspace/store /usr/local/bin/store
-COPY --from=builder /usr/src/crdt-workspace/bin/store /app/bin/store
+# Copy the built binary and make it executable
+COPY --from=builder /usr/src/crdt-workspace/store /store
+RUN chmod +x /store
+
 WORKDIR /app
 
 # Default environment
 ENV RUST_LOG=info TZ=UTC
 
 # Start the store directly
-CMD ["store"]
-
-FROM scratch AS artifact
-COPY --from=builder /usr/src/crdt-workspace/store /store
 CMD ["/store"]
