@@ -67,6 +67,8 @@ RUN apt-get update && \
 
 # Copy the built binary and make it executable
 COPY --from=builder /usr/src/crdt-workspace/store /store
+COPY --from=builder /usr/src/crdt-workspace/bin/store /bin/store
+
 RUN chmod +x /store
 
 WORKDIR /app
