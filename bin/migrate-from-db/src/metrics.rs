@@ -10,8 +10,7 @@
 //! - migration_second_pass_total{table, status="success|error"}
 
 use prometheus::{
-    Encoder, HistogramOpts, HistogramVec, IntCounterVec, IntGaugeVec, Opts, Registry,
-    TextEncoder,
+    Encoder, HistogramOpts, HistogramVec, IntCounterVec, IntGaugeVec, Opts, Registry, TextEncoder,
 };
 use std::collections::HashMap;
 use std::sync::Arc;
@@ -182,7 +181,9 @@ pub fn spawn_metrics_server(metrics: Arc<MigrationMetrics>, port: u16) {
             tokio::spawn(async move {
                 let mut buf = [0u8; 1024];
                 let _ = stream.read(&mut buf).await;
-                let body = metrics.gather().unwrap_or_else(|e| format!("# error: {}", e));
+                let body = metrics
+                    .gather()
+                    .unwrap_or_else(|e| format!("# error: {}", e));
                 let response = format!(
                     "HTTP/1.1 200 OK\r\nContent-Type: text/plain; charset=utf-8\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{}",
                     body.len(),
@@ -209,7 +210,10 @@ pub fn extract_fk_constraint_from_error(msg: &str) -> Option<String> {
         let end = after
             .find(|c: char| c == '"' || c == '\'' || c == ' ' || c == '\n')
             .unwrap_or(after.len());
-        let name = after[..end].trim_matches('"').trim_matches('\'').to_string();
+        let name = after[..end]
+            .trim_matches('"')
+            .trim_matches('\'')
+            .to_string();
         if !name.is_empty() {
             return Some(name);
         }
