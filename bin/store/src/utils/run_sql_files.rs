@@ -42,7 +42,9 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
             let cleanup_path = exe_base
                 .as_ref()
                 .map(|b| b.join(paths::database::cleanup_sql_file()))
-                .unwrap_or_else(|| Path::new(&current_dir).join(paths::database::cleanup_sql_file()));
+                .unwrap_or_else(|| {
+                    Path::new(&current_dir).join(paths::database::cleanup_sql_file())
+                });
             let cleanup_status = Command::new("psql")
                 .args([
                     "-U",

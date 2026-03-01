@@ -278,7 +278,11 @@ impl SchemaGenerator {
         // Check if table already exists
         if Self::table_exists_in_schema(&existing_content, &table_def.name) {
             // Table exists, we need to handle field changes
-            Self::update_existing_table_in_schema(&existing_content, table_def, schema_file_path_str)
+            Self::update_existing_table_in_schema(
+                &existing_content,
+                table_def,
+                schema_file_path_str,
+            )
         } else {
             // Table doesn't exist, add new table
             Self::add_new_table_to_schema(&existing_content, table_def, schema_file_path_str)

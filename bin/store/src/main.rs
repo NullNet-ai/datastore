@@ -87,10 +87,10 @@ async fn main() -> std::io::Result<()> {
     // Parse configuration
     let args = parse_command_args();
     let _args: Vec<String> = env::args().collect();
-    
+
     // Initialize path configuration based on command line arguments
     crate::constants::paths::init_path_config(&_args);
-    
+
     if _args.contains(&"--init-db".to_string()) {
         bootstrap::exec().await?;
         return Ok(());

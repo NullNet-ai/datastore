@@ -147,8 +147,7 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
 ///
 pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
     let schema_file_path = paths::schema_file();
-    let schema_content =
-        fs::read_to_string(Path::new(&schema_file_path)).ok()?;
+    let schema_content = fs::read_to_string(Path::new(&schema_file_path)).ok()?;
 
     if schema_content.is_empty() {
         return None;
