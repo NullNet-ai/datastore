@@ -18,7 +18,6 @@ pub const MIGRATE_TABLES_ORDER: &[&str] = &[
     "communication_templates",
     "student_sessions",
     "onboarding_contacts",
-    "config_sync",
     "contact_phone_numbers",
     "user_settings",
     "samples",

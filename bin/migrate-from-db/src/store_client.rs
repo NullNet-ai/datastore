@@ -103,7 +103,11 @@ impl StoreClient {
                 .ok_or_else(|| format!("root login response missing token: {}", text))?;
             Ok(token.to_string())
         } else {
-            // No explicit root creds; reuse normal login.
+            // No explicit root creds; reuse normal login. Patch phase will get 403 if root is required.
+            eprintln!(
+                "Warning: MIGRATE_STORE_ROOT_ACCOUNT_ID / MIGRATE_STORE_ROOT_ACCOUNT_SECRET not set; \
+                 using normal account for root login — patch phase may fail with 403 Forbidden."
+            );
             self.login().await
         }
     }
