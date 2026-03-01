@@ -48,8 +48,10 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
         )
     };
 
-    // Get the project directory
     let current_dir = env::current_dir()?.to_string_lossy().to_string();
+    let exe_base = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()));
 
     // Step 1: Run cleanup if requested
     if flags.run_cleanup {
@@ -68,9 +70,14 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
         if entered_password == *expected_password {
             info!("Password correct. Running database cleanup script...");
 
-            // Run cleanup.sql using database connection
-            let cleanup_path = Path::new(&current_dir).join(paths::database::CLEANUP_SQL_FILE);
-            let cleanup_sql = std::fs::read_to_string(&cleanup_path)?;
+            let cleanup_path = exe_base
+                .as_ref()
+                .map(|b| b.join(paths::database::cleanup_sql_file()))
+                .unwrap_or_else(|| {
+                    Path::new(&current_dir).join(paths::database::cleanup_sql_file())
+                });
+            let cleanup_sql = std::fs::read_to_string(&cleanup_path)
+                .unwrap_or_else(|_| paths::database::cleanup_sql_content().to_string());
 
             if let Err(e) = execute_sql_script(&db_client, &cleanup_sql).await {
                 return Err(format!("Database cleanup failed: {}", e).into());
@@ -132,8 +139,12 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     // Step 4: Run init.sql if requested
     if flags.run_init_sql {
         info!("Step 4: Running database initialization script...");
-        let init_path = Path::new(&current_dir).join(paths::database::INIT_SQL_FILE);
-        let init_sql = std::fs::read_to_string(&init_path)?;
+        let init_path = exe_base
+            .as_ref()
+            .map(|b| b.join(paths::database::init_sql_file()))
+            .unwrap_or_else(|| Path::new(&current_dir).join(paths::database::init_sql_file()));
+        let init_sql = std::fs::read_to_string(&init_path)
+            .unwrap_or_else(|_| paths::database::init_sql_content().to_string());
 
         if let Err(e) = execute_sql_script(&db_client, &init_sql).await {
             return Err(format!("Database initialization failed: {}", e).into());

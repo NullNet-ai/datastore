@@ -266,10 +266,11 @@ impl SchemaGenerator {
 
     /// Update the schema.rs file with new table definition
     pub fn update_schema_file(table_def: &TableDefinition) -> Result<(), String> {
-        let schema_file_path = paths::database::SCHEMA_FILE.as_str();
+        let schema_file_path = paths::schema_file();
+        let schema_file_path_str = schema_file_path.as_str();
 
         // Read existing schema content
-        let existing_content = match fs::read_to_string(schema_file_path) {
+        let existing_content = match fs::read_to_string(schema_file_path_str) {
             Ok(content) => content,
             Err(e) => return Err(format!("Failed to read schema.rs: {}", e)),
         };
@@ -277,10 +278,14 @@ impl SchemaGenerator {
         // Check if table already exists
         if Self::table_exists_in_schema(&existing_content, &table_def.name) {
             // Table exists, we need to handle field changes
-            Self::update_existing_table_in_schema(&existing_content, table_def, schema_file_path)
+            Self::update_existing_table_in_schema(
+                &existing_content,
+                table_def,
+                schema_file_path_str,
+            )
         } else {
             // Table doesn't exist, add new table
-            Self::add_new_table_to_schema(&existing_content, table_def, schema_file_path)
+            Self::add_new_table_to_schema(&existing_content, table_def, schema_file_path_str)
         }
     }
 

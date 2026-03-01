@@ -19,7 +19,8 @@ pub struct FieldTypeInfo {
 }
 
 pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTypeInfo> {
-    let schema_path = Path::new(paths::database::SCHEMA_FILE.as_str());
+    let schema_file_path = paths::schema_file();
+    let schema_path = Path::new(&schema_file_path);
     let schema_content = fs::read_to_string(schema_path).ok()?;
 
     if schema_content.is_empty() {
@@ -145,8 +146,8 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
 /// * `Option<Vec<String>>` - Vector of field names if table exists, None otherwise
 ///
 pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
-    let schema_content =
-        fs::read_to_string(Path::new(paths::database::SCHEMA_FILE.as_str())).ok()?;
+    let schema_file_path = paths::schema_file();
+    let schema_content = fs::read_to_string(Path::new(&schema_file_path)).ok()?;
 
     if schema_content.is_empty() {
         return None;

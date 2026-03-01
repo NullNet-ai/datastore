@@ -17,6 +17,7 @@ table! {
     }
 }
 
+
 table! {
     user_roles(id) {
         tombstone -> Nullable<Int4>,
@@ -41,7 +42,7 @@ table! {
         sync_status -> Nullable<Text>,
         is_batch -> Nullable<Bool>,
         image_url -> Nullable<Text>,
-
+        
         role -> Nullable<Text>,
         entity -> Nullable<Text>,
 }
@@ -96,6 +97,7 @@ table! {
         is_encryptable -> Nullable<Bool>,
     }
 }
+
 
 table! {
     sessions(id) {
