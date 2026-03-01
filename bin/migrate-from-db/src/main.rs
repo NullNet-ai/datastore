@@ -24,10 +24,13 @@ use std::sync::Mutex;
 use serde_json::{Map, Value};
 
 mod config;
+mod metrics;
 mod store_client;
 
 use config::Config;
 use store_client::StoreClient;
+use std::sync::Arc;
+use std::time::Instant;
 
 // Include the generated order file (provides MIGRATE_CIRCULAR_FK_COLS).
 // Regenerate with `make order-tables` so this stays in sync.
@@ -118,6 +121,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let error_log = ErrorLog::open(&config.error_log_path)?;
     println!("Errors will be appended to: {}", config.error_log_path);
 
+    let metrics_port = std::env::var("MIGRATE_METRICS_PORT").ok().and_then(|p| p.parse::<u16>().ok());
+    let metrics: Option<Arc<metrics::MigrationMetrics>> = match metrics_port {
+        Some(port) => {
+            match metrics::MigrationMetrics::new() {
+                Ok(m) => {
+                    let m = Arc::new(m);
+                    metrics::spawn_metrics_server(Arc::clone(&m), port);
+                    metrics::spawn_rows_per_second_updater(Arc::clone(&m));
+                    Some(m)
+                }
+                Err(e) => {
+                    eprintln!("Metrics init failed: {} (continuing without metrics)", e);
+                    None
+                }
+            }
+        }
+        None => None,
+    };
+
     let client = StoreClient::new(&config)?;
     let token = client.login().await?;
     let root_token = client.login_root().await?;
@@ -173,6 +195,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
             println!("  rows: {}", rows.len());
             let total = rows.len();
+            let table_start = Instant::now();
+
+            if let Some(ref m) = metrics {
+                m.migration_progress_percent.with_label_values(&[table]).set(0);
+            }
 
             for (i, row_json) in rows.into_iter().enumerate() {
                 let row_id = row_json
@@ -200,6 +227,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
 
                 match client.create_record(table, &insert_row, &token).await {
                     Ok(_) => {
+                        if let Some(ref m) = metrics {
+                            m.migration_rows_total.with_label_values(&[table, "success"]).inc();
+                            m.inc_row_count(table);
+                            if total > 0 {
+                                let pct = ((i + 1) * 100) / total;
+                                m.migration_progress_percent.with_label_values(&[table]).set(pct as i64);
+                            }
+                        }
                         if (i + 1) % 100 == 0 || total <= 10 {
                             println!("  inserted {} / {}", i + 1, total);
                         }
@@ -209,10 +244,20 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
                         eprintln!("  error inserting row {}: {}", i + 1, msg);
                         error_log.log(table, i + 1, row_id.as_deref(), &msg, Some(&row_json));
                         error_count += 1;
+                        if let Some(ref m) = metrics {
+                            m.migration_rows_total.with_label_values(&[table, "error"]).inc();
+                            if let Some(constraint) = metrics::extract_fk_constraint_from_error(&msg) {
+                                m.migration_fk_violations_total.with_label_values(&[table, &constraint]).inc();
+                            }
+                        }
                     }
                 }
             }
 
+            if let Some(ref m) = metrics {
+                m.migration_duration_seconds.with_label_values(&[table]).observe(table_start.elapsed().as_secs_f64());
+                m.migration_progress_percent.with_label_values(&[table]).set(100);
+            }
             println!("  done: {}", table);
         }
     } else {
@@ -296,6 +341,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
             eprintln!("  error patching {}/{}: {}", table, row_id, msg);
             error_log.log(table, 0, Some(row_id), &msg, Some(&patch_value));
             error_count += 1;
+            if let Some(ref m) = metrics {
+                m.migration_second_pass_total.with_label_values(&[table, "error"]).inc();
+                if let Some(constraint) = metrics::extract_fk_constraint_from_error(&msg) {
+                    m.migration_fk_violations_total.with_label_values(&[table, &constraint]).inc();
+                }
+            }
+        } else {
+            if let Some(ref m) = metrics {
+                m.migration_second_pass_total.with_label_values(&[table, "success"]).inc();
+            }
         }
     }
 

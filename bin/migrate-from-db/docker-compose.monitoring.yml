@@ -1,0 +1,54 @@
+# Prometheus + Grafana for migrate-from-db metrics.
+#
+# Usage:
+#   1. Start:  docker compose -f docker-compose.monitoring.yml up -d
+#   2. Run migration with metrics:  MIGRATE_METRICS_PORT=9090 make run
+#   3. Open Grafana:  http://localhost:3000  (admin / admin, change password on first login)
+#   4. Prometheus:    http://localhost:9091
+#
+# Prometheus scrapes the migration binary at host.docker.internal:9090 when it runs.
+
+services:
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: migrate-prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --web.enable-lifecycle
+    ports:
+      - "9091:9090"
+    networks:
+      - monitoring
+    extra_hosts:
+      # So Prometheus in Docker can scrape migrate-from-db on the host (Mac, Windows, Linux)
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: migrate-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_SERVER_HTTP_PORT=3000
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - monitoring
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana_data:

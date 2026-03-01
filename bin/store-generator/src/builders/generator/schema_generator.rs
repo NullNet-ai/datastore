@@ -419,7 +419,13 @@ impl SchemaGenerator {
                     && line.contains(&format!("\"{}\"", index_name))
                     && line.contains(&on_table)
                 {
-                    return Some(line.trim_end_matches(';').to_string());
+                    // Strip Diesel/statement-breakpoint comment (e.g. ";--> statement-breakpoint") so comparison matches generator output
+                    let sql = if let Some(comment_start) = line.find("-->") {
+                        line[..comment_start].trim_end().trim_end_matches(';')
+                    } else {
+                        line.trim_end_matches(';')
+                    };
+                    return Some(sql.to_string());
                 }
             }
         }
