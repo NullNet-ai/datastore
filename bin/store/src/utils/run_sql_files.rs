@@ -18,6 +18,9 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
 
     // Get the project directory
     let current_dir = env::current_dir()?.to_string_lossy().to_string();
+    let exe_base = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|d| d.to_path_buf()));
 
     // Only run cleanup if the flag is set
     if cleanup {
@@ -36,8 +39,10 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
         if entered_password == expected_password {
             info!("Password correct. Running database cleanup script...");
 
-            // Run cleanup.sql
-            let cleanup_path = Path::new(&current_dir).join(paths::database::CLEANUP_SQL_FILE);
+            let cleanup_path = exe_base
+                .as_ref()
+                .map(|b| b.join(paths::database::cleanup_sql_file()))
+                .unwrap_or_else(|| Path::new(&current_dir).join(paths::database::cleanup_sql_file()));
             let cleanup_status = Command::new("psql")
                 .args([
                     "-U",
@@ -64,8 +69,10 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
 
     info!("Running database initialization script...");
 
-    // Run init.sql to initialize the database
-    let init_path = Path::new(&current_dir).join(paths::database::INIT_SQL_FILE);
+    let init_path = exe_base
+        .as_ref()
+        .map(|b| b.join(paths::database::init_sql_file()))
+        .unwrap_or_else(|| Path::new(&current_dir).join(paths::database::init_sql_file()));
     let init_status = Command::new("psql")
         .args([
             "-U",

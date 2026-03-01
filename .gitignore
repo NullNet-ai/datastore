@@ -55,3 +55,6 @@ Thumbs.db
 
 # Checkpoint storage (ckpt tool)
 .mycheckpoints/
+
+# Store binary
+/store*
