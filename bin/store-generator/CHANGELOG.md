@@ -5,6 +5,13 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.17
+### Author
+Kashan
+
+### Fixed
+- **Index comparison vs migrations with statement-breakpoint**: When reading existing index SQL from migration `up.sql` files, the line can include Diesel’s `--> statement-breakpoint` comment on the same line. That suffix was included in the string used for comparison, so the generator thought the index definition differed and errored with "already created with a different definition". In `get_existing_index_sql_from_migrations`, the line is now stripped of any `-->` comment (and trailing `;`) before comparison, so re-runs of store-generator-schema no longer false-positive on unchanged indexes.
+
 ## 0.1.16
 ### Author
 Kashan
