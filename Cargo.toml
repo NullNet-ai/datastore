@@ -7,7 +7,7 @@ members = [
     "bin/server",
     "bin/store-generator",
     "bin/ckpt",
-    "bin/counter-service"
+    "bin/counter-service",
     "bin/migrate-from-db"
 ]
 resolver = "2"
