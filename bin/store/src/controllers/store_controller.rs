@@ -23,7 +23,6 @@ use crate::utils::helpers::{normalize_date_format, table_exists};
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
-use actix_web::test;
 use actix_web::{http, web, HttpResponse, Responder, ResponseError};
 use actix_web::{HttpMessage, HttpRequest};
 use aws_sdk_s3::primitives::ByteStream;
@@ -1272,6 +1271,9 @@ pub async fn get_by_filter(
 
     parameters.date_format = normalize_date_format(&parameters.date_format);
 
+    // Clone parameters for debug logging (since they will be moved to SQLConstructor)
+    let parameters_for_debug = parameters.clone();
+
     // Create SQLConstructor with organization_id if available
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root, timezone);
     if let Some(org_id) = organization_id {
@@ -1290,17 +1292,31 @@ pub async fn get_by_filter(
         }
     };
 
+    log::debug!("@@@parameters: {:?}", parameters_for_debug.clone());
     // Get a connection from the pool
     let mut conn = db::get_async_connection().await;
     // Enhanced debug logging to file
     if EnvConfig::default().debug {
         log::debug!("QUERY: {}", query);
         // Also write to debug log file
-        if let Err(e) = write_query_to_debug_log(&query, &table).await {
+        if let Err(e) = write_query_to_debug_log(&query, &table, false).await {
             log::warn!("Failed to write debug query log: {}", e);
+        }
+
+        // Convert parameters to stringified JSON object
+        match serde_json::to_string_pretty(&parameters_for_debug) {
+            Ok(params_json) => {
+                if let Err(e) = write_query_to_debug_log(&params_json, &table, true).await {
+                    log::warn!("Failed to write debug parameters log: {}", e);
+                }
+            }
+            Err(e) => {
+                log::warn!("Failed to serialize parameters to JSON: {}", e);
+            }
         }
     }
 
+    log::debug!("@@@parameters: {:?}", parameters_for_debug.clone());
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
 
     let results = match diesel::dsl::sql_query(&final_query)
@@ -1595,7 +1611,7 @@ pub async fn get_file_by_id(
 
     // Extract organization_id from auth_data
     let organization_id = Some(auth_data.organization_id.as_str());
-
+    log::info!("@@@@Extracted organization_id: {:?}", organization_id);
     // Use the common controller to get file metadata from database
     match process_and_get_record_by_id(
         "files",
@@ -2060,11 +2076,11 @@ pub async fn upload_file(
                                 chrono_dt.format("%H:%M:%S").to_string()
                             })
                             .unwrap_or_else(|| "Unknown".to_string()),
-                        "organization_id": "", // TODO: Extract from auth context
-                        "created_by": "", // TODO: Extract from auth context
-                        "updated_by": "", // TODO: Extract from auth context
+                        "organization_id": auth_data.organization_id.clone(),
+                        "created_by": auth_data.account_organization_id.clone(),
+                        "updated_by": auth_data.responsible_account.clone(),
                         "deleted_by": "",
-                        "requested_by": "", // TODO: Extract from auth context
+                        "requested_by": auth_data.responsible_account.clone(),
                         // "timestamp": chrono::Utc::now().timestamp(),
                         "tags": [],
                         "image_url": format!("{}/{}", bucket_name, actual_filename),
@@ -2076,7 +2092,7 @@ pub async fn upload_file(
                         "filename": actual_filename.clone(),
                         "path": format!("{}/{}", bucket_name, actual_filename),
                         "size": get_output.content_length().unwrap_or(0),
-                        // "uploaded_by": "", // TODO: Extract from auth context
+                        "uploaded_by": auth_data.account_organization_id.clone(),
                         // "downloaded_by": "",
                         "etag": get_output.e_tag().unwrap_or("Unknown"),
                         "version_id": get_output.version_id().unwrap_or(""),
@@ -2089,19 +2105,21 @@ pub async fn upload_file(
                     });
                     // For existing files, try to save to database (will handle duplicates gracefully)
 
-                    // Use create_record function to save metadata
-                    let req = test::TestRequest::default()
-                        .insert_header(("content-type", "application/json"))
-                        .to_http_request();
-                    req.extensions_mut().insert(auth_data.clone());
-
-                    let table_path = web::Path::from(name.to_string());
-                    let body = web::Json(metadata.clone());
-                    let query = web::Query(QueryParams {
-                        pluck: pluck_fields.join(","),
-                    });
-                    let _response =
-                        create_record(req, table_path, body, query, Some(app_state.clone())).await;
+                    let insert_result = process_and_insert_record(
+                        name,
+                        metadata.clone(),
+                        Some(pluck_fields.clone()),
+                        &auth_data,
+                        auth_data.is_root_account,
+                    )
+                    .await;
+                    if let Err(e) = insert_result {
+                        log::warn!(
+                            "Failed to upsert existing file metadata into '{}': {}",
+                            name,
+                            e.message
+                        );
+                    }
                     // For existing files, add metadata regardless of database operation result
                     file_metadata.push(metadata.clone());
                     log::info!(
@@ -2153,11 +2171,11 @@ pub async fn upload_file(
                         "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
                         "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
                         "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
-                        "organization_id": "", // TODO: Extract from auth context
-                        "created_by": "", // TODO: Extract from auth context
-                        "updated_by": "", // TODO: Extract from auth context
+                        "organization_id": auth_data.organization_id.clone(),
+                        "created_by": auth_data.account_organization_id.clone(),
+                        "updated_by": auth_data.responsible_account.clone(),
                         "deleted_by": "",
-                        "requested_by": "", // TODO: Extract from auth context
+                        "requested_by": auth_data.responsible_account.clone(),
                         // "timestamp": chrono::Utc::now().timestamp(),
                         "tags": [],
                         "image_url": format!("{}/{}", bucket_name, final_filename),
@@ -2169,7 +2187,7 @@ pub async fn upload_file(
                         "filename": final_filename.clone(),
                         "path": format!("{}/{}", bucket_name, final_filename),
                         "size": file_data.len(),
-                        "uploaded_by": "", // TODO: Extract from auth context
+                        "uploaded_by": auth_data.account_organization_id.clone(),
                         "downloaded_by": "",
                         "etag": put_output.e_tag().unwrap_or("Unknown"),
                         "version_id": put_output.version_id().unwrap_or(""),
@@ -2183,20 +2201,21 @@ pub async fn upload_file(
                     ));
                     // Save file metadata to the database using process_and_insert_record
 
-                    // Use create_record function to save metadata
-                    let req = test::TestRequest::default()
-                        .insert_header(("content-type", "application/json"))
-                        .to_http_request();
-                    req.extensions_mut().insert(auth_data.clone());
-
-                    let table_path = web::Path::from(name.to_string());
-                    let body = web::Json(metadata.clone());
-                    let query = web::Query(QueryParams {
-                        pluck: pluck_fields.join(","),
-                    });
-
-                    let _response =
-                        create_record(req, table_path, body, query, Some(app_state.clone())).await;
+                    let insert_result = process_and_insert_record(
+                        name,
+                        metadata.clone(),
+                        Some(pluck_fields.clone()),
+                        &auth_data,
+                        auth_data.is_root_account,
+                    )
+                    .await;
+                    if let Err(e) = insert_result {
+                        log::error!(
+                            "Failed to insert uploaded file metadata into '{}': {}",
+                            name,
+                            e.message
+                        );
+                    }
                     log::info!("Attempted to save file metadata to database for '{}' with unique name '{}' using create_record", fname, final_filename);
                     // Add the metadata to response
                     file_metadata.push(metadata);
@@ -2631,6 +2650,7 @@ pub async fn search_suggestions(
 async fn write_query_to_debug_log(
     query: &str,
     table: &str,
+    is_body_params: bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     use std::path::Path;
 
@@ -2646,10 +2666,18 @@ async fn write_query_to_debug_log(
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S%.3f").to_string();
     let formatted_query = query.replace("\n", " ").trim().to_string();
 
+    // Add parameters indicator if body params
+    let params_indicator = if is_body_params {
+        "Body Parameters:"
+    } else {
+        "Query Parameters:"
+    };
+
     let log_entry = format!(
-        "[{}] Table: {}\nQuery: {}\n{}\n",
+        "[{}] Table: {}\n{}: {}\n{}\n",
         timestamp,
         table,
+        params_indicator,
         formatted_query,
         "-".repeat(80)
     );

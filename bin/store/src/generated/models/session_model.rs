@@ -1,4 +1,4 @@
-use chrono::NaiveDateTime;
+use chrono::{DateTime, NaiveDateTime, Utc};
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -53,5 +53,5 @@ pub struct SessionModel {
     pub record_permission: Option<String>,
     pub expire: Option<NaiveDateTime>,
     pub application_accessed: Option<String>,
-    pub last_accessed: Option<NaiveDateTime>,
+    pub last_accessed: Option<DateTime<Utc>>,
 }

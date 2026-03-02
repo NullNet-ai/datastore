@@ -1,4 +1,4 @@
-// use crate::database::schema::verify::field_type_in_table;
+use crate::database::schema::verify::field_type_in_table;
 use crate::structs::core::{
     FilterCriteria, FilterOperator, GroupAdvanceFilter, LogicalOperator, MatchPattern,
 };
@@ -482,7 +482,7 @@ impl<'a> WhereConstructor<'a> {
                         with_alias,
                         time_format,
                     )
-                } else if field.eq_ignore_ascii_case("timestamp") {
+                } else if Self::is_timestamp_column(table, field) {
                     timestamp_format_wrapper(
                         table,
                         field,
@@ -501,6 +501,14 @@ impl<'a> WhereConstructor<'a> {
                 };
                 field_expr
             }
+        }
+    }
+
+    fn is_timestamp_column(table: &str, field: &str) -> bool {
+        if let Some(info) = field_type_in_table(table, field) {
+            info.field_type == "timestamp"
+        } else {
+            false
         }
     }
 
@@ -892,5 +900,37 @@ impl<'a> WhereConstructor<'a> {
 
         // Use the same infix expression building logic as advance filters
         Ok(self.build_expression_with_precedence(&tokens))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn should_detect_timestamp_columns_by_type_for_where_constructor() {
+        // account_profiles.date_of_birth -> Timestamp, field name is not "timestamp"
+        assert!(WhereConstructor::is_timestamp_column(
+            "account_profiles",
+            "date_of_birth"
+        ));
+
+        // account_profiles.timestamp -> Timestamp, classic timestamp column
+        assert!(WhereConstructor::is_timestamp_column(
+            "account_profiles",
+            "timestamp"
+        ));
+
+        // accounts.timestamp -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
+        assert!(WhereConstructor::is_timestamp_column(
+            "accounts",
+            "timestamp"
+        ));
+
+        // Non-timestamp column should not be treated as timestamp
+        assert!(!WhereConstructor::is_timestamp_column(
+            "account_profiles",
+            "code"
+        ));
     }
 }

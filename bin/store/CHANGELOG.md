@@ -5,11 +5,10 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.36
+## 0.2.43
 
 ### Author
 Kashan
-
 ### Added
   - ***Remote code generation (counter-service)***:
     - The store uses the **counter-service** (gRPC + Redis) for unique code generation. **`CODE_SERVICE_GRPC_URL`** is required; the local DB `counters` table is no longer used for codes.
@@ -24,7 +23,94 @@ Kashan
     - **`bin/store/src/initializers/system_initialization/code_prefix_init.rs`** — local DB branch in `initialize()` (Diesel insert/update into `counters::table`); removed `db`, `counters`, `diesel`, and `RunQueryDsl` imports.
     - **`bin/store/src/utils/code_generator.rs`** — optional `CODE_SERVICE_GRPC_URL` check and else branches that called the local implementations; code generation now always uses the counter-service.
 
+## 0.2.42
+
+### Author
+Kashan
+
+### Changed
+  - ***get_by_id in migration mode***:
+    - In `macros/table_enum/table_enum_macros.rs`, `generate_get_by_id_match` now respects `MIGRATION_MODE`. When `MIGRATION_MODE=true` (or `1`), `get_by_id` fetches the record by id only and skips tombstone and organization_id filters, so migration tooling can read any row regardless of soft-delete or tenant.
+
+
+## 0.2.41
+### Author
+Bert
+
+### Added
+  - Improve store docker file for installing dependencies and build runtime image
+  - Added code prefixes for skyll
+  - Revise registration to accept organization categories
+### Fixes
+  - Fix the null code and created_by during registration
+## 0.2.40
+
+### Author
+Jean
+
+### Changed
+  - ***Update Sync Service***:
+    - Update must have 'Update' operation in crdt_messages instead of 'Insert' in /sync_service.rs
+
+## 0.2.39
+
+### Author
+Kashan
+
+### Fixed
+  - ***Schema in release builds***:
+    - `database/schema/verify.rs` now always uses the embedded `SCHEMA_CONTENT` (`include_str!("../../generated/schema.rs")`) instead of reading `schema.rs` from disk at runtime, so `field_exists_in_table`, `field_type_in_table`, and `get_table_fields` work in release builds where source paths are not present.
+  - ***Account login deserialization***:
+    - `AccountModel.timestamp` changed from `Option<NaiveDateTime>` to `Option<DateTime<Utc>>` for correct `timestamptz` handling; `auth_service::get_account_with_org` now uses `row_to_json(a.*)` for the account object so `timestamp` is serialized as RFC3339 and deserializes without "premature end of input" on login.
+
+### Changed
+  - ***Unused code removed***:
+    - Removed unused imports from `database/schema/verify.rs` (`paths`, `std::fs`, `Path`).
+    - Removed unused path constants from `constants/paths.rs`: `GENERATED_DIR`, `SCHEMA_FILE`, `LEGACY_SCHEMA_FILE` (schema is now embedded; only `INIT_SQL_FILE` and `CLEANUP_SQL_FILE` remain in `database`).
+
+## 0.2.38
+
+### Author
+Kashan
+
+### Changed
+  - ***Code generation behavior for migrations***:
+    - Updated `process_and_insert_record` in `controllers/common_controller.rs` to respect `MIGRATION_MODE`. When `MIGRATION_MODE=true` (or `1`), the store no longer auto-generates or overwrites the `code` field for generic insert requests and instead preserves whatever `code` is provided in the request body.
+
+### Added
+  - ***Tests for code generation vs. migration mode***:
+    - Added async tests in `common_controller.rs` to ensure `process_and_insert_record` succeeds when `MIGRATION_MODE` is disabled (normal auto-generated code path) and also when it is enabled while trusting body-provided `code` values.
+
+## 0.2.37
+
+### Author
+Kashan
+
+### Changed
+  - ***System fields handling for migrations***:
+    - Updated `RequestBody::add_common_fields` in `structs/core.rs` to respect a `MIGRATION_MODE` environment flag. When `MIGRATION_MODE=true` (or `1`), the store now skips assigning all system fields (`status`, `tombstone`, `created_*`, `updated_*`, `deleted_*`, `organization_id`, `version`) regardless of operation (`create`, `update`, `delete`), so migration tooling can insert raw records without automatic metadata changes.
+
+### Added
+  - ***Tests for common/system fields and migration mode***:
+    - Added unit tests in `structs/core.rs` to verify that `process_record`/`add_common_fields` populate system fields correctly for creates when `MIGRATION_MODE` is disabled, and that the same fields are **not** added when `MIGRATION_MODE` is enabled.
+
+## 0.2.36
+
+### Author
+Kashan
 ---
+### Fixed
+  - ***Timestamp and timestamptz handling in queries and sync***:
+    - Updated `FieldTypeInfo` in `database/schema/verify.rs` to track `is_timestamptz` so we can distinguish `timestamp` vs `timestamptz` while still simplifying both to the `"timestamp"` logical type for query constructors.
+    - Adjusted sync message parsing in `providers/operations/sync/store/store_driver.rs` to serialize `timestamp` fields as naive datetimes (no timezone, for `NaiveDateTime`) and `timestamptz` fields as RFC3339 with timezone (for `DateTime<Utc>`), fixing “trailing input” deserialization errors.
+    - Normalized API request and sync payloads for timestamp/timestamptz fields in `structs/core.rs` so they are always parsed as valid RFC3339 before being stored or sent.
+    - Updated `sample_checks` and `sessions` models to use correct chrono types for `timestamp` and `timestamptz` columns (e.g. `last_accessed: DateTime<Utc>`), ensuring round-trip sync works both on create and when bootstrapping from the server.
+
+### Added
+  - ***Timestamp-aware query constructors tests***:
+    - Added unit tests for `GroupByConstructor`, `WhereConstructor`, `OrderByConstructor`, and search suggestion SQL to assert that `field_type_in_table` treats both `timestamp` and `timestamptz` columns as timestamp types and leaves non-timestamp fields untouched.
+    - These tests cover the new behavior using the `sample_checks` table (`some_test_field` as `timestamp`, `timestamp2` as `timestamptz`) so that future schema or constructor changes don’t regress timestamp handling.
+
 ## 0.2.35
 
 ### Author

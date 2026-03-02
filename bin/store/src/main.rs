@@ -14,6 +14,9 @@ mod routers;
 mod structs;
 mod utils;
 
+#[cfg(test)]
+mod test_init;
+
 // Re-export database module for use in other modules
 use crate::lifecycle::bootstrap;
 use crate::lifecycle::code_generation;
@@ -59,7 +62,7 @@ async fn bootstrap_with_lifecycle() -> std::io::Result<()> {
         level: LogLevel::Info,
         enable_console: true,
         enable_file: true,
-        file_path: Some("logs/lifecycle.log".to_string()),
+        file_path: Some("lifecycle.log".to_string()),
         enable_structured: true,
         max_entries: 10000,
     };
@@ -87,6 +90,10 @@ async fn main() -> std::io::Result<()> {
     // Parse configuration
     let args = parse_command_args();
     let _args: Vec<String> = env::args().collect();
+
+    // Initialize path configuration based on command line arguments
+    crate::constants::paths::init_path_config(&_args);
+
     if _args.contains(&"--init-db".to_string()) {
         bootstrap::exec().await?;
         return Ok(());

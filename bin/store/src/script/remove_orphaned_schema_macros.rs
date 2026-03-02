@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
+use std::io::{self, Write};
 
 fn main() {
     println!("🔍 Analyzing schema.rs and migration files...");
@@ -33,6 +34,19 @@ fn main() {
     );
     for table in &orphaned_tables {
         println!("   - {}", table);
+    }
+
+    // Ask for confirmation before proceeding
+    print!("\n⚠️  Do you want to remove these {} orphaned table! macros? [y/N]: ", orphaned_tables.len());
+    io::stdout().flush().unwrap();
+    
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
+    
+    let input = input.trim().to_lowercase();
+    if input != "y" && input != "yes" {
+        println!("❌ Operation cancelled by user");
+        return;
     }
 
     // Remove orphaned table! macros from schema.rs

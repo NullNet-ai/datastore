@@ -417,12 +417,40 @@ pub fn validate_table_file(
         result.add_error(e);
     }
 
-    // 6. Validate index names (format)
-    for (index_name, columns, _, _, _) in indexes {
+    // 6. Validate index names and that index/where columns exist in the table
+    let field_set: std::collections::HashSet<&str> =
+        field_names.iter().map(String::as_str).collect();
+    for (index_name, columns, _, _, where_clause) in indexes {
         if columns.is_empty() {
             result.add_error(format!("Index '{}' has no columns", index_name));
-        } else if let Err(e) = validate_index_name(index_name, table_name, columns) {
-            result.add_error(e);
+        } else {
+            if let Err(e) = validate_index_name(index_name, table_name, columns) {
+                result.add_error(e);
+            }
+            for col in columns {
+                if !field_set.contains(col.as_str()) {
+                    result.add_error(format!(
+                        "Index '{}' references column '{}' which is not found in table '{}'. Table columns: {}",
+                        index_name,
+                        col,
+                        table_name,
+                        field_names.join(", ")
+                    ));
+                }
+            }
+            if let Some(ref w) = where_clause {
+                for col in w.column_names() {
+                    if !field_set.contains(col.as_str()) {
+                        result.add_error(format!(
+                            "Index '{}' where clause references column '{}' which is not found in table '{}'. Table columns: {}",
+                            index_name,
+                            col,
+                            table_name,
+                            field_names.join(", ")
+                        ));
+                    }
+                }
+            }
         }
     }
 
@@ -441,7 +469,7 @@ pub fn validate_table_file(
 
 /// Validates JSONB column default value format.
 /// - If a default is set, it must include `::jsonb` (e.g. `default: "'[]'::jsonb"` or `default: "'{\"k\":1}'::jsonb"`).
-/// - Empty array default is not allowed: omit default (array is empty by default when no value).
+/// - Empty array default `'[]'::jsonb` is allowed.
 pub fn validate_jsonb_default(field_name: &str, default_value: Option<&str>) -> Result<(), String> {
     let d = match default_value {
         None => return Ok(()),
@@ -455,20 +483,6 @@ pub fn validate_jsonb_default(field_name: &str, default_value: Option<&str>) -> 
         return Err(format!(
             "JSONB column '{}' default must use format with '::jsonb' (e.g. default: \"'[]'::jsonb\"). Got: {}",
             field_name, d
-        ));
-    }
-    // Do not allow default empty array — omit default (array is empty by default when no value)
-    let before_cast = d
-        .split("::jsonb")
-        .next()
-        .unwrap_or("")
-        .trim()
-        .trim_matches('\'')
-        .trim();
-    if before_cast == "[]" {
-        return Err(format!(
-            "JSONB column '{}' must not have default empty array ('[]'::jsonb); omit default (array is empty by default when no value).",
-            field_name
         ));
     }
     Ok(())
@@ -787,6 +801,121 @@ mod tests {
         assert!(result.is_ok());
     }
 
+    /// Partial index with where clause: when table has the where-clause column, validation passes.
+    #[test]
+    fn test_validate_index_with_where_clause_columns_found() {
+        use crate::builders::generator::diesel_schema_definition::WhereExpr;
+
+        let content = r#"system_indexes!("school_admins")"#;
+        let field_names = vec![
+            "id".to_string(),
+            "school_id".to_string(),
+            "school_admin_id".to_string(),
+            "status".to_string(),
+        ];
+        let where_clause = Some(WhereExpr::Pred {
+            op: "=".to_string(),
+            column: "status".to_string(),
+            value: Some(serde_json::Value::String("Active".to_string())),
+        });
+        let indexes: Vec<TableFileIndex> = vec![(
+            "idx_school_admins_school_id_school_admin_id".to_string(),
+            vec!["school_id".to_string(), "school_admin_id".to_string()],
+            true,
+            Some("btree".to_string()),
+            where_clause,
+        )];
+        let foreign_keys: Vec<(String, String)> = vec![];
+
+        let result = validate_table_file(
+            "school_admins",
+            content,
+            "school_admins",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
+        assert!(
+            result.is_ok(),
+            "expected ok when table has status column, got: {:?}",
+            result
+        );
+    }
+
+    /// Partial index with where clause: when table does not have the where-clause column, validation fails.
+    #[test]
+    fn test_validate_index_with_where_clause_column_not_found() {
+        use crate::builders::generator::diesel_schema_definition::WhereExpr;
+
+        let content = r#"system_indexes!("school_admins")"#;
+        // Table has school_id, school_admin_id but NOT "status"
+        let field_names = vec![
+            "id".to_string(),
+            "school_id".to_string(),
+            "school_admin_id".to_string(),
+        ];
+        let where_clause = Some(WhereExpr::Pred {
+            op: "=".to_string(),
+            column: "status".to_string(),
+            value: Some(serde_json::Value::String("Active".to_string())),
+        });
+        let indexes: Vec<TableFileIndex> = vec![(
+            "idx_school_admins_school_id_school_admin_id".to_string(),
+            vec!["school_id".to_string(), "school_admin_id".to_string()],
+            true,
+            Some("btree".to_string()),
+            where_clause,
+        )];
+        let foreign_keys: Vec<(String, String)> = vec![];
+
+        let result = validate_table_file(
+            "school_admins",
+            content,
+            "school_admins",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("not found") && err.contains("status"),
+            "error should mention column 'status' not found, got: {}",
+            err
+        );
+    }
+
+    /// Index with where clause: index column not in table fails.
+    #[test]
+    fn test_validate_index_column_not_found() {
+        let content = r#"system_indexes!("school_admins")"#;
+        let field_names = vec!["id".to_string(), "school_id".to_string()]; // no school_admin_id
+        let indexes: Vec<TableFileIndex> = vec![(
+            "idx_school_admins_school_id_school_admin_id".to_string(),
+            vec!["school_id".to_string(), "school_admin_id".to_string()],
+            true,
+            Some("btree".to_string()),
+            None,
+        )];
+        let foreign_keys: Vec<(String, String)> = vec![];
+
+        let result = validate_table_file(
+            "school_admins",
+            content,
+            "school_admins",
+            &field_names,
+            &indexes,
+            &foreign_keys,
+        );
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("not found") && err.contains("school_admin_id"),
+            "error should mention column 'school_admin_id' not found, got: {}",
+            err
+        );
+    }
+
     #[test]
     fn test_validate_no_duplicate_fields() {
         let unique = vec!["a".to_string(), "b".to_string()];
@@ -862,6 +991,7 @@ mod tests {
         assert!(validate_jsonb_default("tags", Some("'[1,2]'::jsonb")).is_ok());
         assert!(validate_jsonb_default("data", Some("'{\"a\": 1}'::jsonb")).is_ok());
         assert!(validate_jsonb_default("prefs", Some("'{}'::jsonb")).is_ok());
+        assert!(validate_jsonb_default("allowed_grades", Some("'[]'::jsonb")).is_ok());
     }
 
     #[test]
@@ -875,31 +1005,6 @@ mod tests {
         assert!(
             err.contains("tags"),
             "error should mention field name: {}",
-            err
-        );
-    }
-
-    #[test]
-    fn test_validate_jsonb_default_err_empty_array_default() {
-        let err = validate_jsonb_default("tags", Some("'[]'::jsonb")).unwrap_err();
-        assert!(
-            err.contains("must not have default empty array"),
-            "error should reject empty array default: {}",
-            err
-        );
-        assert!(
-            err.contains("tags"),
-            "error should mention field name: {}",
-            err
-        );
-    }
-
-    #[test]
-    fn test_validate_jsonb_default_err_empty_array_no_quotes() {
-        let err = validate_jsonb_default("meta", Some("[]::jsonb")).unwrap_err();
-        assert!(
-            err.contains("must not have default empty array"),
-            "error should reject empty array default: {}",
             err
         );
     }

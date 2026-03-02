@@ -607,6 +607,7 @@ impl RuntimeManager {
                 .configure(organizations_router::configure_organizations_routes)
                 .configure(organizations_router::configure_token_routes)
                 .configure(root_store_router::configure_root_store_routes)
+                .configure(system_router::configure_system_routes)
                 .configure(|cfg| store_router::configure_store_routes(cfg, app_state.clone()))
                 .configure(listener_router::configure_listener_routes)
                 .configure(|cfg| file_router::configure_file_routes(cfg, app_state.clone()))

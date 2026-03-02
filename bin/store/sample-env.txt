@@ -68,3 +68,6 @@ SYNC_BOOTSTRAP_PASSWORD=ch@ng3m3Pl3@s3!!
 
 #global code service
 CODE_SERVICE_GRPC_URL=http://localhost:50051
+
+# Migration
+MIGRATION_MODE=false

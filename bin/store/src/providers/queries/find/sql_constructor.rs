@@ -282,13 +282,15 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             |filters| self.build_infix_expression(filters),
         ));
 
-        let ids_selections = self.construct_pluck_group_ids_selections();
-        if !ids_selections.is_empty() {
+        let field_array_selections = self.construct_pluck_group_field_arrays_selections();
+        if !field_array_selections.is_empty() {
             if !sql.ends_with("SELECT ") {
                 sql.push_str(", ");
             }
-            sql.push_str(&ids_selections.join(", "));
+            sql.push_str(&field_array_selections.join(", "));
         }
+
+        // legacy ids/items selections are superseded by per-field arrays
 
         sql.push_str(&format!(" FROM \"{}\" \"{}\"", self.table, self.table));
 
@@ -345,14 +347,16 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         Ok(sql)
     }
 
-    fn construct_pluck_group_ids_selections(&self) -> Vec<String> {
+    fn construct_pluck_group_field_arrays_selections(&self) -> Vec<String> {
         let mut selections = Vec::new();
         let pluck_group_object = self.request_body.get_pluck_group_object();
         if pluck_group_object.is_empty() {
             return selections;
         }
-        let joins = self.request_body.get_joins();
-        for (alias_key, _fields) in pluck_group_object.iter() {
+        for (alias_key, fields) in pluck_group_object.iter() {
+            if fields.is_empty() {
+                continue;
+            }
             if let Some((idx, join)) = self.find_join_by_alias(alias_key) {
                 let to_alias = join
                     .field_relation
@@ -362,112 +366,135 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                     .unwrap_or(&join.field_relation.to.entity);
                 let target_table = &join.field_relation.to.entity;
                 let previous_join = self.find_previous_join(idx, join);
-                let selection = if !join.nested {
-                    let mut where_conditions = Vec::new();
-                    let standard_where = match self.build_system_where_clause(to_alias) {
-                        Ok(clause) => clause,
-                        Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
-                    };
-                    where_conditions.push(standard_where);
-                    let join_condition =
-                        self.build_join_condition_for_alias(to_alias, join, previous_join);
-                    where_conditions.push(join_condition);
-                    if !join.field_relation.to.filters.is_empty() {
-                        if let Ok(filter_expression) =
-                            self.build_infix_expression(&join.field_relation.to.filters)
-                        {
-                            if !filter_expression.is_empty() {
-                                where_conditions.push(filter_expression);
+                for field in fields {
+                    let field_expr = Self::get_field(
+                        to_alias,
+                        field,
+                        self.request_body.get_date_format(),
+                        &self.table,
+                        self.timezone.as_deref(),
+                        false,
+                        self.request_body.get_time_format(),
+                        None,
+                    );
+                    let base_expr = field_expr
+                        .split(" AS ")
+                        .next()
+                        .map(|s| s.to_string())
+                        .unwrap_or(field_expr);
+                    let mut plural_field = field.clone();
+                    if !plural_field.ends_with('s') {
+                        plural_field.push('s');
+                    }
+                    let selection_alias = format!("{}_{}", to_alias, plural_field);
+                    let selection = if !join.nested {
+                        let mut where_conditions = Vec::new();
+                        let standard_where = match self.build_system_where_clause(to_alias) {
+                            Ok(clause) => clause,
+                            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                        };
+                        where_conditions.push(standard_where);
+                        let join_condition =
+                            self.build_join_condition_for_alias(to_alias, join, previous_join);
+                        where_conditions.push(join_condition);
+                        if !join.field_relation.to.filters.is_empty() {
+                            if let Ok(filter_expression) =
+                                self.build_infix_expression(&join.field_relation.to.filters)
+                            {
+                                if !filter_expression.is_empty() {
+                                    where_conditions.push(filter_expression);
+                                }
                             }
                         }
-                    }
-                    let combined_where = where_conditions.join(" AND ");
-                    format!(
-                        "COALESCE( ( SELECT JSONB_AGG(\"{}\".\"id\") FROM \"{}\" \"{}\" WHERE {} ), '[]' ) AS \"{}_ids\"",
-                        to_alias, target_table, to_alias, combined_where, to_alias
-                    )
-                } else if let Some(prev_join) = previous_join {
-                    let (prev_alias, prev_table) = if prev_join.r#type == "self" {
-                        (
-                            prev_join
-                                .field_relation
-                                .from
-                                .alias
-                                .as_deref()
-                                .unwrap_or(&prev_join.field_relation.from.entity),
-                            prev_join.field_relation.from.entity.as_str(),
+                        let combined_where = where_conditions.join(" AND ");
+                        format!(
+                            "COALESCE( ( SELECT JSONB_AGG({}) FROM \"{}\" \"{}\" WHERE {} ), '[]' ) AS \"{}\"",
+                            base_expr, target_table, to_alias, combined_where, selection_alias
+                        )
+                    } else if let Some(prev_join) = previous_join {
+                        let (prev_alias, prev_table) = if prev_join.r#type == "self" {
+                            (
+                                prev_join
+                                    .field_relation
+                                    .from
+                                    .alias
+                                    .as_deref()
+                                    .unwrap_or(&prev_join.field_relation.from.entity),
+                                prev_join.field_relation.from.entity.as_str(),
+                            )
+                        } else {
+                            (
+                                prev_join
+                                    .field_relation
+                                    .to
+                                    .alias
+                                    .as_deref()
+                                    .unwrap_or(&prev_join.field_relation.to.entity),
+                                prev_join.field_relation.to.entity.as_str(),
+                            )
+                        };
+                        let parent_where = match self.build_system_where_clause(prev_alias) {
+                            Ok(clause) => clause,
+                            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", prev_alias),
+                        };
+                        let child_where = match self.build_system_where_clause(to_alias) {
+                            Ok(clause) => clause,
+                            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                        };
+                        let main_to_parent_correlation = format!(
+                            "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                            self.table,
+                            prev_join.field_relation.from.field,
+                            prev_alias,
+                            prev_join.field_relation.to.field
+                        );
+                        let on_condition = format!(
+                            "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                            to_alias,
+                            join.field_relation.to.field,
+                            prev_alias,
+                            join.field_relation.from.field
+                        );
+                        let mut where_conditions =
+                            vec![child_where, parent_where, main_to_parent_correlation];
+                        if !join.field_relation.to.filters.is_empty() {
+                            if let Ok(filter_expression) =
+                                self.build_infix_expression(&join.field_relation.to.filters)
+                            {
+                                if !filter_expression.is_empty() {
+                                    where_conditions.push(filter_expression);
+                                }
+                            }
+                        }
+                        let combined_where = where_conditions.join(" AND ");
+                        format!(
+                            "COALESCE( ( SELECT JSONB_AGG({}) FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} ), '[]' ) AS \"{}\"",
+                            base_expr, prev_table, prev_alias, target_table, to_alias, on_condition, combined_where, selection_alias
                         )
                     } else {
-                        (
-                            prev_join
-                                .field_relation
-                                .to
-                                .alias
-                                .as_deref()
-                                .unwrap_or(&prev_join.field_relation.to.entity),
-                            prev_join.field_relation.to.entity.as_str(),
+                        let mut where_conditions = Vec::new();
+                        let standard_where = match self.build_system_where_clause(to_alias) {
+                            Ok(clause) => clause,
+                            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                        };
+                        where_conditions.push(standard_where);
+                        let join_condition =
+                            self.build_join_condition_for_alias(to_alias, join, None);
+                        where_conditions.push(join_condition);
+                        let combined_where = where_conditions.join(" AND ");
+                        format!(
+                            "COALESCE( ( SELECT JSONB_AGG({}) FROM \"{}\" \"{}\" WHERE {} ), '[]' ) AS \"{}\"",
+                            base_expr, target_table, to_alias, combined_where, selection_alias
                         )
                     };
-                    let parent_where = match self.build_system_where_clause(prev_alias) {
-                        Ok(clause) => clause,
-                        Err(_) => format!("(\"{}\".\"tombstone\" = 0)", prev_alias),
-                    };
-                    let child_where = match self.build_system_where_clause(to_alias) {
-                        Ok(clause) => clause,
-                        Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
-                    };
-                    let main_to_parent_correlation = format!(
-                        "\"{}\".\"{}\" = \"{}\".\"{}\"",
-                        self.table,
-                        prev_join.field_relation.from.field,
-                        prev_alias,
-                        prev_join.field_relation.to.field
-                    );
-                    let on_condition = format!(
-                        "\"{}\".\"{}\" = \"{}\".\"{}\"",
-                        to_alias,
-                        join.field_relation.to.field,
-                        prev_alias,
-                        join.field_relation.from.field
-                    );
-                    let mut where_conditions =
-                        vec![child_where, parent_where, main_to_parent_correlation];
-                    if !join.field_relation.to.filters.is_empty() {
-                        if let Ok(filter_expression) =
-                            self.build_infix_expression(&join.field_relation.to.filters)
-                        {
-                            if !filter_expression.is_empty() {
-                                where_conditions.push(filter_expression);
-                            }
-                        }
-                    }
-                    let combined_where = where_conditions.join(" AND ");
-                    format!(
-                        "COALESCE( ( SELECT JSONB_AGG(\"{}\".\"id\") FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {} ), '[]' ) AS \"{}_ids\"",
-                        to_alias, prev_table, prev_alias, target_table, to_alias, on_condition, combined_where, to_alias
-                    )
-                } else {
-                    let mut where_conditions = Vec::new();
-                    let standard_where = match self.build_system_where_clause(to_alias) {
-                        Ok(clause) => clause,
-                        Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
-                    };
-                    where_conditions.push(standard_where);
-                    let join_condition = self.build_join_condition_for_alias(to_alias, join, None);
-                    where_conditions.push(join_condition);
-                    let combined_where = where_conditions.join(" AND ");
-                    format!(
-                        "COALESCE( ( SELECT JSONB_AGG(\"{}\".\"id\") FROM \"{}\" \"{}\" WHERE {} ), '[]' ) AS \"{}_ids\"",
-                        to_alias, target_table, to_alias, combined_where, to_alias
-                    )
-                };
-                selections.push(selection);
-            } else {
-                let _ = joins;
+                    selections.push(selection);
+                }
             }
         }
         selections
     }
+
+    // legacy: construct_pluck_group_items_selections and construct_pluck_group_ids_selections were used previously
 
     fn find_join_by_alias<'a>(&'a self, alias: &str) -> Option<(usize, &'a Join)> {
         self.request_body

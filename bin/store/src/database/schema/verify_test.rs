@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use crate::database::schema::verify::{field_exists_in_table, get_table_fields};
+    use crate::test_init::init_test_state;
 
     /// Validates field existence checking across different scenarios:
     /// - Existing table with existing field (should return true)
@@ -23,6 +24,9 @@ mod tests {
     /// ```
     #[test]
     fn should_correctly_validate_field_existence_in_database_schema() {
+        // Initialize test state (including path configuration)
+        init_test_state();
+
         println!("Testing field existence validation...");
 
         // Test with existing table and field
@@ -61,6 +65,9 @@ mod tests {
     /// ```
     #[test]
     fn should_retrieve_all_fields_from_existing_tables() {
+        // Initialize path configuration for tests
+        init_test_state();
+
         println!("Testing table field retrieval...");
 
         // Test with existing table
@@ -115,6 +122,9 @@ mod tests {
     /// All inputs are safely handled through regex escaping and validation.
     #[test]
     fn should_handle_edge_cases_and_invalid_inputs_gracefully() {
+        // Initialize test state (including path configuration)
+        init_test_state();
+
         println!("Testing edge cases and failure scenarios...");
 
         // Test empty string inputs

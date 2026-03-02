@@ -38,6 +38,13 @@ impl ModelGenerator {
         content.push_str("use diesel::prelude::*;");
         content.push_str("\nuse serde::{Deserialize, Serialize};");
 
+        // Collect chrono import if any field uses timestamp/timestamptz
+        let chrono_import = Self::chrono_import_line(fields);
+        if let Some(ref line) = chrono_import {
+            content.push_str(&format!("\n{}", line));
+        }
+        let use_chrono_short = chrono_import.is_some();
+
         // Collect non-chrono imports only
         let mut other_imports = std::collections::HashSet::new();
 
@@ -75,6 +82,7 @@ impl ModelGenerator {
         for field in fields {
             let rust_type = FieldTypeParser::diesel_to_rust_type(&field.field_type)
                 .unwrap_or_else(|_| "String".to_string());
+            let rust_type = Self::rust_type_for_display(&rust_type, use_chrono_short);
             let rust_field_name = if reserved_keywords::is_reserved(&field.name) {
                 reserved_keywords::rust_identifier(&field.name)
             } else {
@@ -170,6 +178,50 @@ impl ModelGenerator {
         Ok(field_names)
     }
 
+    /// Returns the chrono import line with only the types actually used by the model's fields.
+    /// Timestamptz uses DateTime<Utc> (needs DateTime, Utc); timestamp uses NaiveDateTime.
+    pub(crate) fn chrono_import_line(fields: &[ParsedField]) -> Option<String> {
+        let mut use_naive = false;
+        let mut use_datetime_utc = false;
+        for field in fields {
+            if let Ok(rust_type) = FieldTypeParser::diesel_to_rust_type(&field.field_type) {
+                if rust_type.contains("chrono::NaiveDateTime") {
+                    use_naive = true;
+                }
+                if rust_type.contains("chrono::DateTime<chrono::Utc>") {
+                    use_datetime_utc = true;
+                }
+            }
+        }
+        if !use_naive && !use_datetime_utc {
+            return None;
+        }
+        let imports: Vec<&str> = [
+            use_datetime_utc.then_some("DateTime"),
+            use_naive.then_some("NaiveDateTime"),
+            use_datetime_utc.then_some("Utc"),
+        ]
+        .into_iter()
+        .flatten()
+        .collect();
+        Some(format!("use chrono::{{{}}};", imports.join(", ")))
+    }
+
+    /// When chrono import is present, use short type names (DateTime<Utc>, NaiveDateTime) in the struct.
+    pub(crate) fn rust_type_for_display(rust_type: &str, use_chrono_short: bool) -> String {
+        if !use_chrono_short {
+            return rust_type.to_string();
+        }
+        // Option<chrono::DateTime<chrono::Utc>> -> Option<DateTime<Utc>>
+        // Option<chrono::NaiveDateTime> -> Option<NaiveDateTime>
+        // chrono::DateTime<chrono::Utc> -> DateTime<Utc>
+        // chrono::NaiveDateTime -> NaiveDateTime
+        let s = rust_type
+            .replace("chrono::DateTime<chrono::Utc>", "DateTime<Utc>")
+            .replace("chrono::NaiveDateTime", "NaiveDateTime");
+        s
+    }
+
     fn extract_non_chrono_dependencies(rust_type: &str) -> Vec<String> {
         let mut dependencies = Vec::new();
 
@@ -209,5 +261,125 @@ impl ModelGenerator {
         }
 
         dependencies
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::builders::generator::field_definition::ParsedField;
+
+    fn parsed_field(name: &str, field_type: &str) -> ParsedField {
+        ParsedField {
+            name: name.to_string(),
+            field_type: field_type.to_string(),
+            is_primary_key: false,
+            is_indexed: false,
+            migration_nullable: true,
+            default_value: None,
+        }
+    }
+
+    #[test]
+    fn test_chrono_import_line_none_when_no_chrono_fields() {
+        let fields = vec![
+            parsed_field("id", "Text"),
+            parsed_field("name", "Nullable<Text>"),
+        ];
+        assert!(ModelGenerator::chrono_import_line(&fields).is_none());
+    }
+
+    #[test]
+    fn test_chrono_import_line_some_when_timestamptz_field() {
+        let fields = vec![
+            parsed_field("id", "Text"),
+            parsed_field("timestamp", "Nullable<Timestamptz>"),
+        ];
+        let import = ModelGenerator::chrono_import_line(&fields).unwrap();
+        assert_eq!(import, "use chrono::{DateTime, Utc};");
+    }
+
+    #[test]
+    fn test_chrono_import_line_some_when_timestamp_field() {
+        let fields = vec![
+            parsed_field("id", "Text"),
+            parsed_field("created_at", "Timestamp"),
+        ];
+        let import = ModelGenerator::chrono_import_line(&fields).unwrap();
+        assert_eq!(import, "use chrono::{NaiveDateTime};");
+    }
+
+    #[test]
+    fn test_chrono_import_line_some_when_nullable_timestamp_field() {
+        let fields = vec![parsed_field("last_seen", "Nullable<Timestamp>")];
+        let import = ModelGenerator::chrono_import_line(&fields).unwrap();
+        assert_eq!(import, "use chrono::{NaiveDateTime};");
+    }
+
+    #[test]
+    fn test_chrono_import_line_includes_all_when_both_timestamp_and_timestamptz() {
+        let fields = vec![
+            parsed_field("id", "Text"),
+            parsed_field("created_at", "Timestamp"),
+            parsed_field("updated_at", "Nullable<Timestamptz>"),
+        ];
+        let import = ModelGenerator::chrono_import_line(&fields).unwrap();
+        assert_eq!(import, "use chrono::{DateTime, NaiveDateTime, Utc};");
+    }
+
+    #[test]
+    fn test_rust_type_for_display_no_shortening_when_false() {
+        assert_eq!(
+            ModelGenerator::rust_type_for_display("chrono::DateTime<chrono::Utc>", false),
+            "chrono::DateTime<chrono::Utc>"
+        );
+        assert_eq!(
+            ModelGenerator::rust_type_for_display("Option<chrono::DateTime<chrono::Utc>>", false),
+            "Option<chrono::DateTime<chrono::Utc>>"
+        );
+    }
+
+    #[test]
+    fn test_rust_type_for_display_shortens_timestamptz_when_true() {
+        assert_eq!(
+            ModelGenerator::rust_type_for_display("chrono::DateTime<chrono::Utc>", true),
+            "DateTime<Utc>"
+        );
+    }
+
+    #[test]
+    fn test_rust_type_for_display_shortens_nullable_timestamptz_when_true() {
+        assert_eq!(
+            ModelGenerator::rust_type_for_display("Option<chrono::DateTime<chrono::Utc>>", true),
+            "Option<DateTime<Utc>>"
+        );
+    }
+
+    #[test]
+    fn test_rust_type_for_display_shortens_naive_datetime_when_true() {
+        assert_eq!(
+            ModelGenerator::rust_type_for_display("chrono::NaiveDateTime", true),
+            "NaiveDateTime"
+        );
+    }
+
+    #[test]
+    fn test_rust_type_for_display_shortens_nullable_naive_datetime_when_true() {
+        assert_eq!(
+            ModelGenerator::rust_type_for_display("Option<chrono::NaiveDateTime>", true),
+            "Option<NaiveDateTime>"
+        );
+    }
+
+    #[test]
+    fn test_rust_type_for_display_leaves_non_chrono_unchanged() {
+        assert_eq!(
+            ModelGenerator::rust_type_for_display("String", true),
+            "String"
+        );
+        assert_eq!(
+            ModelGenerator::rust_type_for_display("Option<String>", true),
+            "Option<String>"
+        );
     }
 }

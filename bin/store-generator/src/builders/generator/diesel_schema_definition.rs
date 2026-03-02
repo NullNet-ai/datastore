@@ -33,6 +33,35 @@ pub enum WhereExpr {
     },
 }
 
+impl WhereExpr {
+    /// Collect all column names referenced in this WHERE expression (for validation).
+    /// Returns unique column names.
+    pub fn column_names(&self) -> Vec<String> {
+        let mut set = std::collections::HashSet::new();
+        self.collect_columns_into(&mut set);
+        set.into_iter().collect::<Vec<_>>()
+    }
+
+    fn collect_columns_into(&self, out: &mut std::collections::HashSet<String>) {
+        match self {
+            WhereExpr::And { and: exprs } => {
+                for e in exprs {
+                    e.collect_columns_into(out);
+                }
+            }
+            WhereExpr::Or { or: exprs } => {
+                for e in exprs {
+                    e.collect_columns_into(out);
+                }
+            }
+            WhereExpr::Not { not: expr } => expr.collect_columns_into(out),
+            WhereExpr::Pred { column, .. } => {
+                out.insert(column.trim_matches('"').to_string());
+            }
+        }
+    }
+}
+
 /// Trait for defining table schemas using Diesel types
 #[allow(dead_code)]
 pub trait DieselTableDefinition {
@@ -594,6 +623,64 @@ pub mod types {
     }
     pub fn nullable_integer_array() -> DieselType {
         nullable(array(integer()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::WhereExpr;
+
+    #[test]
+    fn test_where_expr_column_names_single_pred() {
+        let w = WhereExpr::Pred {
+            op: "=".to_string(),
+            column: "status".to_string(),
+            value: Some(serde_json::Value::String("Active".to_string())),
+        };
+        let cols = w.column_names();
+        assert_eq!(cols, vec!["status"]);
+    }
+
+    #[test]
+    fn test_where_expr_column_names_and() {
+        let w = WhereExpr::And {
+            and: vec![
+                WhereExpr::Pred {
+                    op: "=".to_string(),
+                    column: "status".to_string(),
+                    value: Some(serde_json::Value::String("Active".to_string())),
+                },
+                WhereExpr::Pred {
+                    op: "=".to_string(),
+                    column: "name".to_string(),
+                    value: Some(serde_json::Value::String("John".to_string())),
+                },
+            ],
+        };
+        let mut cols = w.column_names();
+        cols.sort();
+        assert_eq!(cols, vec!["name", "status"]);
+    }
+
+    #[test]
+    fn test_where_expr_column_names_deduped() {
+        let w = WhereExpr::And {
+            and: vec![
+                WhereExpr::Pred {
+                    op: "=".to_string(),
+                    column: "status".to_string(),
+                    value: Some(serde_json::Value::String("Active".to_string())),
+                },
+                WhereExpr::Pred {
+                    op: "!=".to_string(),
+                    column: "status".to_string(),
+                    value: Some(serde_json::Value::Null),
+                },
+            ],
+        };
+        let mut cols = w.column_names();
+        cols.sort();
+        assert_eq!(cols, vec!["status".to_string()]);
     }
 }
 

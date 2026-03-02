@@ -2,6 +2,7 @@ use crate::database::schema::verify::field_type_in_table;
 use crate::generated::models::crdt_message_model::CrdtMessageModel;
 use crate::generated::table_enum::Table;
 
+use chrono::Utc;
 use diesel_async::AsyncPgConnection;
 use serde_json::json;
 use serde_json::{Map, Value};
@@ -33,6 +34,7 @@ pub async fn apply(
         &field_type.field_type,
         field_type.is_array,
         field_type.is_json,
+        field_type.is_timestamptz,
         column,
     )?;
 
@@ -55,16 +57,16 @@ pub async fn apply(
         let timestamp_str = if ht_timestamp.contains('T')
             && !ht_timestamp.contains('Z')
             && !ht_timestamp.contains('+')
+            && ht_timestamp.len() > 10
             && !ht_timestamp[10..].contains('-')
         {
             format!("{}+00:00", ht_timestamp)
         } else if ht_timestamp.contains(' ') && !ht_timestamp.contains('T') {
             // Handle space-separated timestamps like "2025-08-20 21:44:41.082307"
-            // Convert to RFC3339 format with T separator and UTC timezone
             let with_t = ht_timestamp.replace(' ', "T");
             format!("{}+00:00", with_t)
         } else {
-            ht_timestamp.to_string()
+            normalize_rfc3339_timezone(ht_timestamp)
         };
 
         let timestamp = chrono::DateTime::parse_from_rfc3339(&timestamp_str).map_err(|e| {
@@ -75,26 +77,58 @@ pub async fn apply(
 
         let json_values = serde_json::Value::Object(json_obj);
 
-        match table.upsert_record_with_id_timestamp(tx, json_values).await {
-            Ok(_) => return Ok(()),
-            Err(e) => {
+        table
+            .upsert_record_with_id_timestamp(tx, json_values)
+            .await
+            .map_err(|e| {
                 print!("Error applying message: {}", e);
-                Err(Box::new(e))
-            }
-        }
+                Box::<dyn std::error::Error>::from(e)
+            })?;
+        return Ok(());
     } else {
         // Insert or update without hypertable timestamp
         let json_values = serde_json::Value::Object(json_obj);
 
-        match table.upsert_record_with_id(tx, json_values).await {
-            Ok(_) => return Ok(()),
-            Err(e) => {
+        table
+            .upsert_record_with_id(tx, json_values)
+            .await
+            .map_err(|e| {
                 log::error!("Error applying message: {}", e);
-                Err(Box::new(e))
-                // return error
-            }
+                Box::<dyn std::error::Error>::from(e)
+            })?;
+        return Ok(());
+    }
+}
+
+/// Normalize timezone offset so RFC3339 accepts it: e.g. "+00" -> "+00:00", "-05" -> "-05:00".
+fn normalize_rfc3339_timezone(s: &str) -> String {
+    let s = s.trim();
+    if s.ends_with('Z') {
+        return s.to_string();
+    }
+    // Trailing +HH or -HH without :MM (e.g. "2026-02-27T02:17:06.634944+00" -> "...+00:00")
+    if s.len() >= 3 {
+        let rest = &s[s.len() - 3..];
+        if (rest.starts_with('+') || rest.starts_with('-'))
+            && rest[1..].chars().all(|c| c.is_ascii_digit())
+        {
+            return format!("{}:00", s);
         }
     }
+    s.to_string()
+}
+
+/// Ensure the string has an RFC3339 timezone so parse_from_rfc3339 accepts it (e.g. "2026-02-27T10:30:00" -> "...+00:00").
+fn ensure_rfc3339_has_timezone(s: &str) -> String {
+    let s = s.trim();
+    if s.ends_with('Z') {
+        return s.to_string();
+    }
+    // Already has an offset (+ or - after the date part, i.e. after position 10)
+    if s.contains('+') || s.rfind('-').map_or(false, |i| i > 10) {
+        return s.to_string();
+    }
+    format!("{}+00:00", s)
 }
 
 /// Bridge function to convert JSON value to ColumnValue using DatabaseTypeConverter
@@ -103,6 +137,7 @@ fn parse_message_value_to_json(
     field_type: &str,
     is_array: bool,
     is_json: bool,
+    is_timestamptz: bool,
     column: &str,
 ) -> Result<serde_json::Value, Box<dyn std::error::Error>> {
     // Handle empty/null values
@@ -202,17 +237,26 @@ fn parse_message_value_to_json(
                 && !timestamp_str[10..].contains('-')
             {
                 format!("{}+00:00", timestamp_str)
+            } else if timestamp_str.contains(' ') && !timestamp_str.contains('T') {
+                // Space-separated datetime: normalize to RFC3339 (add T and ensure full timezone)
+                let with_t = timestamp_str.replace(' ', "T");
+                normalize_rfc3339_timezone(&with_t)
             } else {
-                timestamp_str.to_string()
+                normalize_rfc3339_timezone(&timestamp_str)
             };
+            let formatted_timestamp = ensure_rfc3339_has_timezone(&formatted_timestamp);
 
             let parsed_timestamp = chrono::DateTime::parse_from_rfc3339(&formatted_timestamp)
                 .map_err(|e| {
                     log::error!("Failed to parse timestamp '{}': {}", formatted_timestamp, e);
                     Box::new(e) as Box<dyn std::error::Error>
                 })?;
-            // Use naive_utc() to match hypertable_timestamp handling
-            return Ok(json!(parsed_timestamp.naive_utc()));
+            // timestamptz -> DateTime<Utc> expects RFC3339 with timezone; timestamp -> NaiveDateTime expects no timezone
+            return Ok(if is_timestamptz {
+                Value::String(parsed_timestamp.with_timezone(&Utc).to_rfc3339())
+            } else {
+                json!(parsed_timestamp.naive_utc())
+            });
         }
     }
 

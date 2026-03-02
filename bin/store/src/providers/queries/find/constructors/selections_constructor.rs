@@ -63,7 +63,7 @@ impl SelectionsConstructor {
         let main_in_pluck_object = request_body.get_pluck_object().contains_key(table);
 
         // First, include main table pluck fields (to match final SQL structure)
-        if main_in_pluck_object && !request_body.get_pluck().is_empty() {
+        if main_in_pluck_object {
             let pluck_sel = Self::construct_pluck_object(
                 request_body,
                 table,
@@ -258,7 +258,10 @@ impl SelectionsConstructor {
                 .unwrap_or(false)
                 || concat_field.entity == table;
             let requested = fields.iter().any(|f| f == &concat_field.field_name);
-            if applies_to_table && requested {
+            // Auto-inject concatenated fields when aliased_entity matches the table, even if not explicitly requested
+            let should_include = applies_to_table
+                && (requested || concat_field.aliased_entity.as_deref() == Some(table));
+            if should_include {
                 concatenated_field_names.insert(concat_field.field_name.clone());
                 for source_field in &concat_field.fields {
                     concatenated_source_fields.insert(source_field.clone());
@@ -306,7 +309,10 @@ impl SelectionsConstructor {
                 .unwrap_or(false)
                 || concat_field.entity == table;
             let requested = fields.iter().any(|f| f == &concat_field.field_name);
-            if applies_to_table && requested {
+            // Auto-inject concatenated fields when aliased_entity matches the table, even if not explicitly requested
+            let should_include = applies_to_table
+                && (requested || concat_field.aliased_entity.as_deref() == Some(table));
+            if should_include {
                 let concatenated_expression = concat_field
                     .fields
                     .iter()
@@ -452,19 +458,16 @@ impl SelectionsConstructor {
         get_field: &impl Fn(&str, &str, &str, &str, Option<&str>, bool) -> String,
     ) {
         if !request_body.get_concatenate_fields().is_empty() {
-            let allowed_fields_opt = request_body.get_pluck_object().get(to_alias);
+            // Concatenated fields should be automatically injected even if not explicitly listed in pluck_object
+            let _allowed_fields_opt = request_body.get_pluck_object().get(to_alias);
             request_body
                 .get_concatenate_fields()
                 .iter()
                 .filter(|field| {
-                    let normalized_entity = normalize_entity_name(&field.entity);
-                    let alias_match = field.aliased_entity.as_deref() == Some(to_alias)
-                        || field.entity == to_alias
-                        || normalized_entity == to_alias;
-                    let name_allowed = allowed_fields_opt
-                        .map(|allowed| allowed.iter().any(|f| f == &field.field_name))
-                        .unwrap_or(false);
-                    alias_match && name_allowed
+                    // Only add concatenated fields when the to_alias matches the aliased_entity
+                    // This prevents adding full_name to the wrong entity (e.g., contacts instead of created_by/updated_by)
+                    // Concatenated fields should be automatically injected even if not explicitly listed in pluck_object
+                    field.aliased_entity.as_deref() == Some(to_alias)
                 })
                 .for_each(|field| {
                     let normalized_entity = normalize_entity_name(&field.entity);

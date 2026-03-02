@@ -2,8 +2,9 @@ use crate::constants::paths;
 use crate::database::schema::reserved_keywords;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
+use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::PathBuf;
 const SCHEMA_CONTENT: &str = include_str!("../../generated/schema.rs");
 
 pub fn field_exists_in_table(table_name: &str, field_name: &str) -> bool {
@@ -17,17 +18,22 @@ pub struct FieldTypeInfo {
     pub field_type: String,
     pub nullable: bool,
     pub is_json: bool,
+    /// True when the DB type is timestamptz (with time zone). Used to serialize for DateTime<Utc> vs NaiveDateTime.
+    pub is_timestamptz: bool,
 }
 
 pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTypeInfo> {
-    // Path to schema.rs file
-    let possible_paths = vec![
-        Path::new(paths::database::SCHEMA_FILE),
-        Path::new(paths::LEGACY_SCHEMA_FILE),
-    ];
-    // Read the schema file
+    let mut possible_paths: Vec<PathBuf> = Vec::new();
+    possible_paths.push(PathBuf::from(paths::database::schema_file()));
+    possible_paths.push(PathBuf::from(paths::legacy_schema_file()));
+    if let Ok(exe) = env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            possible_paths.push(dir.join(paths::database::schema_file()));
+            possible_paths.push(dir.join(paths::legacy_schema_file()));
+        }
+    }
     let mut schema_content = String::new();
-    for path in possible_paths {
+    for path in possible_paths.iter() {
         if let Ok(content) = fs::read_to_string(&path) {
             schema_content = content;
             break;
@@ -110,7 +116,9 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
                         }
 
                         // Simplify the base type
-                        let simplified_type = match processed_type.to_lowercase().as_str() {
+                        let lower = processed_type.to_lowercase();
+                        let is_timestamptz = lower == "timestamptz";
+                        let simplified_type = match lower.as_str() {
                             "int4" | "integer" => "integer".to_string(),
                             "text" | "varchar" | "char" => "text".to_string(),
                             "float" | "float4" | "float8" | "double" => "float".to_string(),
@@ -129,6 +137,7 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
                             field_type: simplified_type,
                             nullable: is_nullable,
                             is_json,
+                            is_timestamptz,
                         });
                     }
                 }
@@ -150,14 +159,17 @@ pub fn field_type_in_table(table_name: &str, field_name: &str) -> Option<FieldTy
 /// * `Option<Vec<String>>` - Vector of field names if table exists, None otherwise
 ///
 pub fn get_table_fields(table_name: &str) -> Option<Vec<String>> {
-    // Path to schema.rs file
-    let possible_paths = vec![
-        Path::new(paths::database::SCHEMA_FILE),
-        Path::new(paths::LEGACY_SCHEMA_FILE),
-    ];
-    // Read the schema file
+    let mut possible_paths: Vec<PathBuf> = Vec::new();
+    possible_paths.push(PathBuf::from(paths::database::schema_file()));
+    possible_paths.push(PathBuf::from(paths::legacy_schema_file()));
+    if let Ok(exe) = env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            possible_paths.push(dir.join(paths::database::schema_file()));
+            possible_paths.push(dir.join(paths::legacy_schema_file()));
+        }
+    }
     let mut schema_content = String::new();
-    for path in possible_paths {
+    for path in possible_paths.iter() {
         if let Ok(content) = fs::read_to_string(&path) {
             schema_content = content;
             break;

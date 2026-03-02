@@ -2,7 +2,9 @@
 
 # PHONY targets (targets that don't create files)
 .PHONY: all dev clean help install verify-install install-macos install-linux install-windows \
-        server store store-clean-setup store-watch store-build store-prod \
+        server store store-clean-setup store-watch store-build \
+        store-prod store-build-linux store-build-linux-bx store-build-linux-clean store-build-linux-zig store-build-docker store-build-docker-legacy store-build-docker-nocache store-build-docker-memsafe store-build-docker-memsafe-legacy store-build-docker-auth docker-diagnose \
+        store-build-debian-amd64 store-build-debian-arm64 \
         redis-flush counter-service counter-service-test counter-service-test-integration counter-service-test-all \
         store-generate-schema store-generate-proto store-generator-schema store-generator-proto store-generator-all \
         db-migrate-generate db-migrate-up db-migrate-revert \
@@ -30,7 +32,20 @@ help:
 	@echo "  store-clean-setup       - Run store clean setup"
 	@echo "  store-watch             - Run store in watch mode with debug"
 	@echo "  store-build             - Build store in release mode"
-	@echo "  store-prod              - Run store in production mode"
+	@echo "  store-prod              - Run store compiled store binary (target/release/store) in production mode"
+	@echo "  store-build-linux       - Build Linux store binary in Docker (override LINUX_PLATFORM)"
+	@echo "  store-build-linux-bx    - Build Linux store binary via buildx to ./dist then ./store"
+	@echo "  store-build-linux-clean - Clean builder caches and pull fresh base image"
+	@echo "  store-build-linux-zig   - Cross-compile Linux binary using cargo-zigbuild"
+	@echo "  store-build-docker      - Build via Dockerfile artifact stage and copy to ./store"
+	@echo "  store-build-docker-legacy - Build with legacy builder (DOCKER_BUILDKIT=0)"
+	@echo "  store-build-docker-nocache - Build artifact with --no-cache and copy to ./store"
+	@echo "  store-build-docker-memsafe - Build with minimal memory (jobs=1, cgu=1, opt=0)"
+	@echo "  store-build-docker-memsafe-legacy - Same as memsafe using legacy builder"
+	@echo "  store-build-docker-auth - Build using private registry token via BuildKit secret"
+	@echo "  docker-diagnose         - Print docker info, disk usage, builder and buildx status"
+	@echo "  store-build-debian-amd64 - Cross-compile Debian-compatible x86_64 Linux binary"
+	@echo "  store-build-debian-arm64 - Cross-compile Debian-compatible aarch64 Linux binary"
 	@echo "  store-initialize-device - Initialize device and wait for PostgreSQL listener"
 	@echo "  store-generate-schema   - Generate store schema"
 	@echo "  store-generate-proto    - Generate store proto files"
@@ -491,7 +506,7 @@ store-clean-setup:
 				expect "Enter password for database cleanup:"; \
 				send "admin\r"; \
 				expect { \
-					"Store is running" { \
+					"Store is running on " { \
 						puts "\n=== Setup completed successfully! ==="; \
 						kill [exp_pid]; \
 						exit 0 \
@@ -535,17 +550,201 @@ store-build:
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
 	fi
-	@cd bin/store && cargo build --release
+	@cd bin/store && cargo build --release && cp -f ../../target/release/store ../../store
 
-# Run the store in production mode
-store-prod:
-	@echo "🚀 Starting store in production mode..."
-	@# Check if cargo is installed
-	@if ! command -v cargo >/dev/null 2>&1; then \
-		echo "❌ Cargo not found. Please run 'make install' first."; \
+# Build a Linux binary in Docker and place it at repo root as ./store
+# Usage: make store-build-linux [LINUX_PLATFORM=linux/amd64|linux/arm64]
+LINUX_PLATFORM ?= linux/amd64
+store-build-linux:
+	@echo "🐧 Building Linux store binary using Docker ($(LINUX_PLATFORM))..."
+	@docker pull --platform=$(LINUX_PLATFORM) rust:latest || true
+	@docker run --rm --platform=$(LINUX_PLATFORM) \
+		-e USER_ID=$$(id -u) -e GROUP_ID=$$(id -g) \
+		-v "$$PWD":/usr/src/crdt-workspace \
+		-w /usr/src/crdt-workspace \
+		rust:latest bash -lc '\
+			set -euxo pipefail; \
+			export PATH="/usr/local/cargo/bin:/root/.cargo/bin:$$PATH"; \
+			apt-get update; \
+			DEBIAN_FRONTEND=noninteractive apt-get install -y libpq-dev protobuf-compiler pkg-config make; \
+			cd bin/store; \
+			cargo --version; \
+			cargo build --release; \
+			test -f /usr/src/crdt-workspace/target/release/store; \
+			cp -f /usr/src/crdt-workspace/target/release/store /usr/src/crdt-workspace/store; \
+			chmod +x /usr/src/crdt-workspace/store; \
+			chown $$USER_ID:$$GROUP_ID /usr/src/crdt-workspace/store || true \
+		'
+	@echo "✅ Linux binary available at ./store"
+
+# Build using Docker Buildx and export binary locally
+store-build-linux-bx:
+	@echo "🐧 Building Linux store binary with buildx ($(LINUX_PLATFORM))..."
+	@docker buildx build --platform=$(LINUX_PLATFORM) --pull \
+		--target artifact -f dockerfile \
+		--output type=local,dest=./dist .
+	@mv -f ./dist/store ./store
+	@chmod +x ./store
+	@rm -rf ./dist
+	@echo "✅ Linux binary available at ./store (buildx)"
+
+# Build inside Docker using the Dockerfile and extract the artifact to ./store
+BUILD_JOBS ?= 1
+BUILD_SWAP_MB ?= 0
+OPT_LEVEL ?= 2
+CODEGEN_UNITS ?= 1
+DOCKER_BUILD_ARGS = --build-arg BUILD_JOBS=$(BUILD_JOBS) --build-arg BUILD_SWAP_MB=$(BUILD_SWAP_MB) --build-arg OPT_LEVEL=$(OPT_LEVEL) --build-arg CODEGEN_UNITS=$(CODEGEN_UNITS)
+store-build-docker:
+	@echo "🐳 Building store binary inside Docker (artifact stage)..."
+	@docker build --target artifact -t store-builder -f dockerfile $(DOCKER_BUILD_ARGS) .
+	@cid=$$(docker create store-builder /store); \
+	docker cp $$cid:/store ./store; \
+	docker rm $$cid >/dev/null
+	@chmod +x ./store
+	@echo "✅ Linux binary available at ./store (docker build)"
+
+store-build-docker-legacy:
+	@echo "🐳 Building store binary with legacy builder (BuildKit disabled)..."
+	@DOCKER_BUILDKIT=0 docker build --target artifact -t store-builder-legacy -f dockerfile $(DOCKER_BUILD_ARGS) .
+	@cid=$$(docker create store-builder-legacy /store); \
+	docker cp $$cid:/store ./store; \
+	docker rm $$cid >/dev/null
+	@chmod +x ./store
+	@echo "✅ Linux binary available at ./store (legacy builder)"
+
+store-build-docker-nocache:
+	@echo "🐳 Building store binary without cache (artifact stage)..."
+	@docker build --no-cache --pull --target artifact -t store-builder-nocache -f dockerfile $(DOCKER_BUILD_ARGS) .
+	@cid=$$(docker create store-builder-nocache /store); \
+	docker cp $$cid:/store ./store; \
+	docker rm $$cid >/dev/null
+	@chmod +x ./store
+	@echo "✅ Linux binary available at ./store (no-cache build)"
+
+store-build-docker-memsafe:
+	@$(MAKE) store-build-docker BUILD_JOBS=1 CODEGEN_UNITS=1 OPT_LEVEL=0 BUILD_SWAP_MB=4096
+
+store-build-docker-memsafe-legacy:
+	@$(MAKE) store-build-docker-legacy BUILD_JOBS=1 CODEGEN_UNITS=1 OPT_LEVEL=0 BUILD_SWAP_MB=4096
+
+store-build-docker-auth:
+	@echo "🐳 Building store binary with registry auth via BuildKit secret..."
+	@if [ -z "$$DNAMICRO_TOKEN" ]; then \
+		echo "❌ DNAMICRO_TOKEN environment variable is required for private registry access."; \
+		echo "   Example: export DNAMICRO_TOKEN=..."; \
 		exit 1; \
 	fi
-	@cd bin/store && cargo run --release
+	@tmpfile=$$(mktemp); \
+	trap 'rm -f $$tmpfile' EXIT || true; \
+	printf "%s" "$$DNAMICRO_TOKEN" > "$$tmpfile"; \
+	docker build --target artifact -t store-builder-auth -f dockerfile \
+		--secret id=dnamicro_token,src=$$tmpfile $(DOCKER_BUILD_ARGS) .; \
+	rm -f "$$tmpfile"; \
+	cid=$$(docker create store-builder-auth /store); \
+	docker cp $$cid:/store ./store; \
+	docker rm $$cid >/dev/null; \
+	chmod +x ./store; \
+	echo "✅ Linux binary available at ./store (docker build with auth)"
+
+docker-diagnose:
+	@echo "🔎 Docker daemon info:"
+	@docker info || true
+	@echo ""
+	@echo "📦 Docker disk usage:"
+	@docker system df || true
+	@echo ""
+	@echo "🔧 Docker builders:"
+	@docker builder ls || true
+	@echo ""
+	@echo "🔧 Docker buildx instances:"
+	@docker buildx ls || true
+
+# Clean builder caches and pull fresh base image to fix containerd/blob errors
+store-build-linux-clean:
+	@echo "🧹 Cleaning Docker builder cache and images..."
+	@docker builder prune -af || true
+	@docker image rm rust:latest || true
+	@docker system prune -f || true
+	@docker pull rust:latest || true
+	@echo "✅ Docker caches pruned and base image refreshed"
+
+# Cross-compile Linux binary using cargo-zigbuild (no Docker)
+# Usage: make store-build-linux-zig [LINUX_TARGET=aarch64-unknown-linux-gnu|x86_64-unknown-linux-gnu]
+LINUX_TARGET ?= x86_64-unknown-linux-gnu
+store-build-linux-zig:
+	@echo "🐧 Cross-compiling Linux binary using cargo-zigbuild (target=$(LINUX_TARGET))..."
+	@if ! command -v zig >/dev/null 2>&1; then \
+		if [ "$$(uname)" = "Darwin" ]; then \
+			if command -v brew >/dev/null 2>&1; then \
+				echo "📦 Installing zig via Homebrew..."; \
+				brew list zig >/dev/null 2>&1 || brew install zig; \
+			else \
+				echo "❌ Homebrew not found. Please install Homebrew (https://brew.sh) or install zig manually."; \
+				exit 1; \
+			fi; \
+		else \
+			echo "❌ zig not found. Please install zig via your package manager."; \
+			exit 1; \
+		fi; \
+	fi
+	@if ! command -v cargo-zigbuild >/dev/null 2>&1; then \
+		echo "📦 Installing cargo-zigbuild..."; \
+		cargo install cargo-zigbuild; \
+	fi
+	@rustup target add $(LINUX_TARGET) || true
+	@cd bin/store && cargo zigbuild --release --target $(LINUX_TARGET)
+	@cp -f bin/store/target/$(LINUX_TARGET)/release/store ./store
+	@chmod +x ./store
+	@echo "✅ Linux binary available at ./store (zigbuild)"
+
+# Convenience targets for Debian-compatible builds
+store-build-debian-amd64:
+	@$(MAKE) store-build-linux-zig LINUX_TARGET=x86_64-unknown-linux-gnu
+
+store-build-debian-arm64:
+	@$(MAKE) store-build-linux-zig LINUX_TARGET=aarch64-unknown-linux-gnu
+
+# Run the compiled store binary directly (no cargo)
+store-prod:
+	@echo "▶️  Running compiled store binary..."
+	@if [ ! -x "./target/release/store" ]; then \
+		echo "🔨 Building store (release) first..."; \
+		cd bin/store && cargo build --release || exit 1; \
+	fi
+	@os=$$(uname); \
+	case "$$os" in \
+		Darwin) out="store-mac-os" ;; \
+		Linux) out="store-linux" ;; \
+		MINGW*|MSYS*|CYGWIN*) out="store-windows.exe" ;; \
+		*) out="store-unknown" ;; \
+	esac; \
+	cp -f ./target/release/store ./$$out && chmod +x ./$$out || true; \
+	echo "✅ Binary copied to ./$$out"; \
+	if [ "$$os" = "Darwin" ]; then \
+		echo "🔐 Fixing macOS security attributes..."; \
+		xattr -d com.apple.quarantine ./$$out 2>/dev/null || true; \
+		codesign -s - ./$$out 2>/dev/null || true; \
+	fi; \
+	./$$out
+
+# Build store binary without running it (useful for permission fixes)
+store-build-only:
+	@echo "🔨 Building store binary..."
+	@cd bin/store && cargo build --release
+	@os=$$(uname); \
+	case "$$os" in \
+		Darwin) out="store-mac-os" ;; \
+		Linux) out="store-linux" ;; \
+		MINGW*|MSYS*|CYGWIN*) out="store-windows.exe" ;; \
+		*) out="store-unknown" ;; \
+	esac; \
+	cp -f ./target/release/store ./$$out && chmod +x ./$$out; \
+	echo "✅ Binary built and copied to ./$$out"; \
+	if [ "$$os" = "Darwin" ]; then \
+		echo "🔐 Fixing macOS security attributes..."; \
+		xattr -d com.apple.quarantine ./$$out 2>/dev/null || true; \
+		codesign -s - ./$$out 2>/dev/null || true; \
+	fi
 
 # Create store schema
 store-generate-schema:

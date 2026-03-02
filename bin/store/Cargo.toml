@@ -1,6 +1,6 @@
 [package]
 name = "store"
-version = "0.2.36"
+version = "0.2.42"
 edition = "2021"
 rust-version = "1.91.0"
 
@@ -75,9 +75,17 @@ counter-service = { path = "../counter-service" }
 
 
 [dev-dependencies]
-store-generator = { version = "0.1.12", registry = "dnamicro" }
+store-generator = { version = "0.1.17", registry = "dnamicro" }
 serial_test = "3.0"
 
 
 [build-dependencies]
 tonic-build = "0.12.3"
+
+
+[profile.dev]
+panic = "unwind"
+
+[profile.release]
+lto = false
+codegen-units = 16

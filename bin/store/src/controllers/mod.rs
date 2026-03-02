@@ -1,5 +1,6 @@
 pub mod common_controller;
 pub mod health_controller;
+pub mod initializer_controller;
 pub mod organization_controller;
 pub mod payload_filter_scenarios;
 pub mod pg_functions;

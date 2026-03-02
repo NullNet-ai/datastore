@@ -73,17 +73,25 @@ macro_rules! generate_get_by_id_match {
             match $self {
                 $(
                     Table::$table => {
+                        let migration_mode = std::env::var("MIGRATION_MODE")
+                            .ok()
+                            .map(|v| v.trim().eq_ignore_ascii_case("true") || v.trim() == "1")
+                            .unwrap_or(false);
+
                         let mut query = crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
                             .filter(crate::generated::schema::[<$table:snake:lower>]::id.eq($id))
-                            .filter(crate::generated::schema::[<$table:snake:lower>]::tombstone.eq(0))
                             .into_boxed();
 
-                        // Add organization_id filter if not root account
-                        if !$is_root_account {
-                            if let Some(org_id) = $organization_id {
-                                query = query
-                                    .filter(crate::generated::schema::[<$table:snake:lower>]::organization_id.is_not_null())
-                                    .filter(crate::generated::schema::[<$table:snake:lower>]::organization_id.eq(org_id));
+                        if !migration_mode {
+                            query = query
+                                .filter(crate::generated::schema::[<$table:snake:lower>]::tombstone.eq(0));
+
+                            if !$is_root_account {
+                                if let Some(org_id) = $organization_id {
+                                    query = query
+                                        .filter(crate::generated::schema::[<$table:snake:lower>]::organization_id.is_not_null())
+                                        .filter(crate::generated::schema::[<$table:snake:lower>]::organization_id.eq(org_id));
+                                }
                             }
                         }
 

@@ -5,6 +5,51 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.17
+### Author
+Kashan
+
+### Fixed
+- **Index comparison vs migrations with statement-breakpoint**: When reading existing index SQL from migration `up.sql` files, the line can include Diesel’s `--> statement-breakpoint` comment on the same line. That suffix was included in the string used for comparison, so the generator thought the index definition differed and errored with "already created with a different definition". In `get_existing_index_sql_from_migrations`, the line is now stripped of any `-->` comment (and trailing `;`) before comparison, so re-runs of store-generator-schema no longer false-positive on unchanged indexes.
+
+## 0.1.16
+### Author
+Kashan
+
+### Fixed
+- **Chrono imports in generated models**: The model generator now emits only the chrono types actually used by each model. Models with only `timestamp` (NaiveDateTime) fields get `use chrono::{NaiveDateTime};`; models with only `timestamptz` (DateTime<Utc>) get `use chrono::{DateTime, Utc};`; models with both get all three. This removes "unused imports: `DateTime` and `Utc`" warnings when a model has no timestamptz fields.
+
+## 0.1.15
+### Author
+Kashan
+
+### Changed
+- **JSONB default validation**: `validate_jsonb_default` in `table_validator.rs` now allows empty-array default `'[]'::jsonb`. JSONB columns (e.g. `allowed_grades`, `allowed_ages`) may use `default: "'[]'::jsonb"` in table definitions; the previous rule that rejected empty-array defaults has been removed. Validation still requires the `::jsonb` cast when a default is set.
+
+## 0.1.14
+### Author
+Kashan
+
+### Fixed
+- **Index definition comparison vs existing migrations**: When an index already exists in migrations, the generator compares the table definition’s index SQL with the existing migration SQL. Existing migrations sometimes use unquoted column names (e.g. `btree(tombstone)`) while the generator emits quoted names (e.g. `btree("tombstone")`). In `schema_generator.rs`, `normalize_index_sql_for_compare` now normalizes the column list inside `USING btree(...)` to a single form (unquoted), so both styles compare equal and the generator no longer errors with "Index '...' was already created with a different definition" when the only difference is column quoting.
+
+## 0.1.13
+### Author
+Kashan
+
+### Added
+- **Model generator: timestamp/timestamptz types and chrono imports**:
+  - When any field uses `timestamp()` or `timestamptz()`, generated models now include `use chrono::{DateTime, NaiveDateTime, Utc};` and use short type names in the struct (`DateTime<Utc>`, `NaiveDateTime`) instead of fully qualified paths. `RUST_TYPE_MAPPINGS` already mapped `Timestamptz` → `chrono::DateTime<chrono::Utc>` and `Timestamp` → `chrono::NaiveDateTime`.
+  - New helpers: `ModelGenerator::chrono_import_line()`, `ModelGenerator::rust_type_for_display()`.
+  - Unit tests in `utils.rs` for `parse_diesel_type` and `diesel_to_rust_type` (timestamp, timestamptz, nullable variants); unit tests in `model_generator.rs` for chrono import and type shortening.
+- **Index validation: index and where-clause columns must exist in table**:
+  - `WhereExpr::column_names()` in `diesel_schema_definition.rs` collects all column names referenced in a partial index WHERE expression.
+  - `validate_table_file` in `table_validator.rs` now checks that every index column and every column referenced in an index WHERE clause exists in the table’s field list; otherwise it returns a clear error (e.g. "Index '...' where clause references column 'status' which is not found in table '...'").
+  - Unit tests: `test_validate_index_with_where_clause_columns_found`, `test_validate_index_with_where_clause_column_not_found`, `test_validate_index_column_not_found`; `test_where_expr_column_names_*` in diesel_schema_definition; `test_extract_index_with_where_clause_school_admins_style` in generator_service.
+
+### Changed
+- **Makefile**: `STORE_GEN` now uses `cargo run -p store-generator --` so `store-generator-schema`, `store-generator-proto`, and `store-generator-all` run the local workspace package instead of a `store-generator` binary on PATH.
+
 ## 0.1.12
 ### Author
 Kashan

@@ -34,6 +34,74 @@ mod tests {
     #[test]
     fn should_include_ids_selection_for_pluck_group_object() {
         let mut mock_filter = MockQueryFilter::default();
+        mock_filter.pluck = vec![]; // ensure default id is applied
+        let mut pluck_group_object = HashMap::new();
+        pluck_group_object.insert(
+            "stories".to_string(),
+            vec!["id".to_string(), "course_id".to_string()],
+        );
+        mock_filter.pluck_group_object = pluck_group_object;
+
+        mock_filter.joins = vec![Join {
+            r#type: "left".to_string(),
+            field_relation: FieldRelation {
+                to: RelationEndpoint {
+                    alias: None,
+                    entity: "stories".to_string(),
+                    field: "course_id".to_string(),
+                    filters: vec![],
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                },
+                from: RelationEndpoint {
+                    alias: None,
+                    entity: "courses".to_string(),
+                    field: "id".to_string(),
+                    filters: vec![],
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                },
+            },
+            nested: false,
+        }];
+
+        let mut constructor = SQLConstructor::new(mock_filter, "courses".to_string(), true, None);
+        let sql = constructor.construct().expect("SQL should be constructed");
+
+        assert!(
+            sql.contains("SELECT \"courses\".\"id\""),
+            "Expected default id when pluck is empty. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("AS \"stories_ids\""),
+            "Expected stories_ids selection. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("AS \"stories_course_ids\""),
+            "Expected stories_course_ids selection. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("FROM \"stories\" \"stories\""),
+            "Expected stories source table. Got: {}",
+            sql
+        );
+        assert!(
+            sql.contains("\"courses\".\"id\" = \"stories\".\"course_id\""),
+            "Expected correlation condition. Got: {}",
+            sql
+        );
+    }
+
+    #[test]
+    fn should_include_per_field_arrays_for_pluck_group_object() {
+        let mut mock_filter = MockQueryFilter::default();
         mock_filter.pluck = vec!["id".to_string()];
         let mut pluck_group_object = HashMap::new();
         pluck_group_object.insert(
@@ -78,13 +146,13 @@ mod tests {
             sql
         );
         assert!(
-            sql.contains("FROM \"stories\" \"stories\""),
-            "Expected stories source table. Got: {}",
+            sql.contains("AS \"stories_course_ids\""),
+            "Expected stories_course_ids selection. Got: {}",
             sql
         );
         assert!(
-            sql.contains("\"courses\".\"id\" = \"stories\".\"course_id\""),
-            "Expected correlation condition. Got: {}",
+            !sql.contains("AS \"stories_items\""),
+            "Did not expect stories_items selection. Got: {}",
             sql
         );
     }
