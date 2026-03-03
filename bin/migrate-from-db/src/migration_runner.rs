@@ -97,9 +97,15 @@ async fn drop_unique_indexes_for_table(
     indexes: &[(String, String)],
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for (index_name, _ddl) in indexes {
-        let sql = format!("DROP INDEX IF EXISTS \"{}\"", index_name.replace('"', "\"\""));
+        let sql = format!(
+            "DROP INDEX IF EXISTS \"{}\"",
+            index_name.replace('"', "\"\"")
+        );
         if let Err(e) = dest_client.batch_execute(&sql).await {
-            eprintln!("Warning: failed to drop index {} on {}: {}", index_name, table, e);
+            eprintln!(
+                "Warning: failed to drop index {} on {}: {}",
+                index_name, table, e
+            );
             // Continue with other indexes
         }
     }
@@ -114,7 +120,10 @@ async fn recreate_unique_indexes_for_table(
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     for (index_name, ddl) in indexes {
         if let Err(e) = dest_client.batch_execute(ddl).await {
-            eprintln!("Warning: failed to recreate index {} on {}: {}", index_name, table, e);
+            eprintln!(
+                "Warning: failed to recreate index {} on {}: {}",
+                index_name, table, e
+            );
         }
     }
     Ok(())
@@ -379,7 +388,11 @@ pub async fn run_migration(
             // Drop unique indexes on destination before insert (if destination URL is set).
             if let Some(ref dest) = dest_client {
                 if let Some(indexes) = unique_indexes_map.get(table) {
-                    eprintln!("[migrate] table={} dropping {} unique index(es)", table, indexes.len());
+                    eprintln!(
+                        "[migrate] table={} dropping {} unique index(es)",
+                        table,
+                        indexes.len()
+                    );
                     if let Err(e) = drop_unique_indexes_for_table(dest, table, indexes).await {
                         eprintln!("Warning: drop unique indexes for {}: {}", table, e);
                     }
@@ -388,7 +401,9 @@ pub async fn run_migration(
 
             let table_start = Instant::now();
             if let Some(ref m) = metrics {
-                m.migration_progress_percent.with_label_values(&[table]).set(0);
+                m.migration_progress_percent
+                    .with_label_values(&[table])
+                    .set(0);
             }
 
             let batch_size = config.batch_size as i64;
@@ -495,7 +510,10 @@ pub async fn run_migration(
                         }
                         Err(e) => {
                             let msg = e.to_string();
-                            eprintln!("[migrate] ERROR table={} row={} id={:?} err={}", table, row_index, row_id, msg);
+                            eprintln!(
+                                "[migrate] ERROR table={} row={} id={:?} err={}",
+                                table, row_index, row_id, msg
+                            );
                             error_log.log(table, row_index, row_id.as_deref(), &msg, None);
                             let mut s = state.write().unwrap();
                             if let Some(st) = s.table_stats.get_mut(table) {
@@ -510,7 +528,9 @@ pub async fn run_migration(
                                 m.migration_rows_total
                                     .with_label_values(&[table, "error"])
                                     .inc();
-                                if let Some(constraint) = metrics::extract_fk_constraint_from_error(&msg) {
+                                if let Some(constraint) =
+                                    metrics::extract_fk_constraint_from_error(&msg)
+                                {
                                     m.migration_fk_violations_total
                                         .with_label_values(&[table, &constraint])
                                         .inc();
@@ -532,17 +552,36 @@ pub async fn run_migration(
                     .set(100);
             }
 
-            let inserted = state.read().unwrap().table_stats.get(table).map(|s| s.records_inserted).unwrap_or(0);
-            let errors = state.read().unwrap().table_stats.get(table).map(|s| s.errors_count).unwrap_or(0);
+            let inserted = state
+                .read()
+                .unwrap()
+                .table_stats
+                .get(table)
+                .map(|s| s.records_inserted)
+                .unwrap_or(0);
+            let errors = state
+                .read()
+                .unwrap()
+                .table_stats
+                .get(table)
+                .map(|s| s.errors_count)
+                .unwrap_or(0);
             eprintln!(
                 "[migrate] table={} done inserted={} errors={} elapsed={:.1}s",
-                table, inserted, errors, table_start.elapsed().as_secs_f64()
+                table,
+                inserted,
+                errors,
+                table_start.elapsed().as_secs_f64()
             );
 
             // Recreate unique indexes on destination after insert (if destination URL is set).
             if let Some(ref dest) = dest_client {
                 if let Some(indexes) = unique_indexes_map.get(table) {
-                    eprintln!("[migrate] table={} recreating {} unique index(es)", table, indexes.len());
+                    eprintln!(
+                        "[migrate] table={} recreating {} unique index(es)",
+                        table,
+                        indexes.len()
+                    );
                     if let Err(e) = recreate_unique_indexes_for_table(dest, table, indexes).await {
                         eprintln!("Warning: recreate unique indexes for {}: {}", table, e);
                     }

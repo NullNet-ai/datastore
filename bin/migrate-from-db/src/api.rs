@@ -2,8 +2,8 @@
 
 use axum::{
     extract::State,
-    http::StatusCode,
-    response::IntoResponse,
+    http::{header, StatusCode},
+    response::{IntoResponse, Response},
     routing::{get, post},
     Json, Router,
 };
@@ -12,17 +12,19 @@ use std::collections::HashMap;
 use std::fs;
 use std::sync::Arc;
 
+use crate::metrics::MigrationMetrics;
 use crate::{
     format_rust_output, generate_table_order, run_migration, Config, ErrorLog, MigrationPhase,
     SharedMigrationState, StoreClient, MIGRATE_CIRCULAR_FK_COLS, MIGRATE_TABLES_ORDER,
     MIGRATE_UNIQUE_INDEXES,
 };
-use crate::metrics::MigrationMetrics;
 
 /// Combined state for the API: migration state + optional Prometheus metrics.
 pub struct AppState {
     pub migration_state: Arc<SharedMigrationState>,
     pub metrics: Option<Arc<MigrationMetrics>>,
+    /// Path to the error log file (used by GET /errors and cleared on each new migration).
+    pub error_log_path: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -189,7 +191,18 @@ async fn post_migrate(
             .into_response();
     }
 
-    let error_log_path = config.error_log_path.clone();
+    // Use the error log path from app state (consistent across requests), falling back to config.
+    let error_log_path = if !state.error_log_path.is_empty() {
+        state.error_log_path.clone()
+    } else {
+        config.error_log_path.clone()
+    };
+
+    // Clear the error log at the start of each new migration.
+    if let Err(e) = std::fs::write(&error_log_path, "") {
+        eprintln!("Warning: could not clear error log {}: {}", error_log_path, e);
+    }
+
     let error_log = match ErrorLog::open(&error_log_path) {
         Ok(l) => l,
         Err(e) => {
@@ -207,7 +220,15 @@ async fn post_migrate(
     let state_clone = Arc::clone(&state.migration_state);
     let metrics_clone = state.metrics.clone();
     tokio::spawn(async move {
-        if let Err(e) = run_migration(config, state_clone, error_log, circular_fk_override, metrics_clone).await {
+        if let Err(e) = run_migration(
+            config,
+            state_clone,
+            error_log,
+            circular_fk_override,
+            metrics_clone,
+        )
+        .await
+        {
             eprintln!("Migration task failed: {}", e);
         }
     });
@@ -229,7 +250,13 @@ async fn post_generate_tables_order(
     Json(body): Json<GenerateTablesOrderRequest>,
 ) -> impl IntoResponse {
     let schema = body.schema.as_deref().unwrap_or("public");
-    match generate_table_order(&body.database_url, schema, body.migrate_to_database_url.as_deref()).await {
+    match generate_table_order(
+        &body.database_url,
+        schema,
+        body.migrate_to_database_url.as_deref(),
+    )
+    .await
+    {
         Ok((tables, circular_fk_cols, unique_indexes)) => {
             let mut circular_vec: Vec<(String, Vec<String>)> = circular_fk_cols
                 .iter()
@@ -286,6 +313,27 @@ async fn get_status(State(state): State<Arc<AppState>>) -> impl IntoResponse {
     (StatusCode::OK, Json(snapshot))
 }
 
+/// GET /errors — return the contents of the error log as plain text (empty string if no errors yet).
+async fn get_errors(State(state): State<Arc<AppState>>) -> Response {
+    let path = &state.error_log_path;
+    let body = match fs::read_to_string(path) {
+        Ok(contents) => contents,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => String::new(),
+        Err(e) => {
+            return (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                Json(serde_json::json!({ "error": format!("Could not read error log: {}", e) })),
+            )
+                .into_response();
+        }
+    };
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "text/plain; charset=utf-8")
+        .body(axum::body::Body::from(body))
+        .unwrap()
+}
+
 /// GET /tables — table order, circular FK columns, and unique indexes (same as migrate_tables_order.rs).
 async fn get_tables() -> impl IntoResponse {
     let tables: Vec<&str> = MIGRATE_TABLES_ORDER.to_vec();
@@ -295,7 +343,14 @@ async fn get_tables() -> impl IntoResponse {
         .collect();
     let unique_indexes: Vec<(String, Vec<(String, String)>)> = MIGRATE_UNIQUE_INDEXES
         .iter()
-        .map(|(t, idxs)| (t.to_string(), idxs.iter().map(|(a, b)| (a.to_string(), b.to_string())).collect()))
+        .map(|(t, idxs)| {
+            (
+                t.to_string(),
+                idxs.iter()
+                    .map(|(a, b)| (a.to_string(), b.to_string()))
+                    .collect(),
+            )
+        })
         .collect();
     (
         StatusCode::OK,
@@ -313,5 +368,6 @@ pub fn router(state: Arc<AppState>) -> Router {
         .route("/generate-tables-order", post(post_generate_tables_order))
         .route("/status", get(get_status))
         .route("/tables", get(get_tables))
+        .route("/errors", get(get_errors))
         .with_state(state)
 }

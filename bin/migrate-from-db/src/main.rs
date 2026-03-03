@@ -15,7 +15,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let migration_state: Arc<SharedMigrationState> =
         Arc::new(std::sync::RwLock::new(MigrationState::default()));
 
-    let metrics = match std::env::var("MIGRATE_METRICS_PORT").ok().and_then(|p| p.parse::<u16>().ok()) {
+    let metrics = match std::env::var("MIGRATE_METRICS_PORT")
+        .ok()
+        .and_then(|p| p.parse::<u16>().ok())
+    {
         Some(port) => match MigrationMetrics::new() {
             Ok(m) => {
                 let m = Arc::new(m);
@@ -31,9 +34,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         None => None,
     };
 
+    let error_log_path = std::env::var("MIGRATE_ERROR_LOG").unwrap_or_else(|_| {
+        std::env::current_dir()
+            .map(|d| d.join("migrate_errors.log").to_string_lossy().to_string())
+            .unwrap_or_else(|_| "migrate_errors.log".to_string())
+    });
+
     let app_state = Arc::new(AppState {
         migration_state,
         metrics,
+        error_log_path,
     });
 
     let port: u16 = std::env::var("MIGRATE_API_PORT")

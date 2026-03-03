@@ -67,7 +67,10 @@ async fn list_counters(State(pool): State<Arc<Pool>>) -> impl IntoResponse {
     match redis_code::list_counter_records(pool.as_ref()).await {
         Ok(records) => {
             let list = serde_json::to_value(&records).unwrap_or(serde_json::json!([]));
-            (StatusCode::OK, Json(serde_json::json!({ "counters": list })))
+            (
+                StatusCode::OK,
+                Json(serde_json::json!({ "counters": list })),
+            )
         }
         Err(e) => {
             tracing::error!("list_counters error: {}", e);

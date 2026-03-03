@@ -86,10 +86,11 @@ impl Default for MigrationState {
 impl MigrationState {
     pub fn snapshot(&self) -> MigrationStateSnapshot {
         let now = chrono::Utc::now();
-        let duration_secs = self.started_at.map(|t| {
-            (now - t).num_milliseconds() as f64 / 1000.0
-        });
-        let started_at = self.started_at
+        let duration_secs = self
+            .started_at
+            .map(|t| (now - t).num_milliseconds() as f64 / 1000.0);
+        let started_at = self
+            .started_at
             .map(|t| t.format("%Y-%m-%dT%H:%M:%S%.3fZ").to_string());
         MigrationStateSnapshot {
             phase: self.phase.clone(),
@@ -98,7 +99,13 @@ impl MigrationState {
             start_error: if self.start_error.is_empty() {
                 None
             } else {
-                Some(self.start_error.iter().cloned().collect::<Vec<_>>().join("; "))
+                Some(
+                    self.start_error
+                        .iter()
+                        .cloned()
+                        .collect::<Vec<_>>()
+                        .join("; "),
+                )
             },
             tables: self.tables.clone(),
             table_stats: self.table_stats.clone(),

@@ -36,10 +36,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
     let grpc_server = Server::builder().add_service(svc).serve(grpc_addr);
 
     let app = counter_service::http_api::router(pool);
-    let http_server = axum::serve(
-        tokio::net::TcpListener::bind(http_addr).await?,
-        app,
-    );
+    let http_server = axum::serve(tokio::net::TcpListener::bind(http_addr).await?, app);
 
     tracing::info!("Counter service gRPC listening on {}", grpc_addr);
     tracing::info!("Counter service HTTP (migrate) listening on {}", http_addr);

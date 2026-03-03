@@ -27,14 +27,20 @@ async fn unique_indexes_detected_from_real_database() {
     let url = match database_url_from_env() {
         Some(u) => u,
         None => {
-            eprintln!("skip: set MIGRATE_FROM_DATABASE_URL or MIGRATE_TO_DATABASE_URL in .env to run");
+            eprintln!(
+                "skip: set MIGRATE_FROM_DATABASE_URL or MIGRATE_TO_DATABASE_URL in .env to run"
+            );
             return;
         }
     };
 
     let mut url_owned = url.clone();
     if !url.contains("sslmode=") {
-        url_owned.push_str(if url.contains('?') { "&sslmode=disable" } else { "?sslmode=disable" });
+        url_owned.push_str(if url.contains('?') {
+            "&sslmode=disable"
+        } else {
+            "?sslmode=disable"
+        });
     }
 
     let (client, connection) = tokio_postgres::connect(&url_owned, tokio_postgres::NoTls)
@@ -65,8 +71,9 @@ async fn unique_indexes_detected_from_real_database() {
         .await
         .expect("create test table and unique index");
 
-    let (tables, _circular_fk_cols, unique_indexes) =
-        generate_table_order(&url, "public", None).await.expect("generate_table_order");
+    let (tables, _circular_fk_cols, unique_indexes) = generate_table_order(&url, "public", None)
+        .await
+        .expect("generate_table_order");
 
     // Our test table should be in the table list.
     assert!(
@@ -93,9 +100,7 @@ async fn unique_indexes_detected_from_real_database() {
 
     let (index_name, index_def) = indexes
         .iter()
-        .find(|(name, def)| {
-            name.contains("district_admin") || def.contains("CREATE UNIQUE INDEX")
-        })
+        .find(|(name, def)| name.contains("district_admin") || def.contains("CREATE UNIQUE INDEX"))
         .expect("expected an index with district_admin in name or CREATE UNIQUE INDEX in def");
 
     assert!(
