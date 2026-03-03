@@ -1889,6 +1889,7 @@ pub async fn upload_file(
     let mut file_metadata = Vec::new();
     let pluck_fields = vec!["id".to_string()];
     while let Some(field_result) = multipart.next().await {
+        log::debug!("Processing field result: {:?}", field_result);
         let mut field = match field_result {
             Ok(field) => field,
             Err(e) => {
@@ -2416,6 +2417,17 @@ pub async fn search_suggestions(
         timezone: body_timezone,
         ..
     } = &parameters;
+    // Convert parameters to stringified JSON object
+    match serde_json::to_string_pretty(&parameters.clone()) {
+        Ok(params_json) => {
+            if let Err(e) = write_query_to_debug_log(&params_json, &table, true).await {
+                log::warn!("Failed to write debug parameters log: {}", e);
+            }
+        }
+        Err(e) => {
+            log::warn!("Failed to serialize parameters to JSON: {}", e);
+        }
+    }
 
     if advance_filters.is_empty() && group_advance_filters.is_empty() {
         return HttpResponse::BadRequest().json(ApiResponse {
@@ -2599,10 +2611,12 @@ pub async fn search_suggestions(
             });
         }
     };
+    if let Err(e) = write_query_to_debug_log(&query, &table, false).await {
+        log::warn!("Failed to write debug query log: {}", e);
+    }
 
+    log::debug!("Search Suggestion Query: {}", query);
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
-    log::info!("Search Suggestion Query:     {}", final_query);
-    log::debug!("Search Suggestion Query: {}", final_query);
 
     // execute query
     let results = match diesel::dsl::sql_query(&final_query)

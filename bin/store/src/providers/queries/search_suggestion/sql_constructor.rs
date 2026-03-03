@@ -1,7 +1,6 @@
 use serde_json::Value;
 use std::collections::BTreeMap;
 
-use crate::database::schema::verify::field_type_in_table;
 use crate::providers::queries::find::sql_constructor::QueryFilter;
 use crate::providers::queries::find::sql_constructor::SQLConstructor as FindSQLConstructor;
 use crate::providers::queries::search_suggestion::{
@@ -268,7 +267,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                                         time_format
                                     )
                                 );
-                            } else if is_timestamp_column(entity.as_str(), field) {
+                            } else if field.eq_ignore_ascii_case("timestamp") {
                                 let date_fmt = date_format.unwrap_or("YYYY-mm-dd");
                                 entity_field = format!(
                                     "{}",
@@ -373,12 +372,10 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
             SUM(CASE WHEN match_score = 100 THEN count ELSE 0 END) AS exact_count,
             SUM(CASE WHEN match_score >= 70 AND match_score < 100 THEN count ELSE 0 END) AS prefix_count,
             SUM(CASE WHEN match_score >= 50 AND match_score < 70 THEN count ELSE 0 END) AS partial_count,
-            -- Create JSON with values sorted by their individual match scores
             JSON_OBJECT_AGG(
               value, 
               count 
               ORDER BY 
-                -- Calculate the individual match score for each value
                 CASE
                   WHEN LOWER(value) = LOWER('{}') THEN 100
                   WHEN LOWER(value) LIKE LOWER('{} %') THEN 90
@@ -389,7 +386,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                   WHEN LOWER(value) LIKE LOWER('%{}%') THEN 50
                   ELSE 0
                 END DESC,
-                value ASC  -- Alphabetical as tiebreaker
+                value ASC
             ) AS value_json
         FROM all_values
         GROUP BY entity_type, key",
@@ -408,9 +405,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         format!("entity_scores AS (SELECT 
             entity_type,
             MAX(best_score)::integer as max_score,
-            -- Add weighted total score
             SUM(exact_count * 100 + prefix_count * 70 + partial_count * 50)::integer as total_weighted_score,
-            -- Add count of high-scoring matches
             SUM(CASE WHEN best_score >= 70 THEN 1 ELSE 0 END)::integer as high_score_count,
             JSON_OBJECT_AGG(key, value_json ORDER BY best_score DESC) AS entity_data
         FROM key_scores
@@ -432,10 +427,10 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                     AND ks.value_json IS NOT NULL
                 )
                 ORDER BY 
-                max_score DESC,           -- First by max score
-                total_weighted_score DESC, -- Then by total weighted score
-                high_score_count DESC,    -- Then by count of high scores
-                entity_type               -- Finally by name
+                max_score DESC,          
+                total_weighted_score DESC, 
+                high_score_count DESC,   
+                entity_type               
             )
         ) AS results
         FROM entity_scores"
@@ -506,15 +501,15 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
     ) -> String {
         let clean_value = value.trim_matches('\"');
         format!(
-            "SELECT '{}' AS key, {} AS value, COUNT(*) AS count,
+            "SELECT '{}' AS key, {}{} AS value, COUNT(*) AS count,
             CASE
-                WHEN LOWER({}{}) = LOWER('{}') THEN 100  -- Exact match
-                WHEN LOWER({}{}) LIKE LOWER('{} %') THEN 90  -- Starts with '{} '
-                WHEN LOWER({}{}) LIKE LOWER('% {}') THEN 85  -- Ends with ' {}'
-                WHEN LOWER({}{}) LIKE LOWER('% {} %') THEN 80  -- Contains ' {} ' (word boundary)
-                WHEN LOWER({}{}) LIKE LOWER('{}%') THEN 70  -- Starts with '{}'
-                WHEN LOWER({}{}) LIKE LOWER('%{}') THEN 60  -- Ends with '{}'
-                WHEN LOWER({}{}) LIKE LOWER('%{}%') THEN 50  -- Contains '{}'
+                WHEN LOWER({}{}) = LOWER('{}') THEN 100  
+                WHEN LOWER({}{}) LIKE LOWER('{} %') THEN 90
+                WHEN LOWER({}{}) LIKE LOWER('% {}') THEN 85
+                WHEN LOWER({}{}) LIKE LOWER('% {} %') THEN 80  
+                WHEN LOWER({}{}) LIKE LOWER('{}%') THEN 70  
+                WHEN LOWER({}{}) LIKE LOWER('%{}') THEN 60  
+                WHEN LOWER({}{}) LIKE LOWER('%{}%') THEN 50  
                 ELSE 0
             END AS match_score,
             '{}' AS entity_type
@@ -522,32 +517,27 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
             ",
             field,
             entity_field,
+            parse_string,
             entity_field,
             parse_string,
             clean_value,
             entity_field,
             parse_string,
             clean_value,
+            entity_field,
+            parse_string,
             clean_value,
             entity_field,
             parse_string,
             clean_value,
+            entity_field,
+            parse_string,
             clean_value,
             entity_field,
             parse_string,
             clean_value,
-            clean_value,
             entity_field,
             parse_string,
-            clean_value,
-            clean_value,
-            entity_field,
-            parse_string,
-            clean_value,
-            clean_value,
-            entity_field,
-            parse_string,
-            clean_value,
             clean_value,
             entity,
             &self.sql_constructor.table
@@ -597,11 +587,15 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         };
 
         let to_alias = if is_self_join {
-            join.field_relation
-                .to
-                .alias
-                .as_deref()
-                .unwrap_or(&self.sql_constructor.table)
+            if let Some(from_alias) = &join.field_relation.from.alias {
+                from_alias.as_str()
+            } else {
+                join.field_relation
+                    .to
+                    .alias
+                    .as_deref()
+                    .unwrap_or(&self.sql_constructor.table)
+            }
         } else {
             join.field_relation.to.alias.as_deref().unwrap_or(to_entity)
         };
@@ -756,33 +750,5 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         } else {
             String::from("")
         }
-    }
-}
-
-fn is_timestamp_column(table: &str, field: &str) -> bool {
-    if let Some(info) = field_type_in_table(table, field) {
-        info.field_type == "timestamp"
-    } else {
-        false
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn should_detect_timestamp_columns_by_type_for_search_suggestion() {
-        // account_profiles.date_of_birth -> Timestamp, field name is not "timestamp"
-        assert!(is_timestamp_column("account_profiles", "date_of_birth"));
-
-        // account_profiles.timestamp -> Timestamp, classic timestamp column
-        assert!(is_timestamp_column("account_profiles", "timestamp"));
-
-        // accounts.timestamp -> Timestamptz, simplified to "timestamp" in FieldTypeInfo
-        assert!(is_timestamp_column("accounts", "timestamp"));
-
-        // Non-timestamp column should not be treated as timestamp
-        assert!(!is_timestamp_column("account_profiles", "code"));
     }
 }
