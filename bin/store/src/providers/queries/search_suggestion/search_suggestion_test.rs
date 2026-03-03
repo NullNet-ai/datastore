@@ -837,11 +837,7 @@ mod tests {
         );
 
         assert!(result.contains_key("contacts"));
-        let expr = result
-            .get("contacts")
-            .unwrap()
-            .get("created_date_time")
-            .unwrap();
+        let expr = result.get("contacts").unwrap().get("created_date_time").unwrap();
         assert!(
             expr.expression.contains("AT TIME ZONE 'Europe/Berlin'"),
             "Concatenated expression should contain AT TIME ZONE. Got: {}",
@@ -873,11 +869,7 @@ mod tests {
         );
 
         assert!(result.contains_key("contacts"));
-        let expr = result
-            .get("contacts")
-            .unwrap()
-            .get("created_date_time")
-            .unwrap();
+        let expr = result.get("contacts").unwrap().get("created_date_time").unwrap();
         assert!(
             expr.expression.contains("TO_CHAR"),
             "Expression should still contain TO_CHAR for date/time formatting"
