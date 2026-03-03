@@ -1888,15 +1888,15 @@ pub async fn upload_file(
     let mut uploaded_files_count = 0;
     let mut file_metadata = Vec::new();
     let pluck_fields = vec!["id".to_string()];
-        while let Some(field_result) = multipart.next().await {
-            log::debug!("Processing field result: {:?}", field_result);
-            let mut field = match field_result {
-                Ok(field) => field,
-                Err(e) => {
-                    log::error!("Error getting field from multipart: {:?}", e);
-                    return HttpResponse::InternalServerError().body(format!("Multipart error: {}", e));
-                }
-            };
+    while let Some(field_result) = multipart.next().await {
+        log::debug!("Processing field result: {:?}", field_result);
+        let mut field = match field_result {
+            Ok(field) => field,
+            Err(e) => {
+                log::error!("Error getting field from multipart: {:?}", e);
+                return HttpResponse::InternalServerError().body(format!("Multipart error: {}", e));
+            }
+        };
 
         let content_disposition = field.content_disposition();
         let fname = content_disposition.get_filename().map(|s| s.to_string());
@@ -2614,7 +2614,7 @@ pub async fn search_suggestions(
     if let Err(e) = write_query_to_debug_log(&query, &table, false).await {
         log::warn!("Failed to write debug query log: {}", e);
     }
-    
+
     log::debug!("Search Suggestion Query: {}", query);
     let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
 

@@ -2,9 +2,7 @@
 mod tests {
     use crate::providers::queries::search_suggestion::sql_constructor::SQLConstructor;
     use crate::providers::queries::search_suggestion::structs::ConcatenatedExpressions;
-    use crate::structs::core::{
-        FieldRelation, Join, RelationEndpoint, SearchSuggestionParams,
-    };
+    use crate::structs::core::{FieldRelation, Join, RelationEndpoint, SearchSuggestionParams};
     use serde_json::json;
     use std::collections::BTreeMap;
     use std::collections::HashMap;
@@ -57,8 +55,12 @@ mod tests {
             time_format: "HH24:MI".to_string(),
         };
 
-        let mut constructor =
-            SQLConstructor::new(params.clone(), "account_organizations".to_string(), true, None);
+        let mut constructor = SQLConstructor::new(
+            params.clone(),
+            "account_organizations".to_string(),
+            true,
+            None,
+        );
 
         let filtered_fields = json!({ "account_organizations": ["status"] });
         let advance_filters = Vec::<serde_json::Value>::new();
