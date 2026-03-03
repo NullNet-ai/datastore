@@ -1001,15 +1001,10 @@ impl<'a, 'b> Validation<'a, 'b> {
                     });
 
                     if !field_exists_in_joins {
-                        return ApiResponse {
-                            success: false,
-                            message: format!(
-                                "advance_filters[{}] > field > Filter field '{}' in entity '{}' is not found in prioritized properties (pluck, pluck_object, pluck_group_object, concatenated_fields, group_by) or JOIN 'to' fields. Please ensure the field exists in one of these locations.",
-                                filter_index, field, normalized_entity
-                            ),
-                            count: 0,
-                            data: vec![],
-                        };
+                        log::warn!(
+                            "advance_filters[{}] > field > Filter field '{}' in entity '{}' is not found in prioritized properties (pluck, pluck_object, pluck_group_object, concatenated_fields, group_by) or JOIN 'to' fields. Please ensure the field exists in one of these locations.",
+                            filter_index, field, normalized_entity
+                        );
                     }
 
                     // Validate field exists in schema (try both original and normalized entity names)
