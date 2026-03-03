@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package code_service;
+
+service CodeService {
+  /// Returns the next unique code for the given database and entity (table).
+  /// Uses Redis INCR atomically. Config (prefix, default_code, digits_number) must be set via InitCounters first.
+  rpc GetCode(GetCodeRequest) returns (GetCodeResponse);
+  /// Initializes or updates counter config for entities. Optionally sets initial counter value.
+  rpc InitCounters(InitCountersRequest) returns (InitCountersResponse);
+}
+
+message GetCodeRequest {
+  string database = 1;  // database or project name (e.g. "default")
+  string table = 2;      // entity/table name (e.g. "organizations", "sessions")
+}
+
+message GetCodeResponse {
+  string code = 1;
+}
+
+message CounterConfig {
+  string entity = 1;        // table/entity name
+  string prefix = 2;
+  int32 default_code = 3;
+  int32 digits_number = 4;   // zero-pad counter to this many digits; 0 = no padding, use default_code + counter
+}
+
+message InitCountersRequest {
+  string database = 1;           // database or project name
+  repeated CounterConfig counters = 2;
+}
+
+message InitCountersResponse {
+  bool success = 1;
+  string message = 2;  // error details if success is false
+}

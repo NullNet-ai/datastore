@@ -65,5 +65,9 @@ SYNC_BOOTSTRAP_URL=http://localhost:3002
 SYNC_BOOTSTRAP_USERNAME=admin@dnamicro.com
 SYNC_BOOTSTRAP_PASSWORD=ch@ng3m3Pl3@s3!!
 
+
+#global code service
+CODE_SERVICE_GRPC_URL=http://localhost:50051
+
 # Migration
 MIGRATION_MODE=false

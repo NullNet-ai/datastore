@@ -5,6 +5,7 @@
         server store store-clean-setup store-watch store-build \
         store-prod store-build-linux store-build-linux-bx store-build-linux-clean store-build-linux-zig store-build-docker store-build-docker-legacy store-build-docker-nocache store-build-docker-memsafe store-build-docker-memsafe-legacy store-build-docker-auth docker-diagnose \
         store-build-debian-amd64 store-build-debian-arm64 \
+        redis-flush counter-service counter-service-test counter-service-test-integration counter-service-test-all \
         store-generate-schema store-generate-proto store-generator-schema store-generator-proto store-generator-all \
         db-migrate-generate db-migrate-up db-migrate-revert \
         fmt fmt-check git-cleanup setup-hooks ensure-hooks \
@@ -81,6 +82,11 @@ help:
 	@echo "  docker-compose-restart  - Restart Docker Compose services"
 	@echo "  docker-compose-logs     - Show logs from Docker Compose services"
 	@echo "  docker-compose-ps       - Show status of Docker Compose services"
+	@echo "  redis-flush             - Flush Redis using REDIS_URL from env (default redis://127.0.0.1:6379)"
+	@echo "  counter-service        - Start the counter-service (gRPC + Redis code generation)"
+	@echo "  counter-service-test    - Run counter-service unit tests"
+	@echo "  counter-service-test-integration - Run counter-service integration tests (requires Redis)"
+	@echo "  counter-service-test-all - Flush Redis, run all counter-service tests (unit + integration)"
 	@echo "  remove-schema-table-macros - Remove table macros from schema.rs based on tables dir"
 	@echo "  help                    - Show this help message"
 
@@ -416,6 +422,64 @@ store:
 		exit 1; \
 	fi && \
 	cd bin/store && cargo run
+
+# =============================================================================
+# Counter service (gRPC + Redis code generation)
+# =============================================================================
+# REDIS_URL: connection string for Redis. Set in env or in .env (sourced in targets below).
+
+# Flush Redis using REDIS_URL from env or .env (default redis://127.0.0.1:6379)
+redis-flush:
+	@REDIS_URL=$${REDIS_URL:-redis://127.0.0.1:6379}; \
+	if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+	if [ -f bin/counter-service/.env ]; then set -a && . bin/counter-service/.env && set +a; fi; \
+	REDIS_URL=$${REDIS_URL:-redis://127.0.0.1:6379}; \
+	echo "🧹 Flushing Redis at $$REDIS_URL..."; \
+	if command -v redis-cli >/dev/null 2>&1; then \
+		redis-cli -u "$$REDIS_URL" FLUSHALL || { echo "❌ redis-cli failed (is Redis running?)"; exit 1; }; \
+		echo "✅ Redis flushed."; \
+	else \
+		echo "❌ redis-cli not found. Install Redis client (e.g. brew install redis) or run via Docker."; \
+		exit 1; \
+	fi
+
+# Start the counter-service (REDIS_URL, CODE_SERVICE_GRPC_LISTEN from env or .env)
+counter-service:
+	@echo "🔢 Starting counter-service..."
+	@if ! command -v cargo >/dev/null 2>&1; then \
+		echo "❌ Cargo not found. Please run 'make install' first."; \
+		exit 1; \
+	fi
+	@export PATH="$$HOME/.cargo/bin:$$PATH"; \
+	if [ -f "$$HOME/.cargo/env" ]; then . "$$HOME/.cargo/env"; fi; \
+	if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+	if [ -f bin/counter-service/.env ]; then set -a && . bin/counter-service/.env && set +a; fi; \
+	export REDIS_URL=$${REDIS_URL:-redis://127.0.0.1:6379}; \
+	export CODE_SERVICE_GRPC_LISTEN=$${CODE_SERVICE_GRPC_LISTEN:-0.0.0.0:50051}; \
+	cd bin/counter-service && cargo run
+
+# Run counter-service unit tests (no Redis required)
+counter-service-test:
+	@echo "🧪 Running counter-service unit tests..."
+	@export PATH="$$HOME/.cargo/bin:$$PATH"; \
+	if [ -f "$$HOME/.cargo/env" ]; then . "$$HOME/.cargo/env"; fi; \
+	cargo test -p counter-service --lib
+
+# Run counter-service integration tests (requires Redis at REDIS_URL)
+counter-service-test-integration: redis-flush
+	@REDIS_URL=$${REDIS_URL:-redis://127.0.0.1:6379}; \
+	if [ -f .env ]; then set -a && . ./.env && set +a; fi; \
+	if [ -f bin/counter-service/.env ]; then set -a && . bin/counter-service/.env && set +a; fi; \
+	REDIS_URL=$${REDIS_URL:-redis://127.0.0.1:6379}; \
+	export REDIS_URL; \
+	echo "🧪 Running counter-service integration tests (Redis at $$REDIS_URL)..."; \
+	export PATH="$$HOME/.cargo/bin:$$PATH"; \
+	if [ -f "$$HOME/.cargo/env" ]; then . "$$HOME/.cargo/env"; fi; \
+	cargo test -p counter-service --test integration -- --ignored
+
+# Flush Redis and run all counter-service tests (unit + integration)
+counter-service-test-all: redis-flush counter-service-test counter-service-test-integration
+	@echo "✅ All counter-service tests finished."
 
 # =============================================================================
 # Store-specific targets

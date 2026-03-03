@@ -1,9 +1,5 @@
 use crate::controllers::store_controller::ApiError;
-use crate::database::db;
 use crate::generated::models::counter_model::CounterModel;
-use crate::generated::schema::counters;
-use diesel::prelude::*;
-use diesel_async::RunQueryDsl;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -88,6 +84,17 @@ impl CodePrefixInitializer {
             },
         );
 
+        prefixes.insert(
+            "samples".to_string(),
+            CounterModel {
+                default_code: 10000,
+                prefix: "SA".to_string(),
+                counter: 0,
+                entity: "samples".to_string(),
+                digits_number: 6,
+            },
+        );
+
         // Add more table configurations as needed
         // Example:
         // prefixes.insert(
@@ -103,38 +110,31 @@ impl CodePrefixInitializer {
         CodePrefixInitializer { prefixes }
     }
 
-    /// Inserts all prefix configurations into the counter table in the database
-    /// If a record with the same entity already exists, it will update the prefix and default_code
+    /// Initializes counter config in the code service (counter-service). Requires CODE_SERVICE_GRPC_URL.
     pub async fn initialize(&self) -> Result<(), ApiError> {
-        let mut conn = db::get_async_connection().await;
-
-        // Process each counter without using a transaction
-        for (_, counter) in &self.prefixes {
-            // Insert with on_conflict_do_update - if the entity already exists, update prefix and default_code
-            diesel::insert_into(counters::table)
-                .values(counter)
-                .on_conflict(counters::entity)
-                .do_update()
-                .set((
-                    counters::prefix.eq(diesel::upsert::excluded(counters::prefix)),
-                    counters::default_code.eq(diesel::upsert::excluded(counters::default_code)),
-                ))
-                .execute(&mut conn)
-                .await
-                .map_err(|e| {
-                    log::error!(
-                        "Error inserting/updating counter for entity {}: {}",
-                        counter.entity,
-                        e
-                    );
-                    // Convert DieselError to ApiError
-                    ApiError::from(e)
-                })?;
-
-            log::info!("Initialized/updated counter for entity: {}", counter.entity);
-        }
-
-        Ok(())
+        let counters: Vec<(String, String, i32, i32)> = self
+            .prefixes
+            .values()
+            .map(|c| {
+                (
+                    c.entity.clone(),
+                    c.prefix.clone(),
+                    c.default_code,
+                    c.digits_number,
+                )
+            })
+            .collect();
+        crate::utils::code_generator::init_counters(
+            &crate::utils::code_generator::database_name_from_env(),
+            &counters,
+        )
+        .await
+        .map_err(|e| {
+            ApiError::new(
+                actix_web::http::StatusCode::INTERNAL_SERVER_ERROR,
+                e.to_string(),
+            )
+        })
     }
 }
 

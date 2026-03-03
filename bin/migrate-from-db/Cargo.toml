@@ -3,6 +3,11 @@ name = "migrate-from-db"
 version = "0.1.0"
 edition = "2021"
 description = "Migrate data from a PostgreSQL database into the store API (create route)"
+default-run = "migrate-from-db"
+
+[lib]
+name = "migrate_from_db"
+path = "src/lib.rs"
 
 [[bin]]
 name = "migrate-from-db"
@@ -12,6 +17,10 @@ path = "src/main.rs"
 name = "order-tables"
 path = "src/bin/order_tables.rs"
 
+[[bin]]
+name = "migrate-once"
+path = "src/bin/migrate_once.rs"
+
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }
@@ -20,5 +29,12 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 dotenv = "0.15"
 env_logger = "0.10"
-chrono = "0.4"
+chrono = { version = "0.4", features = ["serde"] }
 prometheus = "0.13"
+axum = { version = "0.7", features = ["json"] }
+tower = "0.4"
+
+[dev-dependencies]
+dotenv = "0.15"
+tokio = { version = "1", features = ["full"] }
+tokio-postgres = { version = "0.7", features = ["with-serde_json-1"] }

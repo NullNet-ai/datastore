@@ -5,6 +5,24 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.43
+
+### Author
+Kashan
+### Added
+  - ***Remote code generation (counter-service)***:
+    - The store uses the **counter-service** (gRPC + Redis) for unique code generation. **`CODE_SERVICE_GRPC_URL`** is required; the local DB `counters` table is no longer used for codes.
+    - **Store:** `bin/store/src/utils/code_generator.rs` — client for GetCode and InitCounters; `database_name_from_env()` derives database name from `DATABASE_URL` (e.g. `connectivo`) for scoping counters. `table_enum::generate_code` and `helpers::generate_code` delegate to code_generator; `code_prefix_init` calls InitCounters. Legacy local counter assignment removed from `table_enum`, `helpers`, and `code_prefix_init`.
+    - **Counter-service:** `bin/counter-service` — gRPC service using deadpool-redis; atomic Redis INCR per (database, entity); InitCounters sets config and seeds counter only when key does not exist. See `bin/counter-service/README.md`.
+    - Re-initialization does not reset existing counters.
+
+### Removed
+  - ***Legacy (global) counter service*** — the store no longer uses the local DB `counters` table for code generation. Removed from:
+    - **`bin/store/src/generated/table_enum.rs`** — `generate_code_local` and its use of `schema::counters`; removed `db` and `CounterModel` imports.
+    - **`bin/store/src/utils/helpers.rs`** — `generate_code_local` and its use of `counters::table`; removed `db`, `CounterModel`, and `counters` imports.
+    - **`bin/store/src/initializers/system_initialization/code_prefix_init.rs`** — local DB branch in `initialize()` (Diesel insert/update into `counters::table`); removed `db`, `counters`, `diesel`, and `RunQueryDsl` imports.
+    - **`bin/store/src/utils/code_generator.rs`** — optional `CODE_SERVICE_GRPC_URL` check and else branches that called the local implementations; code generation now always uses the counter-service.
+
 ## 0.2.42
 
 ### Author
@@ -80,7 +98,7 @@ Kashan
 
 ### Author
 Kashan
-
+---
 ### Fixed
   - ***Timestamp and timestamptz handling in queries and sync***:
     - Updated `FieldTypeInfo` in `database/schema/verify.rs` to track `is_timestamptz` so we can distinguish `timestamp` vs `timestamptz` while still simplifying both to the `"timestamp"` logical type for query constructors.
@@ -94,6 +112,7 @@ Kashan
     - These tests cover the new behavior using the `sample_checks` table (`some_test_field` as `timestamp`, `timestamp2` as `timestamptz`) so that future schema or constructor changes don’t regress timestamp handling.
 
 ## 0.2.35
+
 ### Author
 Bert
 
