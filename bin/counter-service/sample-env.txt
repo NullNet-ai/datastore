@@ -7,5 +7,8 @@ REDIS_URL=redis://127.0.0.1:6379
 # gRPC listen address (host:port)
 CODE_SERVICE_GRPC_LISTEN=0.0.0.0:50051
 
+# HTTP listen address for POST /migrate (host:port)
+CODE_SERVICE_HTTP_LISTEN=0.0.0.0:8080
+
 # Log level (e.g. info, debug)
 RUST_LOG=info

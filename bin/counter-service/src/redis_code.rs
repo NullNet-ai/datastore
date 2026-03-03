@@ -112,6 +112,121 @@ pub async fn init_counters(
     Ok(())
 }
 
+/// Get one counter record from Redis (config + current value). Returns None if config or counter key is missing.
+pub async fn get_counter_record(
+    pool: &Pool,
+    database: &str,
+    entity: &str,
+) -> Result<Option<CounterRecord>, CodeError> {
+    let mut conn = pool.get().await?;
+    let ck = config_key(database, entity);
+    let raw: Vec<Option<String>> = redis::cmd("HMGET")
+        .arg(&ck)
+        .arg("prefix")
+        .arg("default_code")
+        .arg("digits_number")
+        .query_async(&mut conn)
+        .await?;
+    if raw.len() < 3 || raw[0].is_none() || raw[1].is_none() || raw[2].is_none() {
+        return Ok(None);
+    }
+    let prefix = raw[0].as_ref().unwrap().clone();
+    let default_code = raw[1].as_ref().unwrap().parse::<i32>().unwrap_or(0);
+    let digits_number = raw[2].as_ref().unwrap().parse::<i32>().unwrap_or(0);
+    let counter_k = counter_key(database, entity);
+    let counter: i64 = redis::cmd("GET")
+        .arg(&counter_k)
+        .query_async(&mut conn)
+        .await
+        .unwrap_or(0);
+    Ok(Some(CounterRecord {
+        database: database.to_string(),
+        entity: entity.to_string(),
+        prefix,
+        default_code,
+        digits_number,
+        counter,
+    }))
+}
+
+/// Counter record as returned by get_counter_record / list.
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct CounterRecord {
+    pub database: String,
+    pub entity: String,
+    pub prefix: String,
+    pub default_code: i32,
+    pub digits_number: i32,
+    pub counter: i64,
+}
+
+/// List all counter (database, entity) pairs by scanning Redis keys code:config:*.
+/// Key format: code:config:<database>:<entity> (database and entity must not contain ':').
+pub async fn list_counter_keys(pool: &Pool) -> Result<Vec<(String, String)>, CodeError> {
+    let mut conn = pool.get().await?;
+    let keys: Vec<String> = redis::cmd("KEYS")
+        .arg("code:config:*")
+        .query_async(&mut conn)
+        .await?;
+    let mut out = Vec::new();
+    let prefix = "code:config:";
+    for key in keys {
+        if let Some(suffix) = key.strip_prefix(prefix) {
+            let parts: Vec<&str> = suffix.splitn(2, ':').collect();
+            if parts.len() == 2 {
+                out.push((parts[0].to_string(), parts[1].to_string()));
+            }
+        }
+    }
+    out.sort_by(|a, b| a.0.cmp(&b.0).then_with(|| a.1.cmp(&b.1)));
+    Ok(out)
+}
+
+/// List all counter records with full details (config + current count).
+pub async fn list_counter_records(pool: &Pool) -> Result<Vec<CounterRecord>, CodeError> {
+    let pairs = list_counter_keys(pool).await?;
+    let mut records = Vec::with_capacity(pairs.len());
+    for (database, entity) in pairs {
+        if let Some(record) = get_counter_record(pool, &database, &entity).await? {
+            records.push(record);
+        }
+    }
+    Ok(records)
+}
+
+/// Migration: replace the whole counter record in Redis with the given values.
+/// Overwrites both the config hash (prefix, default_code, digits_number) and the counter value.
+pub async fn replace_counter_record(
+    pool: &Pool,
+    database: &str,
+    entity: &str,
+    prefix: &str,
+    default_code: i32,
+    digits_number: i32,
+    counter: i64,
+) -> Result<(), CodeError> {
+    let mut conn = pool.get().await?;
+    let ck = config_key(database, entity);
+    let _: () = redis::cmd("HSET")
+        .arg(&ck)
+        .arg("prefix")
+        .arg(prefix)
+        .arg("default_code")
+        .arg(default_code)
+        .arg("digits_number")
+        .arg(digits_number)
+        .query_async(&mut conn)
+        .await?;
+    let counter_k = counter_key(database, entity);
+    let _: () = redis::cmd("SET")
+        .arg(&counter_k)
+        .arg(counter)
+        .query_async(&mut conn)
+        .await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

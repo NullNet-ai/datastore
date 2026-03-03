@@ -6,6 +6,9 @@ gRPC service that generates unique codes per database and entity (table) using *
 
 - **GetCode(database, table)** — Returns the next unique code for that (database, entity). Uses Redis `INCR` atomically so no two callers get the same number. Config (prefix, default_code, digits_number) must be set via InitCounters first.
 - **InitCounters(database, list of CounterConfig)** — Sets or updates config (prefix, default_code, digits_number) per entity. If the counter key does not exist, it is set to 0 so the first GetCode returns the first code. **Re-initialization does not reset existing counters**; only config is updated and missing counters are seeded.
+- **HTTP POST /migrate** — Replaces the whole counter record in Redis for a given (database, entity). Send a JSON body with `database`, `entity`, `prefix`, `default_code`, `digits_number`, and `counter`; both the config hash and the counter value are overwritten. Useful for migrations or fixing state.
+- **HTTP GET /counters** — Lists all counters with full details: database, entity, prefix, default_code, digits_number, and current counter value.
+- **HTTP GET /counters/:database/:entity** — Returns one counter record from Redis: config (prefix, default_code, digits_number) and current counter value. Use to query a specific counter.
 
 Codes are formatted as `prefix + (zero-padded counter or default_code + counter)` depending on `digits_number`.
 
@@ -29,6 +32,7 @@ Copy `sample-env.txt` to `.env` and adjust. The binary loads `.env` from the **c
 |----------|-------------|---------|
 | `REDIS_URL` | Redis connection URL | `redis://127.0.0.1:6379` |
 | `CODE_SERVICE_GRPC_LISTEN` | gRPC listen address (host:port) | `0.0.0.0:50051` |
+| `CODE_SERVICE_HTTP_LISTEN` | HTTP listen address for /migrate (host:port) | `0.0.0.0:8080` |
 | `RUST_LOG` | Log level | `info` |
 
 ## Build and run
@@ -62,7 +66,89 @@ cargo run
 - **Config** (prefix, default_code, digits_number) is overwritten on every InitCounters call.
 - **Counter value** is only set to 0 when the counter key does **not** exist. If it already exists, it is left unchanged. So re-running the initializer does **not** reset existing counters.
 
-To reset a counter manually (e.g. for a test): delete the Redis key (e.g. `code:counter:<database>:<entity>`) or use `make redis-flush` to clear all counter data.
+To reset a counter manually (e.g. for a test): delete the Redis key (e.g. `code:counter:<database>:<entity>`) or use `make redis-flush` to clear all counter data. You can also **POST /migrate** with the desired full record (see below).
+
+## Migration endpoint (HTTP)
+
+**POST /migrate** — Replace the whole counter record for one (database, entity). Body (JSON):
+
+```json
+{
+  "database": "connectivo",
+  "entity": "organizations",
+  "prefix": "OR",
+  "default_code": 1000,
+  "digits_number": 6,
+  "counter": 42
+}
+```
+
+All fields are required. This overwrites both the config hash and the counter value in Redis. Example:
+
+```bash
+curl -X POST http://localhost:8080/migrate -H "Content-Type: application/json" -d '{"database":"connectivo","entity":"organizations","prefix":"OR","default_code":1000,"digits_number":6,"counter":42}'
+```
+
+## Query counters (HTTP) — Postman / curl
+
+Base URL: same as HTTP server (e.g. `http://localhost:8080`). No auth.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/counters` | List all counter keys (database, entity) in Redis |
+| GET | `/counters/:database/:entity` | Get one counter: config + current value |
+
+**List all counters**
+
+```bash
+curl http://localhost:8080/counters
+```
+
+Response (each counter includes config and current count):
+
+```json
+{
+  "counters": [
+    {
+      "database": "connectivo",
+      "entity": "organizations",
+      "prefix": "OR",
+      "default_code": 1000,
+      "digits_number": 6,
+      "counter": 42
+    },
+    {
+      "database": "connectivo",
+      "entity": "invoices",
+      "prefix": "INV",
+      "default_code": 0,
+      "digits_number": 6,
+      "counter": 105
+    }
+  ]
+}
+```
+
+**Get one counter**
+
+```bash
+curl http://localhost:8080/counters/connectivo/organizations
+```
+
+Response (200):
+
+```json
+{
+  "database": "connectivo",
+  "entity": "organizations",
+  "prefix": "OR",
+  "default_code": 1000,
+  "digits_number": 6,
+  "counter": 42
+}
+```
+
+If the counter is missing, response is 404 with `{ "error": "Counter not found", "database": "...", "entity": "..." }`.
 
 ## Store integration
 

@@ -5,6 +5,7 @@ use serde_json::Value;
 
 use crate::config::Config;
 
+#[derive(Clone)]
 pub struct StoreClient {
     client: reqwest::Client,
     base_url: String,

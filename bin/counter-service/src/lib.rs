@@ -1,5 +1,6 @@
 //! Counter service: gRPC service and client for generating unique codes via Redis.
 
+pub mod http_api;
 pub mod redis_code;
 pub mod server;
 
