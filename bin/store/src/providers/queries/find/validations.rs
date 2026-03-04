@@ -713,7 +713,7 @@ impl<'a, 'b> Validation<'a, 'b> {
             data: vec![],
         }
     }
-
+    #[allow(dead_code)]
     pub fn validate_order_by_format(&self) -> ApiResponse {
         // Validate order_by format (should be "entity.field" or just "field" for main table)
         if !self.request_body.order_by.is_empty() {

@@ -544,20 +544,29 @@ impl<'a> WhereConstructor<'a> {
         let (table_name, field_name, field_with_table) =
                 // Check if field_name contains complex expressions (like COALESCE)
                 if field_name.contains("COALESCE") || field_name.contains("(") || field_name.contains("::") {
-                    let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
-                        field_name[start + 3..].trim().replace("\"", "")
+                    if let Some(start) = field_name.rfind("AS ") {
+                        let extracted_field_name = field_name[start + 3..].trim().replace("\"", "");
+                        (String::new(), extracted_field_name, field_name.to_string())
                     } else if field_name.contains("::") {
+                        // Extract base before type cast and parse table/field
                         let base = field_name.splitn(2, "::").next().unwrap_or(field_name);
-                        base.rsplit('.')
-                            .next()
-                            .unwrap_or(base)
-                            .trim()
-                            .trim_matches('"')
-                            .to_string()
+                        let mut parts = base.split('.');
+                        let table_part = parts.next().map(|s| s.trim().trim_matches('"').to_string());
+                        let field_part = parts.next().map(|s| s.trim().trim_matches('"').to_string());
+                        let tname = table_part.unwrap_or_else(|| String::new());
+                        let fname = field_part.unwrap_or_else(|| {
+                            base.rsplit('.')
+                                .next()
+                                .unwrap_or(base)
+                                .trim()
+                                .trim_matches('"')
+                                .to_string()
+                        });
+                        (tname, fname, field_name.to_string())
                     } else {
-                        field_name.replace("\"", "")
-                    };
-                    (String::new(), extracted_field_name, field_name.to_string())
+                        let extracted_field_name = field_name.replace("\"", "");
+                        (String::new(), extracted_field_name, field_name.to_string())
+                    }
                 } else {
                     // Handle simple field names with or without table prefix
                     let mut parts = field_name.split(".");
