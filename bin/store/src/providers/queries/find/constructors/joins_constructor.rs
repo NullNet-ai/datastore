@@ -175,6 +175,7 @@ impl JoinsConstructor {
         let combined_where = where_conditions.join(" AND ");
 
         // Same as LEFT: determine the correct from table reference for the join condition
+        // Prioritize from.alias over from.entity when creating SQL alias for selections
         let from_table_ref = if let Some(alias) = &join.field_relation.from.alias {
             alias.as_str()
         } else if is_nested && join_index > 0 {
@@ -322,21 +323,58 @@ impl JoinsConstructor {
         let combined_where = where_conditions.join(" AND ");
 
         if is_nested {
+            // For nested joins, we need to include an additional join inside the lateral subquery
+            // Use the from.alias for the joined table reference
+            let nested_join_alias = if let Some(alias) = &join.field_relation.from.alias {
+                alias.as_str()
+            } else {
+                from_entity
+            };
+            
+            // For nested joins, we need to find the previous join's entity to use as the table name
+            // The from.entity in the current join might be referencing the previous join's alias
+            let actual_from_entity = {
+                let joins = request_body.get_joins();
+                let mut found_entity = from_entity;
+                
+                // Look through previous joins to find the one that matches our from.entity
+                // This could be either the to.alias or to.entity of a previous join
+                for prev_join in joins.iter() {
+                    // Check if our from.entity matches a previous join's to.alias
+                    if prev_join.field_relation.to.alias.as_ref() == Some(&join.field_relation.from.entity) {
+                        found_entity = prev_join.field_relation.to.entity.as_str();
+                        break;
+                    }
+                    // Check if our from.entity matches a previous join's to.entity
+                    else if prev_join.field_relation.to.entity == join.field_relation.from.entity {
+                        found_entity = prev_join.field_relation.to.entity.as_str();
+                        break;
+                    }
+                }
+                found_entity
+            };
+            
             return format!(
-                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON \"{}\".\"{}\" = \"{}\".\"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
                 join_kind,
                 selected_fields,
                 to_entity, lateral_alias,
+                actual_from_entity, nested_join_alias,
+                lateral_alias, to_field, nested_join_alias, from_field,
                 combined_where,
-                lateral_alias, to_field, from_entity, from_field,
+                lateral_alias, to_field, nested_join_alias, from_field,
                 to_alias
             );
         }
 
         // Determine the correct from table reference for the join condition
         // For self joins, always reference the main table (cannot reference the join alias inside its own lateral subquery)
+        // For other joins, prioritize from.alias over from.entity when creating SQL alias for selections
         let from_table_ref = if is_self_join {
             table
+        } else if let Some(alias) = &join.field_relation.from.alias {
+            // Prioritize from.alias over from.entity for selections
+            alias.as_str()
         } else if is_nested {
             // For nested joins, we need to look at the previous join's alias
             // Find the index of the current join to get the previous one

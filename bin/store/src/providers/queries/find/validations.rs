@@ -395,15 +395,19 @@ impl<'a, 'b> Validation<'a, 'b> {
         if self.request_body.joins.is_empty() {
             for (entity, _) in &self.request_body.pluck_object {
                 if entity != self.table {
-                    return ApiResponse {
-                        success: false,
-                        message: format!(
-                            "pluck_object[{}] > Entity '{}' is not valid. Without joins, only the main table '{}' can be referenced",
-                            entity, entity, self.table
-                        ),
-                        count: 0,
-                        data: vec![],
-                    };
+                    log::warn!(
+                        "pluck_object[{}] > Entity '{}' is not valid. Without joins, only the main table '{}' can be referenced",
+                        entity, entity, self.table
+                    );
+                    // return ApiResponse {
+                    //     success: false,
+                    //     message: format!(
+                    //         "pluck_object[{}] > Entity '{}' is not valid. Without joins, only the main table '{}' can be referenced",
+                    //         entity, entity, self.table
+                    //     ),
+                    //     count: 0,
+                    //     data: vec![],
+                    // };
                 }
             }
         } else {
