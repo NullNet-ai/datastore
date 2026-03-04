@@ -116,26 +116,30 @@ where
                             sort_option.by_direction.to_uppercase(),
                             nulls_clause
                         )
-                    } else if group_by.map_or(false, |g| !g.fields.is_empty()) {
-                        let agg = if sort_option.by_direction.eq_ignore_ascii_case("ASC") {
-                            "MIN"
-                        } else {
-                            "MAX"
-                        };
-                        format!(
-                            "{}({}) {} {}",
-                            agg,
-                            final_field,
-                            sort_option.by_direction.to_uppercase(),
-                            nulls_clause
-                        )
                     } else {
-                        format!(
-                            "{} {} {}",
-                            final_field,
-                            sort_option.by_direction.to_uppercase(),
-                            nulls_clause
-                        )
+                        let main_tbl = Self::dequote_ident(_table);
+                        let alias_raw = Self::dequote_ident(&table_alias);
+                        if alias_raw != main_tbl {
+                            let agg = if sort_option.by_direction.eq_ignore_ascii_case("ASC") {
+                                "MIN"
+                            } else {
+                                "MAX"
+                            };
+                            format!(
+                                "{}({}) {} {}",
+                                agg,
+                                final_field,
+                                sort_option.by_direction.to_uppercase(),
+                                nulls_clause
+                            )
+                        } else {
+                            format!(
+                                "{} {} {}",
+                                final_field,
+                                sort_option.by_direction.to_uppercase(),
+                                nulls_clause
+                            )
+                        }
                     }
                 })
                 .filter(|clause| !clause.is_empty()) // Filter out empty clauses
@@ -201,30 +205,30 @@ where
                     order_direction.to_uppercase(),
                     nulls_clause
                 )
-            } else if self
-                .request_body
-                .get_group_by()
-                .map_or(false, |g| !g.fields.is_empty())
-            {
-                let agg = if order_direction.eq_ignore_ascii_case("ASC") {
-                    "MIN"
-                } else {
-                    "MAX"
-                };
-                format!(
-                    "{}({}) {} {}",
-                    agg,
-                    final_field,
-                    order_direction.to_uppercase(),
-                    nulls_clause
-                )
             } else {
-                format!(
-                    "{} {} {}",
-                    final_field,
-                    order_direction.to_uppercase(),
-                    nulls_clause
-                )
+                let main_tbl = Self::dequote_ident(&self.table);
+                let alias_raw = Self::dequote_ident(&table_alias);
+                if alias_raw != main_tbl {
+                    let agg = if order_direction.eq_ignore_ascii_case("ASC") {
+                        "MIN"
+                    } else {
+                        "MAX"
+                    };
+                    format!(
+                        "{}({}) {} {}",
+                        agg,
+                        final_field,
+                        order_direction.to_uppercase(),
+                        nulls_clause
+                    )
+                } else {
+                    format!(
+                        "{} {} {}",
+                        final_field,
+                        order_direction.to_uppercase(),
+                        nulls_clause
+                    )
+                }
             };
 
             format!(" ORDER BY {}", order_clause)

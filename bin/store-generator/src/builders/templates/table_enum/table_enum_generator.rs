@@ -37,7 +37,6 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
             singular_name.to_case(Case::Pascal)
         )?;
     }
-    writeln!(file, "use crate::generated::schema;")?;
     writeln!(file, "use crate::structs::core::{{Auth, RequestBody}};")?;
     writeln!(file, "use actix_web::web;")?;
     writeln!(file, "use diesel::associations::HasTable;")?;
@@ -46,11 +45,6 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(file, "use diesel_async::AsyncPgConnection;")?;
     writeln!(file, "use diesel_async::RunQueryDsl;")?;
     writeln!(file, "use serde_json::{{Map, Value}};")?;
-    writeln!(file, "use crate::database::db;")?;
-    writeln!(
-        file,
-        "use crate::generated::models::counter_model::CounterModel;"
-    )?;
 
     writeln!(file, "")?;
 
@@ -251,59 +245,16 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     // Close the impl block
     writeln!(file, "}}")?;
 
+    writeln!(
+        file,
+        "/// Generate next unique code for the table via code-service (CODE_SERVICE_GRPC_URL)."
+    )?;
     writeln!(file, "pub async fn generate_code(")?;
     writeln!(file, "    table: &str,")?;
     writeln!(file, "    prefix_param: &str,")?;
     writeln!(file, "    default_code_param: i32,")?;
     writeln!(file, ") -> Result<String, DieselError> {{")?;
-    writeln!(file, "")?;
-    writeln!(file, "    let mut conn = db::get_async_connection().await;")?;
-    writeln!(file, "")?;
-    writeln!(file, "    let new_counter = CounterModel {{")?;
-    writeln!(file, "        entity: table.to_string(),")?;
-    writeln!(file, "        counter: 1,")?;
-    writeln!(file, "        prefix: prefix_param.to_string(),")?;
-    writeln!(file, "        default_code: default_code_param,")?;
-    writeln!(file, "        digits_number: 1,")?;
-    writeln!(file, "    }};")?;
-    writeln!(file, "    ")?;
-    writeln!(file, "    // Attempt the insert with conflict handling")?;
-    writeln!(
-        file,
-        "    let result = diesel::insert_into(schema::counters::dsl::counters::table())"
-    )?;
-    writeln!(file, "    .values(&new_counter)")?;
-    writeln!(file, "        .on_conflict(schema::counters::entity)")?;
-    writeln!(file, "        .do_update()")?;
-    writeln!(
-        file,
-        "        .set(schema::counters::counter.eq(schema::counters::counter + 1))"
-    )?;
-    writeln!(file, "        .returning((schema::counters::prefix, schema::counters::default_code, schema::counters::counter))")?;
-    writeln!(
-        file,
-        "        .get_result::<(String, i32, i32)>(&mut conn).await"
-    )?;
-    writeln!(file, "        .map_err(|e| {{")?;
-    writeln!(
-        file,
-        "            log::error!(\"Error generating code: {{}}\", e);"
-    )?;
-    writeln!(file, "            e")?;
-    writeln!(file, "        }})?;")?;
-    writeln!(file, "    ")?;
-    writeln!(file, "    // Format the code")?;
-    writeln!(
-        file,
-        "    let (prefix_val, default_code_val, counter_val) = result;"
-    )?;
-    writeln!(file, "    let code = format!(")?;
-    writeln!(file, "        \"{{}}{{}}\",")?;
-    writeln!(file, "        prefix_val,")?;
-    writeln!(file, "        default_code_val + counter_val")?;
-    writeln!(file, "    );")?;
-    writeln!(file, "    ")?;
-    writeln!(file, "    Ok(code)")?;
+    writeln!(file, "    crate::utils::code_generator::generate_code(table, prefix_param, default_code_param).await")?;
     writeln!(file, "}}")?;
 
     // Format the generated code with rustfmt

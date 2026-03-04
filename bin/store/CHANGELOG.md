@@ -5,6 +5,26 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.44
+
+### Author
+Jean
+
+### Changed
+  - ***ORDER BY aggregation for joined entities***:
+    - In `providers/queries/find/constructors/order_by_constructor.rs`, both multiple-sort and single-field paths now decide MIN/MAX purely by comparing the field's table alias to the main table name (alias_raw != main_tbl). This removes any reliance on `group_by` presence for determining aggregation.
+    - Removed normalization that mapped a `"self"` alias to the main table for this comparison; dequoted raw alias is compared directly to the main table.
+    - Preserved NULLS handling: ASC uses NULLS FIRST, DESC uses NULLS LAST.
+    - Removed validation for order_by/by_field in multiple sort as the joined tables are not handled in checkings
+
+### Added
+  - ***OrderBy unit tests***:
+    - `order_by_constructor_test.rs` covers:
+      - Aggregation for joined fields (MIN for ASC, MAX for DESC).
+      - No aggregation for main-table fields.
+      - Case-insensitive sorting emits `LOWER(...)` in ORDER BY.
+    - Test setup uses `test_init::init_test_state()` to initialize path configuration required by schema lookups, and `constructors/mod.rs` exports the test module.
+
 ## 0.2.43
 
 ### Author
