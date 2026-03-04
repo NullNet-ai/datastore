@@ -8,8 +8,9 @@ use std::io;
 use tonic::transport::Channel;
 use tonic::transport::Endpoint;
 
-static CODE_SERVICE_CLIENT: tokio::sync::OnceCell<code_service::code_service_client::CodeServiceClient<Channel>> =
-    tokio::sync::OnceCell::const_new();
+static CODE_SERVICE_CLIENT: tokio::sync::OnceCell<
+    code_service::code_service_client::CodeServiceClient<Channel>,
+> = tokio::sync::OnceCell::const_new();
 
 fn code_service_err(msg: impl Into<String>) -> DieselError {
     DieselError::QueryBuilderError(Box::new(io::Error::new(io::ErrorKind::Other, msg.into())))
@@ -36,7 +37,8 @@ pub fn database_name_from_env() -> String {
         .to_string()
 }
 
-async fn get_client() -> Result<&'static code_service::code_service_client::CodeServiceClient<Channel>, DieselError> {
+async fn get_client(
+) -> Result<&'static code_service::code_service_client::CodeServiceClient<Channel>, DieselError> {
     if let Some(existing) = CODE_SERVICE_CLIENT.get() {
         return Ok(existing);
     }

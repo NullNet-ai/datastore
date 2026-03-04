@@ -330,30 +330,33 @@ impl JoinsConstructor {
             } else {
                 from_entity
             };
-            
+
             // For nested joins, we need to find the previous join's entity to use as the table name
             // The from.entity in the current join might be referencing the previous join's alias
             let actual_from_entity = {
                 let joins = request_body.get_joins();
                 let mut found_entity = from_entity;
-                
+
                 // Look through previous joins to find the one that matches our from.entity
                 // This could be either the to.alias or to.entity of a previous join
                 for prev_join in joins.iter() {
                     // Check if our from.entity matches a previous join's to.alias
-                    if prev_join.field_relation.to.alias.as_ref() == Some(&join.field_relation.from.entity) {
+                    if prev_join.field_relation.to.alias.as_ref()
+                        == Some(&join.field_relation.from.entity)
+                    {
                         found_entity = prev_join.field_relation.to.entity.as_str();
                         break;
                     }
                     // Check if our from.entity matches a previous join's to.entity
-                    else if prev_join.field_relation.to.entity == join.field_relation.from.entity {
+                    else if prev_join.field_relation.to.entity == join.field_relation.from.entity
+                    {
                         found_entity = prev_join.field_relation.to.entity.as_str();
                         break;
                     }
                 }
                 found_entity
             };
-            
+
             return format!(
                 "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON \"{}\".\"{}\" = \"{}\".\"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
                 join_kind,
