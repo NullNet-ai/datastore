@@ -350,7 +350,7 @@ impl JoinsConstructor {
                     // Look at the previous join specifically
                     if current_index > 0 {
                         let prev_join = &joins[current_index - 1];
-                        
+
                         // Special handling for self joins
                         if prev_join.r#type == "self" {
                             // For self joins, we need to look at the previous join's to.entity
@@ -364,7 +364,8 @@ impl JoinsConstructor {
                                 found_entity = prev_join.field_relation.to.entity.as_str();
                             }
                             // Check if our from.entity matches a previous join's to.entity
-                            else if prev_join.field_relation.to.entity == join.field_relation.from.entity
+                            else if prev_join.field_relation.to.entity
+                                == join.field_relation.from.entity
                             {
                                 found_entity = prev_join.field_relation.to.entity.as_str();
                             }
