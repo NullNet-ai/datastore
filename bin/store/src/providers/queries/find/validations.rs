@@ -830,38 +830,39 @@ impl<'a, 'b> Validation<'a, 'b> {
     pub fn validate_multiple_sort(&self) -> ApiResponse {
         for (sort_index, sort_option) in self.request_body.multiple_sort.iter().enumerate() {
             // Validate sort field format
-            let by_entity_field: Vec<&str> = sort_option.by_field.split('.').collect();
+            // let by_entity_field: Vec<&str> = sort_option.by_field.split('.').collect();
 
-            let (sort_entity, sort_field) = if by_entity_field.len() == 1 {
-                // If just field name (e.g., "id"), default to main table
-                (self.table.as_str(), by_entity_field[0])
-            } else if by_entity_field.len() == 2 {
-                // If entity.field format
-                (by_entity_field[0], by_entity_field[1])
-            } else {
-                return ApiResponse {
-                    success: false,
-                    message: format!(
-                        "multiple_sort[{}] > by_field > Invalid sort field format: '{}'. It should be 'field' or 'table.field'",
-                        sort_index, sort_option.by_field
-                    ),
-                    count: 0,
-                    data: vec![],
-                };
-            };
+            // let (sort_entity, sort_field) = if by_entity_field.len() == 1 {
+            //     // If just field name (e.g., "id"), default to main table
+            //     (self.table.as_str(), by_entity_field[0])
+            // } else if by_entity_field.len() == 2 {
+            //     // If entity.field format
+            //     (by_entity_field[0], by_entity_field[1])
+            // } else {
+            //     return ApiResponse {
+            //         success: false,
+            //         message: format!(
+            //             "multiple_sort[{}] > by_field > Invalid sort field format: '{}'. It should be 'field' or 'table.field'",
+            //             sort_index, sort_option.by_field
+            //         ),
+            //         count: 0,
+            //         data: vec![],
+            //     };
+            // };
 
             // Validate field exists in schema
-            if !field_exists_in_table(sort_entity, sort_field) {
-                return ApiResponse {
-                    success: false,
-                    message: format!(
-                        "multiple_sort[{}] > by_field > Sort field '{}' does not exist in entity '{}'",
-                        sort_index, sort_field, sort_entity
-                    ),
-                    count: 0,
-                    data: vec![],
-                };
-            }
+            // Note: Commented as sorting can also be for a joined entity which is not considered here
+            // if !field_exists_in_table(sort_entity, sort_field) {
+            //     return ApiResponse {
+            //         success: false,
+            //         message: format!(
+            //             "multiple_sort[{}] > by_field > Sort field '{}' does not exist in entity '{}'",
+            //             sort_index, sort_field, sort_entity
+            //         ),
+            //         count: 0,
+            //         data: vec![],
+            //     };
+            // }
 
             // Validate direction
             let direction = sort_option.by_direction.to_lowercase();
