@@ -1,5 +1,6 @@
 #![recursion_limit = "2056"]
 use dotenv::dotenv;
+mod code_service;
 mod config;
 mod constants;
 mod controllers;
