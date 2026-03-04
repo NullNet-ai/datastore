@@ -57,7 +57,7 @@ impl<'a, 'b> Validation<'a, 'b> {
                 "advance_filters" => self.validate_advance_filters(),
                 "group_advance_filters" => self.validate_group_advance_filters(),
                 "joins" => self.validate_joins(),
-                "order_by_format" => self.validate_order_by_format(),
+                // "order_by_format" => self.validate_order_by_format(),
                 "order_direction" => self.validate_order_direction(),
                 "date_format" => self.validate_date_format(),
                 "multiple_sort" => self.validate_multiple_sort(),
