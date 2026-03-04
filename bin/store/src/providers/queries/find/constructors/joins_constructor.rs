@@ -336,22 +336,39 @@ impl JoinsConstructor {
             let actual_from_entity = {
                 let joins = request_body.get_joins();
                 let mut found_entity = from_entity;
+                let mut current_join_index = None;
 
-                // Look through previous joins to find the one that matches our from.entity
-                // This could be either the to.alias or to.entity of a previous join
-                for prev_join in joins.iter() {
-                    // Check if our from.entity matches a previous join's to.alias
-                    if prev_join.field_relation.to.alias.as_ref()
-                        == Some(&join.field_relation.from.entity)
-                    {
-                        found_entity = prev_join.field_relation.to.entity.as_str();
+                // Find the current join index first
+                for (i, j) in joins.iter().enumerate() {
+                    if std::ptr::eq(j, join) {
+                        current_join_index = Some(i);
                         break;
                     }
-                    // Check if our from.entity matches a previous join's to.entity
-                    else if prev_join.field_relation.to.entity == join.field_relation.from.entity
-                    {
-                        found_entity = prev_join.field_relation.to.entity.as_str();
-                        break;
+                }
+
+                if let Some(current_index) = current_join_index {
+                    // Look at the previous join specifically
+                    if current_index > 0 {
+                        let prev_join = &joins[current_index - 1];
+                        
+                        // Special handling for self joins
+                        if prev_join.r#type == "self" {
+                            // For self joins, we need to look at the previous join's to.entity
+                            // The from.entity in current join references the alias from the self join
+                            found_entity = prev_join.field_relation.to.entity.as_str();
+                        } else {
+                            // Check if our from.entity matches a previous join's to.alias
+                            if prev_join.field_relation.to.alias.as_ref()
+                                == Some(&join.field_relation.from.entity)
+                            {
+                                found_entity = prev_join.field_relation.to.entity.as_str();
+                            }
+                            // Check if our from.entity matches a previous join's to.entity
+                            else if prev_join.field_relation.to.entity == join.field_relation.from.entity
+                            {
+                                found_entity = prev_join.field_relation.to.entity.as_str();
+                            }
+                        }
                     }
                 }
                 found_entity
