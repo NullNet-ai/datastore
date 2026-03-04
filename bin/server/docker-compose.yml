@@ -1,0 +1,33 @@
+networks:
+  internal:
+  frontend:
+    external: true
+
+services:
+  timescaledb:
+    image: timescale/timescaledb:latest-pg15
+    container_name: timescaledb
+    ports:
+      - "5440:5432"
+    networks:
+      - internal
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin
+      POSTGRES_DB: postgres
+    restart: always
+
+  # Main store application
+  sync-server:
+    build:
+      context: .
+      dockerfile: dockerfile
+    container_name: crdt-sync-server
+    depends_on:
+      - timescaledb
+    env_file:
+      - .env-sync-server
+    ports:
+      - "3002:3002"
+    networks:
+      - internal

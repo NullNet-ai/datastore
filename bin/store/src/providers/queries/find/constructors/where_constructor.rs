@@ -541,7 +541,7 @@ impl<'a> WhereConstructor<'a> {
         case_sensitive: Option<bool>,
         match_pattern: Option<&MatchPattern>,
     ) -> String {
-        let (_table_name, field_name, field_with_table) =
+        let (table_name, field_name, field_with_table) =
                 // Check if field_name contains complex expressions (like COALESCE)
                 if field_name.contains("COALESCE") || field_name.contains("(") || field_name.contains("::") {
                     let extracted_field_name = if let Some(start) = field_name.rfind("AS ") {
@@ -611,12 +611,51 @@ impl<'a> WhereConstructor<'a> {
             }
         };
 
+        let type_info = if !table_name.is_empty() {
+            field_type_in_table(&table_name, &field_name)
+        } else {
+            None
+        };
+        let is_array_field = type_info.as_ref().map_or(false, |i| i.is_array);
+        let is_json_field = type_info.as_ref().map_or(false, |i| i.is_json);
+        let base_field = if field_with_table.contains("::text") {
+            field_with_table
+                .splitn(2, "::")
+                .next()
+                .unwrap_or(&field_with_table)
+                .to_string()
+        } else {
+            field_with_table.clone()
+        };
+
         match operator {
             FilterOperator::Equal => {
-                if values_str.len() == 1 {
-                    format!("{} = {}", field_with_table, values_str[0])
+                if is_array_field && !is_json_field {
+                    if values_str.len() == 1 {
+                        format!("{} = ANY({})", values_str[0], base_field)
+                    } else {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| format!("{} = ANY({})", v, base_field))
+                            .collect();
+                        format!("({})", conditions.join(" OR "))
+                    }
+                } else if is_json_field {
+                    if values_str.len() == 1 {
+                        format!("{} @> [{}]::jsonb", base_field, values_str[0])
+                    } else {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| format!("{} @> [{}]::jsonb", base_field, v))
+                            .collect();
+                        format!("({})", conditions.join(" OR "))
+                    }
                 } else {
-                    format!("{} IN ({})", field_with_table, values_str.join(", "))
+                    if values_str.len() == 1 {
+                        format!("{} = {}", field_with_table, values_str[0])
+                    } else {
+                        format!("{} IN ({})", field_with_table, values_str.join(", "))
+                    }
                 }
             }
             FilterOperator::NotEqual => {
@@ -932,5 +971,45 @@ mod tests {
             "account_profiles",
             "code"
         ));
+    }
+
+    #[test]
+    fn should_build_equal_for_text_array_membership() {
+        let wc = WhereConstructor::new("samples", None, true, None);
+        let filters = vec![FilterCriteria::Criteria {
+            field: "categories".to_string(),
+            entity: Some("samples".to_string()),
+            operator: FilterOperator::Equal,
+            values: vec![serde_json::json!("Root")],
+            case_sensitive: None,
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        }];
+        let expr = wc
+            .build_infix_expression(&filters, &[], "YYYY-mm-dd", "HH24:MI:SS")
+            .expect("build_infix_expression should succeed");
+        assert_eq!(expr, "'Root' = ANY(\"samples\".\"categories\")");
+    }
+
+    #[test]
+    fn should_build_equal_for_jsonb_array_membership() {
+        let wc = WhereConstructor::new("organizations", None, true, None);
+        let filters = vec![FilterCriteria::Criteria {
+            field: "path_level".to_string(),
+            entity: Some("organizations".to_string()),
+            operator: FilterOperator::Equal,
+            values: vec![serde_json::json!("Root")],
+            case_sensitive: None,
+            parse_as: String::new(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        }];
+        let expr = wc
+            .build_infix_expression(&filters, &[], "YYYY-mm-dd", "HH24:MI:SS")
+            .expect("build_infix_expression should succeed");
+        assert_eq!(expr, "\"organizations\".\"path_level\" @> ['Root']::jsonb");
     }
 }

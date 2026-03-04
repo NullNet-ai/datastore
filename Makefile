@@ -400,7 +400,7 @@ dev: ensure-hooks
 	make -j 2 server store
 
 # Run the server
-server:
+sync-server:
 	@echo "🖥️  Starting server..."
 	@# Check if cargo is installed
 	@if ! command -v cargo >/dev/null 2>&1; then \
@@ -408,6 +408,16 @@ server:
 		exit 1; \
 	fi
 	@cd bin/server && cargo run
+
+# Run the sync server in production mode
+sync-server-prod:
+	@echo "🖥️  Starting sync server..."
+	@# Check if cargo is installed
+	@if ! command -v cargo >/dev/null 2>&1; then \
+		echo "❌ Cargo not found. Please run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd bin/server && cargo run --release
 
 # Run the store
 store:
