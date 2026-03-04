@@ -19,6 +19,7 @@ use crate::structs::core::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
     QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
+use crate::structs::core::{FilterCriteria, FilterOperator};
 use crate::utils::helpers::{normalize_date_format, table_exists};
 use crate::{db, providers};
 use actix_multipart::Multipart;
@@ -807,70 +808,6 @@ pub async fn batch_update_records(
             })
         }
     }
-
-    //use the below code if you want to return the updated fields to the user, can be inefficient if the updated fields are large
-
-    //print rows here
-    // let mut json_rows: Vec<serde_json::Value> = Vec::new();
-    // for row in &rows {
-    //     let mut json_obj = serde_json::Map::new();
-
-    //     // Extract id
-    //     if let Ok(id) = row.try_get::<_, String>("id") {
-    //         json_obj.insert("id".to_string(), serde_json::Value::String(id));
-    //     }
-
-    //     // Extract version
-    //     if let Ok(version) = row.try_get::<_, i32>("version") {
-    //         json_obj.insert("version".to_string(), serde_json::Value::Number(serde_json::Number::from(version)));
-    //     }
-
-    //     // Extract updated_date
-    //     if let Ok(updated_date) = row.try_get::<_, String>("updated_date") {
-    //         json_obj.insert("updated_date".to_string(), serde_json::Value::String(updated_date));
-    //     }
-
-    //     // Extract updated_time
-    //     if let Ok(updated_time) = row.try_get::<_, String>("updated_time") {
-    //         json_obj.insert("updated_time".to_string(), serde_json::Value::String(updated_time));
-    //     }
-
-    //     // Extract updated_by
-    //     if let Ok(updated_by) = row.try_get::<_, String>("updated_by") {
-    //         json_obj.insert("updated_by".to_string(), serde_json::Value::String(updated_by));
-    //     }
-
-    //     // Extract hypertable_timestamp if it exists
-    //     if field_exists_in_table(&table_name, "hypertable_timestamp") {
-    //         if let Ok(timestamp) = row.try_get::<_, String>("hypertable_timestamp") {
-    //             json_obj.insert("hypertable_timestamp".to_string(), serde_json::Value::String(timestamp));
-    //         }
-    //     }
-
-    //     // Extract any updated fields
-    //     if let Some(update_obj) = updates.as_object() {
-    //         for key in update_obj.keys() {
-    //             if key != "record" {
-    //                 // Try to get the value as different types
-    //                 if let Ok(val) = row.try_get::<_, String>(key.as_str()) {
-    //                     json_obj.insert(key.clone(), serde_json::Value::String(val));
-    //                 } else if let Ok(val) = row.try_get::<_, i32>(key.as_str()) {
-    //                     json_obj.insert(key.clone(), serde_json::Value::Number(serde_json::Number::from(val)));
-    //                 } else if let Ok(val) = row.try_get::<_, i64>(key.as_str()) {
-    //                     json_obj.insert(key.clone(), serde_json::Value::Number(serde_json::Number::from(val)));
-    //                 } else if let Ok(val) = row.try_get::<_, f64>(key.as_str()) {
-    //                     if let Some(num) = serde_json::Number::from_f64(val) {
-    //                         json_obj.insert(key.clone(), serde_json::Value::Number(num));
-    //                     }
-    //                 } else if let Ok(val) = row.try_get::<_, bool>(key.as_str()) {
-    //                     json_obj.insert(key.clone(), serde_json::Value::Bool(val));
-    //                 }
-    //             }
-    //         }
-    //     }
-
-    //     json_rows.push(serde_json::Value::Object(json_obj));
-    // }
 }
 
 pub async fn batch_delete_records(
@@ -1685,6 +1622,7 @@ pub async fn download_file_by_id(
         "mimetype".to_string(),
         "download_path".to_string(),
         "size".to_string(),
+        "etag".to_string(),
     ];
 
     // Extract organization_id from auth_data
@@ -1722,6 +1660,7 @@ pub async fn download_file_by_id(
     };
 
     // Extract file information from metadata
+    log::debug!("file_metadata: {:?}", file_metadata);
     let mimetype = file_metadata
         .get("mimetype")
         .and_then(|v| v.as_str())
@@ -1730,6 +1669,10 @@ pub async fn download_file_by_id(
         .get("download_path")
         .and_then(|v| v.as_str())
         .unwrap_or(&file_id);
+    let file_etag = file_metadata
+        .get("etag")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
 
     // Get bucket name with organization context
     let base_bucket_name =
@@ -1801,12 +1744,288 @@ pub async fn download_file_by_id(
         }
         Err(e) => {
             log::error!("Error downloading file {} from S3: {:?}", file_id, e);
-            HttpResponse::NotFound().json(ApiResponse {
-                success: false,
-                message: "File not found in storage".to_string(),
-                count: 0,
-                data: vec![],
-            })
+            let normalize_etag = |s: &str| {
+                s.trim()
+                    .trim_start_matches("\\\"") // strip \"
+                    .trim_end_matches("\\\"") // strip \"
+                    .trim_end_matches('\\') // trailing back-slash
+                    .trim_matches('"') // strip any remaining "
+                    .to_string()
+            };
+
+            let target_etag = normalize_etag(file_etag);
+            log::debug!("file_etag: {:?}", &target_etag);
+            let mut found_key: Option<String> = None;
+
+            if !target_etag.is_empty() {
+                let db_pluck = vec![
+                    "download_path".to_string(),
+                    "mimetype".to_string(),
+                    "size".to_string(),
+                    "etag".to_string(),
+                    "id".to_string(),
+                ];
+                let parameters = GetByFilter {
+                    pluck: db_pluck.clone(),
+                    pluck_object: Default::default(),
+                    pluck_group_object: Default::default(),
+                    advance_filters: vec![
+                        FilterCriteria::Criteria {
+                            field: "etag".to_string(),
+                            entity: None,
+                            operator: FilterOperator::Equal,
+                            values: vec![serde_json::Value::String(target_etag.clone())],
+                            case_sensitive: Some(false),
+                            parse_as: "text".to_string(),
+                            match_pattern: None,
+                            is_search: None,
+                            has_group_count: None,
+                        },
+                        FilterCriteria::Criteria {
+                            field: "organization_id".to_string(),
+                            entity: None,
+                            operator: FilterOperator::Equal,
+                            values: vec![serde_json::Value::String(
+                                auth_data.organization_id.clone(),
+                            )],
+                            case_sensitive: Some(false),
+                            parse_as: "text".to_string(),
+                            match_pattern: None,
+                            is_search: None,
+                            has_group_count: None,
+                        },
+                    ],
+                    group_advance_filters: vec![],
+                    joins: vec![],
+                    group_by: None,
+                    concatenate_fields: vec![],
+                    multiple_sort: vec![],
+                    date_format: "YYYY-mm-dd".to_string(),
+                    order_by: "id".to_string(),
+                    order_direction: "ASC".to_string(),
+                    is_case_sensitive_sorting: None,
+                    offset: 0,
+                    limit: 1,
+                    distinct_by: None,
+                    timezone: None,
+                    time_format: "HH24:MI".to_string(),
+                };
+                let mut sql_constructor = SQLConstructor::new(
+                    parameters.clone(),
+                    "files".to_string(),
+                    is_root_controller,
+                    None,
+                );
+                sql_constructor =
+                    sql_constructor.with_organization_id(auth_data.organization_id.clone());
+                if let Ok(query) = sql_constructor.construct() {
+                    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+                    let mut conn = db::get_async_connection().await;
+                    match diesel::dsl::sql_query(&final_query)
+                        .load::<DynamicResult>(&mut conn)
+                        .await
+                    {
+                        Ok(results) => {
+                            if let Some(first) =
+                                results.into_iter().filter_map(|r| r.row_to_json).next()
+                            {
+                                if let Some(obj) = first.as_object() {
+                                    if let Some(dp) =
+                                        obj.get("download_path").and_then(|v| v.as_str())
+                                    {
+                                        found_key = Some(dp.to_string());
+                                    }
+                                }
+                            }
+                        }
+                        Err(err) => {
+                            log::error!(
+                                "DB fallback query by ETag failed for file {}: {:?}",
+                                file_id,
+                                err
+                            );
+                        }
+                    }
+                }
+            }
+
+            if !target_etag.is_empty() {
+                let org_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
+                    .unwrap_or_else(|_| "default".to_string());
+                let valid_prefix =
+                    get_valid_bucket_name(&org_name, Some(auth_data.organization_id.as_str()));
+                let prefix = Some(valid_prefix.as_str());
+                let mut continuation: Option<String> = None;
+                loop {
+                    let mut req = s3_client.list_objects_v2().bucket(&bucket_name);
+                    if let Some(p) = prefix {
+                        req = req.prefix(p);
+                    }
+                    if let Some(token) = continuation.as_deref() {
+                        req = req.continuation_token(token);
+                    }
+                    match req.send().await {
+                        Ok(list_output) => {
+                            for object in list_output.contents() {
+                                let obj_etag = object.e_tag().unwrap_or("");
+                                if !obj_etag.is_empty() && normalize_etag(obj_etag) == target_etag {
+                                    if let Some(key) = object.key() {
+                                        found_key = Some(key.to_string());
+                                        break;
+                                    }
+                                }
+                            }
+                            if found_key.is_some() {
+                                break;
+                            }
+                            if let Some(next) = list_output.next_continuation_token() {
+                                continuation = Some(next.to_string());
+                            } else {
+                                break;
+                            }
+                        }
+                        Err(err) => {
+                            log::error!(
+                                "ListObjectsV2 error while searching by ETag for file {}: {:?}",
+                                file_id,
+                                err
+                            );
+                            break;
+                        }
+                    }
+                }
+
+                if found_key.is_none() {
+                    let mut continuation_all: Option<String> = None;
+                    loop {
+                        let mut req = s3_client.list_objects_v2().bucket(&bucket_name);
+                        if let Some(token) = continuation_all.as_deref() {
+                            req = req.continuation_token(token);
+                        }
+                        match req.send().await {
+                            Ok(list_output) => {
+                                for object in list_output.contents() {
+                                    let obj_etag = object.e_tag().unwrap_or("");
+                                    if !obj_etag.is_empty()
+                                        && normalize_etag(obj_etag) == target_etag
+                                    {
+                                        if let Some(key) = object.key() {
+                                            found_key = Some(key.to_string());
+                                            break;
+                                        }
+                                    }
+                                }
+                                if found_key.is_some() {
+                                    break;
+                                }
+                                if let Some(next) = list_output.next_continuation_token() {
+                                    continuation_all = Some(next.to_string());
+                                } else {
+                                    break;
+                                }
+                            }
+                            Err(err) => {
+                                log::error!(
+                                    "Bucket-wide ListObjectsV2 error while searching by ETag for file {}: {:?}",
+                                    file_id,
+                                    err
+                                );
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if let Some(fallback_key) = found_key {
+                match s3_client
+                    .get_object()
+                    .bucket(&bucket_name)
+                    .key(&fallback_key)
+                    .send()
+                    .await
+                {
+                    Ok(output) => {
+                        // Persist the key we found so future requests skip the expensive search
+                        let update_body =
+                            serde_json::json!({"id": file_id, "download_path": &fallback_key});
+                        if let Err(e) = process_and_update_record(
+                            "files",
+                            update_body,
+                            file_id.as_str(),
+                            None,     // pluck_fields
+                            "update", // operation
+                            &auth_data,
+                            false, // is_root_account
+                        )
+                        .await
+                        {
+                            log::warn!(
+                                "Failed to update download_path for file {}: {:?}",
+                                file_id,
+                                e
+                            );
+                        }
+
+                        let actual_content_type = mimetype.to_string();
+                        let content_length = output.content_length().unwrap_or(0);
+                        match output.body.collect().await {
+                            Ok(data) => {
+                                let bytes = data.into_bytes();
+                                use futures_util::stream;
+                                let byte_stream =
+                                    stream::once(async move { Ok::<_, std::io::Error>(bytes) });
+                                let is_image = actual_content_type.starts_with("image/");
+                                let filename = fallback_key.split('/').last().unwrap_or("file");
+                                let content_disposition = if is_image {
+                                    format!("inline; filename=\"{}\"", filename)
+                                } else {
+                                    format!("attachment; filename=\"{}\"", filename)
+                                };
+                                HttpResponse::Ok()
+                                    .content_type(actual_content_type)
+                                    .insert_header(("Content-Length", content_length.to_string()))
+                                    .insert_header(("Cache-Control", "public, max-age=3600"))
+                                    .insert_header(("Accept-Ranges", "bytes"))
+                                    .insert_header(("Content-Disposition", content_disposition))
+                                    .streaming(byte_stream)
+                            }
+                            Err(e) => {
+                                log::error!(
+                                    "Error reading S3 object body (fallback by ETag) for file {}: {:?}",
+                                    file_id,
+                                    e
+                                );
+                                HttpResponse::InternalServerError().json(ApiResponse {
+                                    success: false,
+                                    message: "Failed to read file content".to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                })
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        log::error!(
+                            "Fallback get_object by ETag failed for file {}: {:?}",
+                            file_id,
+                            err
+                        );
+                        HttpResponse::NotFound().json(ApiResponse {
+                            success: false,
+                            message: "File not found in storage".to_string(),
+                            count: 0,
+                            data: vec![],
+                        })
+                    }
+                }
+            } else {
+                HttpResponse::NotFound().json(ApiResponse {
+                    success: false,
+                    message: "File not found in storage".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
         }
     }
 }
