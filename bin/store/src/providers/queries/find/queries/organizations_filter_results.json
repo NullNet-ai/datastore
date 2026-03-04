@@ -1,538 +1,213 @@
 {
     "success": true,
     "message": "Filter operation completed for table: organizations",
-    "count": 100,
+    "count": 27,
     "data": [
         {
             "categories": [
                 "District"
             ],
-            "city": "",
-            "code": "OR001111",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "02/18/2026",
-            "created_time": "13:59",
-            "department_id": "",
-            "district_id": "",
-            "district_identifier": "",
-            "district_superintendent": [],
-            "id": "01KHSC85XYHR49MD4HXK37KKSX",
-            "name": "",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "",
-            "state": "",
-            "status": "Draft",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "02/18/2026",
-            "updated_time": "13:59"
-        },
-        {
-            "categories": [
-                "School"
-            ],
             "city": null,
-            "code": "OR000589",
+            "code": "OR000147",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "01/22/2026",
-            "created_time": "20:56",
+            "created_date": "09/29/2025",
+            "created_time": "22:35",
             "department_id": null,
             "district_id": null,
             "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KFMKC9M5ZN76TD6X5HMKRTZE",
-            "name": "",
+            "id": "01K6CHXP3X859ENKT2G6HWRFAX",
+            "name": null,
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
-            "state": "",
+            "state": null,
             "status": "Draft",
             "superintendent": [],
             "superintendent_id": null,
             "updated_by": [],
             "updated_by_account_organizations": [],
-            "updated_date": "01/22/2026",
-            "updated_time": "20:56"
+            "updated_date": "09/29/2025",
+            "updated_time": "22:35"
         },
         {
             "categories": [
-                "Department"
+                "School"
             ],
             "city": null,
-            "code": "OR000342",
+            "code": "OR000145",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "11/07/2025",
-            "created_time": "15:04",
+            "created_date": "09/29/2025",
+            "created_time": "22:32",
             "department_id": null,
             "district_id": null,
             "district_identifier": null,
             "district_superintendent": [],
-            "id": "01K9G91EDGNH3Z84B6ZJ5EPH8F",
-            "name": "",
+            "id": "01K6CHQPDQWSM0K5MMFD3ZFYA1",
+            "name": null,
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
-            "state": "",
-            "status": "Draft",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "11/07/2025",
-            "updated_time": "15:04"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000665",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "15:25",
-            "department_id": null,
-            "district_id": null,
-            "district_identifier": null,
-            "district_superintendent": [],
-            "id": "01KFYA0VJ119EC245EVT6HJCM9",
-            "name": "",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "",
-            "status": "Draft",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/26/2026",
-            "updated_time": "15:25"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000738",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "17:50",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KG14Q3AGY7061HRQ6TH20DDG",
-            "district_identifier": "17Schools",
-            "district_superintendent": [],
-            "id": "01KG14Q3RDR2X3NABZZ0VXR01X",
-            "name": "170403School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "170403School",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "17:50"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000737",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "17:50",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "17Schools",
-            "district_superintendent": [],
-            "id": "01KG14Q3AGY7061HRQ6TH20DDG",
-            "name": "17Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "17:50"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000739",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "17:50",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "206District",
-            "district_superintendent": [],
-            "id": "01KG14Q68MJ4BH23PEEPKWJM69",
-            "name": "206District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "17:50"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000789",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "18:54",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "5001Washington",
-            "district_superintendent": [],
-            "id": "01KG18C8W4YHK04A9GP4FT09S6",
-            "name": "5001Washington",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "18:54"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000807",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "18:54",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "5002Jefferson",
-            "district_superintendent": [],
-            "id": "01KG18D3S1FJ9QH0VNN4N67EZ9",
-            "name": "5002Jefferson",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "18:54"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000813",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "18:55",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "5003Lincoln",
-            "district_superintendent": [],
-            "id": "01KG18DGSQAFRATP042W54X54P",
-            "name": "5003Lincoln",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "18:55"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000740",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "17:50",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KG14Q68MJ4BH23PEEPKWJM69",
-            "district_identifier": "206District",
-            "district_superintendent": [],
-            "id": "01KG14Q6P5AK2RQWGNR8CSNTCF",
-            "name": "8264Academy",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "8264Academy",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "17:50"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000347",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "11/07/2025",
-            "created_time": "16:34",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01K7362P70Q964Y2PEDWGEWFF8",
-            "district_identifier": null,
-            "district_superintendent": [],
-            "id": "01K9GE5C2QJYEJKSJ531G6ZPQ3",
-            "name": "A High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "",
-            "state": "West Virginia",
+            "state": null,
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "11/07/2025",
-            "updated_time": "16:34"
+            "updated_date": "09/29/2025",
+            "updated_time": "22:33"
         },
         {
             "categories": [
                 "District"
             ],
             "city": null,
-            "code": "OR000218",
+            "code": "OR000143",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "10/08/2025",
-            "created_time": "17:31",
+            "created_date": "09/29/2025",
+            "created_time": "22:27",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6CHDZB0Y6H6GTHRWP338NBG",
+            "name": null,
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": null,
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/29/2025",
+            "updated_time": "22:28"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000146",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/29/2025",
+            "created_time": "22:34",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6CHV3HJJFH00EP1FTXT8GBT",
+            "name": null,
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": null,
+            "status": "Draft",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [],
+            "updated_by_account_organizations": [],
+            "updated_date": "09/29/2025",
+            "updated_time": "22:34"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000484",
+            "county": null,
+            "created_by": [],
+            "created_by_account_organizations": [],
+            "created_date": "12/02/2025",
+            "created_time": "16:51",
             "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
             "district_id": null,
-            "district_identifier": "55",
+            "district_identifier": "90",
             "district_superintendent": [],
-            "id": "01K7362P70Q964Y2PEDWGEWFF8",
-            "name": "ABC County Schools",
+            "id": "01KBGV1WQSCR4229BFM0B3Q8EZ",
+            "name": "A County Schools",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
@@ -542,167 +217,37 @@
             "superintendent_id": null,
             "updated_by": [],
             "updated_by_account_organizations": [],
-            "updated_date": "10/08/2025",
-            "updated_time": "17:31"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000346",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "11/07/2025",
-            "created_time": "16:33",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01K7362P70Q964Y2PEDWGEWFF8",
-            "district_identifier": null,
-            "district_superintendent": [],
-            "id": "01K9GE30V36GZTK7CH3CNKHRKK",
-            "name": "ABC Elementary School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "11/07/2025",
-            "updated_time": "16:33"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000224",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "10/08/2025",
-            "created_time": "17:31",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01K7362P70Q964Y2PEDWGEWFF8",
-            "district_identifier": "55",
-            "district_superintendent": [],
-            "id": "01K7362QXFN6FXN8NRPVAA98YM",
-            "name": "ABC High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "810",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "10/08/2025",
-            "updated_time": "17:31"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000227",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "10/08/2025",
-            "created_time": "17:31",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01K7362P70Q964Y2PEDWGEWFF8",
-            "district_identifier": "55",
-            "district_superintendent": [],
-            "id": "01K7362RR0FV8TE1WPV1848P6Z",
-            "name": "ABC Midland High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "910",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "10/08/2025",
-            "updated_time": "17:31"
+            "updated_date": "12/02/2025",
+            "updated_time": "16:51"
         },
         {
             "categories": [
                 "District"
             ],
             "city": null,
-            "code": "OR000207",
-            "county": "Steuben County",
+            "code": "OR000082",
+            "county": "New York County",
             "created_by": [
                 {
-                    "first_name": "Charlyn",
-                    "id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "last_name": "Tabada"
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "id": "01K710E17FG2T4GPBJXG24VX2N"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "10/07/2025",
-            "created_time": "21:16",
-            "department_id": "01K710HAP4XTTPQYRZFXBW9PBS",
+            "created_date": "09/22/2025",
+            "created_time": "15:41",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
             "district_id": null,
-            "district_identifier": "",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01K710J9ZQVANYN4NDK7RGNTA2",
+            "id": "01K5SSE4C8E3JS80VHJPXT6NE0",
             "name": "Addison Central School District",
             "principal": [],
             "principal_id": null,
@@ -713,419 +258,421 @@
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "Charlyn",
-                    "id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "last_name": "Tabada"
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "id": "01K710E17FG2T4GPBJXG24VX2N"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "10/07/2025",
-            "updated_time": "21:19"
+            "updated_date": "09/22/2025",
+            "updated_time": "15:42"
         },
         {
             "categories": [
                 "School"
             ],
             "city": "New York",
-            "code": "OR000208",
+            "code": "OR000083",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "Charlyn",
-                    "id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "last_name": "Tabada"
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "id": "01K710E17FG2T4GPBJXG24VX2N"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "10/07/2025",
-            "created_time": "21:19",
-            "department_id": "01K710HAP4XTTPQYRZFXBW9PBS",
-            "district_id": "01K710J9ZQVANYN4NDK7RGNTA2",
+            "created_date": "09/22/2025",
+            "created_time": "15:43",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": "01K5SSE4C8E3JS80VHJPXT6NE0",
             "district_identifier": null,
             "district_superintendent": [],
-            "id": "01K710Q0ZGGFZ39F870RHHJQKN",
+            "id": "01K5SSGYXSCQR8W28A9N8CFTV9",
             "name": "Addison Middle/High School",
             "principal": [],
             "principal_id": null,
-            "school_identifier": "",
+            "school_identifier": null,
             "state": "New York",
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "Charlyn",
-                    "id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "last_name": "Tabada"
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "id": "01K710E17FG2T4GPBJXG24VX2N"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "10/07/2025",
-            "updated_time": "21:21"
+            "updated_date": "09/22/2025",
+            "updated_time": "15:44"
+        },
+        {
+            "categories": [
+                "Department"
+            ],
+            "city": null,
+            "code": "OR000099",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/22/2025",
+            "created_time": "19:08",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5T57VZQRAFFKM31ADV4W7NR",
+            "name": "AKDE",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "Alaska",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "19:08"
         },
         {
             "categories": [
                 "District"
             ],
             "city": null,
-            "code": "OR000282",
-            "county": "Steuben County",
+            "code": "OR000100",
+            "county": "Anchorage, Municipality of",
             "created_by": [
                 {
-                    "first_name": "Charlyn",
-                    "id": "01K84Y9ZZAMZA7TGXAJH0F6N0K",
-                    "last_name": "Tabada"
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K84Y9ZZAMZA7TGXAJH0F6N0K",
-                    "id": "01K84YC7Y2ED6VHDDXSH312W75"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "10/21/2025",
-            "created_time": "21:10",
+            "created_date": "09/22/2025",
+            "created_time": "19:09",
+            "department_id": "01K5T57VZQRAFFKM31ADV4W7NR",
+            "district_id": null,
+            "district_identifier": "AK-46",
+            "district_superintendent": [],
+            "id": "01K5T5APT1TWNEN25G0VRQ88S5",
+            "name": "Anchorage School District",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "Alaska",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "19:13"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000144",
+            "county": "Steuben County",
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/29/2025",
+            "created_time": "22:31",
             "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
             "district_id": null,
-            "district_identifier": "",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01K851RXDY6THX4SWB50CJTS5F",
-            "name": "Afton Central School District",
+            "id": "01K6CHMNNXJRP4E1G85R3Z6Y7Q",
+            "name": "Arkport Central School District",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
             "state": "New York",
             "status": "Active",
-            "superintendent": [
-                {
-                    "code": "CO000161",
-                    "first_name": "Kelly",
-                    "last_name": "Jones",
-                    "username": ""
-                }
-            ],
-            "superintendent_id": "01K711012VPWAY5F12MNPY2Q48",
+            "superintendent": [],
+            "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "Charlyn",
-                    "id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "last_name": "Tabada"
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K710D3X25DT6FHQWC7M4Q1MN",
-                    "id": "01K710E17FG2T4GPBJXG24VX2N"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "10/27/2025",
-            "updated_time": "21:29"
+            "updated_date": "09/29/2025",
+            "updated_time": "22:32"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000037",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/18/2025",
+            "created_time": "23:38",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5GB3HHA6ND411001S8HPZAP",
+            "name": "Ashford Rumble Elementary School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/18/2025",
+            "updated_time": "23:38"
         },
         {
             "categories": [
                 "School"
             ],
             "city": "New York",
-            "code": "OR000283",
+            "code": "OR000149",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "Charlyn",
-                    "id": "01K84Y9ZZAMZA7TGXAJH0F6N0K",
-                    "last_name": "Tabada"
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K84Y9ZZAMZA7TGXAJH0F6N0K",
-                    "id": "01K84YC7Y2ED6VHDDXSH312W75"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "10/21/2025",
-            "created_time": "21:17",
+            "created_date": "09/29/2025",
+            "created_time": "22:43",
             "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
-            "district_id": "01K851RXDY6THX4SWB50CJTS5F",
+            "district_id": "01K6CJ8N7YPG6QTEQPAF90C2T3",
             "district_identifier": null,
-            "district_superintendent": [
-                {
-                    "code": "CO000161",
-                    "first_name": "Kelly",
-                    "last_name": "Jones",
-                    "username": ""
-                }
-            ],
-            "id": "01K85262YD5N1M1AHFFCJPY024",
-            "name": "Afton Elementary School",
+            "district_superintendent": [],
+            "id": "01K6CJANT49KAFA79GMVRME7GC",
+            "name": "Avoca Central School",
             "principal": [],
             "principal_id": null,
-            "school_identifier": "",
+            "school_identifier": null,
             "state": "New York",
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "Charlyn",
-                    "id": "01K84Y9ZZAMZA7TGXAJH0F6N0K",
-                    "last_name": "Tabada"
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K84Y9ZZAMZA7TGXAJH0F6N0K",
-                    "id": "01K84YC7Y2ED6VHDDXSH312W75"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "10/21/2025",
-            "updated_time": "21:18"
+            "updated_date": "09/29/2025",
+            "updated_time": "22:45"
         },
         {
             "categories": [
                 "District"
             ],
             "city": null,
-            "code": "OR000559",
-            "county": "",
+            "code": "OR000148",
+            "county": "Steuben County",
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "12/19/2025",
-            "created_time": "19:52",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
+            "created_date": "09/29/2025",
+            "created_time": "22:41",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
             "district_id": null,
-            "district_identifier": "302",
-            "district_superintendent": [],
-            "id": "01KCWY6YFF6P3KA7PV8H2ES18B",
-            "name": "Allentown City School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/19/2025",
-            "updated_time": "19:55"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000575",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/05/2026",
-            "created_time": "17:45",
-            "department_id": "01KE8F2TD1PWC6GNN0X5T3CEQC",
-            "district_id": "01KE8F3YGVH628NSCEEW5C04AW",
             "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KE8FPK5YRZR9B5S6PYS1G7MK",
-            "name": "Amelia County Elementary School",
+            "id": "01K6CJ8N7YPG6QTEQPAF90C2T3",
+            "name": "Avoca Central School District",
             "principal": [],
             "principal_id": null,
-            "school_identifier": "220",
-            "state": "Virginia",
+            "school_identifier": null,
+            "state": "New York",
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "01/05/2026",
-            "updated_time": "17:47"
+            "updated_date": "09/29/2025",
+            "updated_time": "22:42"
         },
         {
             "categories": [
-                "School"
+                "District"
             ],
-            "city": "",
-            "code": "OR000576",
+            "city": null,
+            "code": "OR000015",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "01/05/2026",
-            "created_time": "17:48",
-            "department_id": "01KE8F2TD1PWC6GNN0X5T3CEQC",
-            "district_id": "01KE8F3YGVH628NSCEEW5C04AW",
+            "created_date": "09/18/2025",
+            "created_time": "17:32",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": null,
             "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KE8FTN5SBX5RYDT4V26TBBMG",
-            "name": "Amelia County High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "10",
-            "state": "Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/05/2026",
-            "updated_time": "17:49"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000571",
-            "county": "Amelia County",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/05/2026",
-            "created_time": "17:35",
-            "department_id": "01KE8F2TD1PWC6GNN0X5T3CEQC",
-            "district_id": null,
-            "district_identifier": "004",
-            "district_superintendent": [],
-            "id": "01KE8F3YGVH628NSCEEW5C04AW",
-            "name": "Amelia County Public Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/05/2026",
-            "updated_time": "17:36"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000513",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "17:52",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "60",
-            "district_superintendent": [],
-            "id": "01KBGYJ0GE8FY1HM438DHAVC5F",
-            "name": "Avon Grove School District",
+            "id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "name": "Boone County Schools",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
@@ -1135,742 +682,49 @@
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "12/02/2025",
-            "updated_time": "17:53"
+            "updated_date": "09/18/2025",
+            "updated_time": "23:36"
         },
         {
             "categories": [
                 "District"
             ],
             "city": null,
-            "code": "OR000485",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:51",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "95",
-            "district_superintendent": [],
-            "id": "01KBGV2P4QFKFZ2AH54JA1196W",
-            "name": "B County Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:51"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000348",
+            "code": "OR000036",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "11/07/2025",
-            "created_time": "16:35",
+            "created_date": "09/18/2025",
+            "created_time": "23:37",
             "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01K7362P70Q964Y2PEDWGEWFF8",
+            "district_id": null,
             "district_identifier": null,
             "district_superintendent": [],
-            "id": "01K9GE6QAGT6ESNSAB5R6J29V6",
-            "name": "B High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "11/07/2025",
-            "updated_time": "16:35"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000543",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/11/2025",
-            "created_time": "14:48",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": "01KFYA3N8FJ6XXEMH70H2TFMTQ",
-            "district_identifier": "",
-            "district_superintendent": [],
-            "id": "01KC7SMAAXWHQ1PC4PBQNKDP5C",
-            "name": "Bainbridge Elementary School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "2555",
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/26/2026",
-            "updated_time": "15:54"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000465",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "15:25",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "101",
-            "district_superintendent": [],
-            "id": "01KBGP4KDMVCZ9913RYS76KHTW",
-            "name": "Bamboo County Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:28"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000689",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "21:10",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KFYXQPSRCHDV15ZTBDAVR3D2",
-            "district_identifier": "17",
-            "district_superintendent": [],
-            "id": "01KFYXQQ7AFKDF5ZKF7VAFECQ2",
-            "name": "Bayside Elementary School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "170403",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/26/2026",
-            "updated_time": "21:10"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000514",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "17:53",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "61",
-            "district_superintendent": [],
-            "id": "01KBGYN54CTQ6HE92AJK5A9RFB",
-            "name": "Bellwood-Antis School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:15"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000663",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "15:20",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": null,
-            "district_identifier": "122091002",
-            "district_superintendent": [],
-            "id": "01KFY9R9GYQZ4K2W7R4RR3SW8W",
-            "name": "Bensalem Township School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/26/2026",
-            "updated_time": "15:22"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000150",
-            "county": "Berkeley County",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "09/30/2025",
-            "created_time": "17:55",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "20",
-            "district_superintendent": [],
-            "id": "01K6EM88VVR19NK09H32Y3JZKW",
-            "name": "Berkeley County Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [
-                {
-                    "code": "CO000118",
-                    "first_name": "Ryan ",
-                    "last_name": "Saxe",
-                    "username": ""
-                }
-            ],
-            "superintendent_id": "01K6EN1SXXD61MJQKT171T03NB",
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "11/26/2025",
-            "updated_time": "13:36"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000574",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/05/2026",
-            "created_time": "17:41",
-            "department_id": "01KE8F2TD1PWC6GNN0X5T3CEQC",
-            "district_id": "01KE8F8YTEVT9PH91RXSQVB169",
-            "district_identifier": null,
-            "district_superintendent": [],
-            "id": "01KE8FEDHGXJSWEBVMNBF0AQHE",
-            "name": "Boyce Elementary School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "250",
-            "state": "Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/05/2026",
-            "updated_time": "17:44"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000728",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "16:53",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KG11F71G3VBJ1G1SSQKNV4MQ",
-            "district_identifier": "033",
-            "district_superintendent": [],
-            "id": "01KG11F7EQ9HGJ4KCMCGE2X5PN",
-            "name": "Bridgeport High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "501",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "16:53"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000561",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/19/2025",
-            "created_time": "19:59",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": "01KCWY6YFF6P3KA7PV8H2ES18B",
-            "district_identifier": null,
-            "district_superintendent": [],
-            "id": "01KCWYK4A6XF1WF0AN026TE7HF",
-            "name": "Building 21 Allentown",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "8412",
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/19/2025",
-            "updated_time": "19:59"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000151",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "09/30/2025",
-            "created_time": "17:55",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01K6EM88VVR19NK09H32Y3JZKW",
-            "district_identifier": null,
-            "district_superintendent": [
-                {
-                    "code": "CO000118",
-                    "first_name": "Ryan ",
-                    "last_name": "Saxe",
-                    "username": ""
-                }
-            ],
-            "id": "01K6EM9G26RW66CER5BN9SRTN8",
-            "name": "Burke Street Elementary School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "09/30/2025",
-            "updated_time": "17:58"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000486",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:54",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "80",
-            "district_superintendent": [],
-            "id": "01KBGV7D6KGKNJC26A3P80ZA94",
-            "name": "C County Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:54"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000743",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "18:18",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "Cabell",
-            "district_superintendent": [],
-            "id": "01KG16ACBBVX5CA5G5BS3C6GJK",
-            "name": "Cabell",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "18:18"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000733",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "17:26",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "12",
-            "district_superintendent": [],
-            "id": "01KG13AQAE6HZ4HVEJJP3Y8K8T",
+            "id": "01K5GB1WZ093D457B5PJ18RRYC",
             "name": "Cabell County Schools",
             "principal": [],
             "principal_id": null,
@@ -1879,789 +733,52 @@
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "17:26"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000734",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "17:26",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KG13AQAE6HZ4HVEJJP3Y8K8T",
-            "district_identifier": "12",
-            "district_superintendent": [],
-            "id": "01KG13AQQWP6CC7WH99NJC8A1R",
-            "name": "Cabell Midland HighSchool",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "550",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "17:26"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000633",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/22/2026",
-            "created_time": "23:48",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KFMQDGM04WEPK8SST4JMWESY",
-            "district_identifier": "206",
-            "district_superintendent": [],
-            "id": "01KFMX7B8TM70330GS64CCV0W9",
-            "name": "Camp Curtin Academy",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "8264",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/22/2026",
-            "updated_time": "23:48"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000664",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "15:22",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": null,
-            "district_identifier": "115211003",
-            "district_superintendent": [],
-            "id": "01KFY9V7YRQGYMTVH7ATP5TWTS",
-            "name": "Camp Hill School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "01/26/2026",
-            "updated_time": "15:23"
+            "updated_date": "09/18/2025",
+            "updated_time": "23:37"
         },
         {
             "categories": [
                 "District"
             ],
             "city": null,
-            "code": "OR000844",
-            "county": null,
+            "code": "OR000160",
+            "county": "Steuben County",
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "01/29/2026",
-            "created_time": "17:29",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "created_date": "10/01/2025",
+            "created_time": "14:33",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
             "district_id": null,
-            "district_identifier": "260",
-            "district_superintendent": [],
-            "id": "01KG689SEHD1GN994SBB0TV3KZ",
-            "name": "Camp Taylor County Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/29/2026",
-            "updated_time": "17:29"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000853",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/29/2026",
-            "created_time": "17:29",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KG689SEHD1GN994SBB0TV3KZ",
-            "district_identifier": "260",
-            "district_superintendent": [],
-            "id": "01KG68A34A5K1FCS8GQ52RMX5J",
-            "name": "Camp Taylor High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "2600005",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/29/2026",
-            "updated_time": "17:29"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000896",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/29/2026",
-            "created_time": "19:58",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KG689SEHD1GN994SBB0TV3KZ",
-            "district_identifier": "260",
-            "district_superintendent": [],
-            "id": "01KG6GVDERXHCFH5S6QNJGTGQ5",
-            "name": "Camp Taylor MS",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "2600010",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/29/2026",
-            "updated_time": "19:58"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000515",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "18:18",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "62",
-            "district_superintendent": [],
-            "id": "01KBH01JX7KB7PDF938P461BAS",
-            "name": "Cedar Hill School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:19"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000545",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/11/2025",
-            "created_time": "15:29",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": null,
-            "district_identifier": "80",
-            "district_superintendent": [],
-            "id": "01KC7VZEZ24MC00H4A7WREA1AR",
-            "name": "Central Greene School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/11/2025",
-            "updated_time": "15:30"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": null,
-            "code": "OR000721",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "15:23",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KFYXQPSRCHDV15ZTBDAVR3D2",
-            "district_identifier": "17",
-            "district_superintendent": [],
-            "id": "01KG0WACRHC7HQD1TRPXVGEE2Y",
-            "name": "Centreville elementary school",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "170308",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "15:23"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000720",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "23:05",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KFYXQPSRCHDV15ZTBDAVR3D2",
             "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KFZ4ADNTQYVANZ9A59RXH1T6",
-            "name": "Centreville Elementary School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "170308",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/26/2026",
-            "updated_time": "23:06"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000474",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:33",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "110",
-            "district_superintendent": [],
-            "id": "01KBGT1VCDYHT0HA73X4YF6JND",
-            "name": "Chestnut School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:34"
-        },
-        {
-            "categories": [
-                "School"
-            ],
-            "city": "",
-            "code": "OR000573",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/05/2026",
-            "created_time": "17:39",
-            "department_id": "01KE8F2TD1PWC6GNN0X5T3CEQC",
-            "district_id": "01KE8F8YTEVT9PH91RXSQVB169",
-            "district_identifier": null,
-            "district_superintendent": [],
-            "id": "01KE8FAMZZ5Z7P88G9GSEVQ29G",
-            "name": "Clarke County High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "10",
-            "state": "Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/05/2026",
-            "updated_time": "17:41"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000572",
-            "county": "Clarke County",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/05/2026",
-            "created_time": "17:38",
-            "department_id": "01KE8F2TD1PWC6GNN0X5T3CEQC",
-            "district_id": null,
-            "district_identifier": "022",
-            "district_superintendent": [],
-            "id": "01KE8F8YTEVT9PH91RXSQVB169",
-            "name": "Clarke County Public Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/05/2026",
-            "updated_time": "17:39"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000466",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:23",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "103",
-            "district_superintendent": [],
-            "id": "01KBGSF2NHRW22DHR3TFVYH4QW",
-            "name": "D District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:29"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000475",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:35",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "111",
-            "district_superintendent": [],
-            "id": "01KBGT5Q5ERV4V6WBMTJKS506E",
-            "name": "Deer Lakes School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:35"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000516",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "18:20",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "63",
-            "district_superintendent": [],
-            "id": "01KBH04XB2B4WP4JEDN3Y4QAT0",
-            "name": "Deer Park Independent School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:20"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000551",
-            "county": "New York County",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/19/2025",
-            "created_time": "19:01",
-            "department_id": "01KCWV6Z7T1M1AD589ZK80QHDF",
-            "district_id": null,
-            "district_identifier": "",
-            "district_superintendent": [],
-            "id": "01KCWV8XBX3BRYQGP279CBN5XH",
-            "name": "District 1",
+            "id": "01K6GV3M17F3GT9YHNS1VFP4X0",
+            "name": "Campbell-Savona Central School District",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
@@ -2671,48 +788,50 @@
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "12/19/2025",
-            "updated_time": "19:01"
+            "updated_date": "10/01/2025",
+            "updated_time": "14:35"
         },
         {
             "categories": [
-                "District"
+                "School"
             ],
-            "city": null,
-            "code": "OR000464",
-            "county": "New York County",
+            "city": "New York",
+            "code": "OR000161",
+            "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "12/01/2025",
-            "created_time": "17:53",
-            "department_id": "01K710HAP4XTTPQYRZFXBW9PBS",
-            "district_id": null,
-            "district_identifier": "22323",
+            "created_date": "10/01/2025",
+            "created_time": "14:34",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": "01K6GV3M17F3GT9YHNS1VFP4X0",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KBEC6Y83DABZQBR62HYZV63B",
-            "name": "District 101",
+            "id": "01K6GV5ATDJZEDAJP921HRDQMV",
+            "name": "Campbell-Savona Elementary School",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
@@ -2722,751 +841,50 @@
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "12/01/2025",
-            "updated_time": "17:53"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000467",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:24",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "102",
-            "district_superintendent": [],
-            "id": "01KBGSGJVN0QMJ8YQ7SG0EPJB2",
-            "name": "E District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:28"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000517",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "18:21",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "64",
-            "district_superintendent": [],
-            "id": "01KBH075AXDP885Q2N43TFV9W9",
-            "name": "Eagle Pass School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:21"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000666",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "15:27",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": null,
-            "district_identifier": "113362403",
-            "district_superintendent": [],
-            "id": "01KFYA3N8FJ6XXEMH70H2TFMTQ",
-            "name": "Elizabethtown Area School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/26/2026",
-            "updated_time": "15:28"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000476",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:41",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "113",
-            "district_superintendent": [],
-            "id": "01KBGTGG0Y3375DPSPGCWKNERX",
-            "name": "Ellwood Area School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:41"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000468",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:29",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "104",
-            "district_superintendent": [],
-            "id": "01KBGSV2MWEEEBSZC4RS3SX1E1",
-            "name": "F District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:30"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000518",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "18:22",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "66",
-            "district_superintendent": [],
-            "id": "01KBH08JBA5QK2VD7RPZ9HSK12",
-            "name": "Farmersville School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:22"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000667",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "15:55",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": null,
-            "district_identifier": "114062503",
-            "district_superintendent": [],
-            "id": "01KFYBQBDYPW49J2W8PV1XBBGS",
-            "name": "Fleetwood Area School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/26/2026",
-            "updated_time": "15:55"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000477",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:43",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "114",
-            "district_superintendent": [],
-            "id": "01KBGTN050XSSBBPK235NG683N",
-            "name": "Forest Hills School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:44"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000469",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:30",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "105",
-            "district_superintendent": [],
-            "id": "01KBGSW1CJNNRN383KJY75VNF2",
-            "name": "G District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:30"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000519",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "18:22",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "67",
-            "district_superintendent": [],
-            "id": "01KBH0A7R24G7W1XTWRBZH2A7D",
-            "name": "Garland Independent School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:23"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000668",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "15:56",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": null,
-            "district_identifier": "114063003",
-            "district_superintendent": [],
-            "id": "01KFYBRZBEA46G6CQXGY9KKNX1",
-            "name": "Governor Mifflin School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/26/2026",
-            "updated_time": "15:56"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000520",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "18:24",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "68",
-            "district_superintendent": [],
-            "id": "01KBH0D6C8H4DGHRKXMZXPHJGE",
-            "name": "Grapeland School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:24"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000588",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/22/2026",
-            "created_time": "20:54",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": null,
-            "district_identifier": "107653203",
-            "district_superintendent": [],
-            "id": "01KFMK7RMNFHN0CMB0Y80S4HRE",
-            "name": "Greensburg Salem School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/22/2026",
-            "updated_time": "20:56"
+            "updated_date": "10/01/2025",
+            "updated_time": "14:35"
         },
         {
             "categories": [
                 "School"
             ],
             "city": null,
-            "code": "OR001130",
+            "code": "OR000075",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "02/19/2026",
-            "created_time": "18:16",
+            "created_date": "09/21/2025",
+            "created_time": "19:14",
             "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KHWDAABQYYMZJKX7N5T70F35",
-            "district_identifier": "81470",
+            "district_id": "01K5QK4N4HXJTDMWV5449FFF2V",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KHWDAGVAD77M1PSECQKQ884M",
-            "name": "Greenwood Central High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "81470802",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "02/19/2026",
-            "updated_time": "18:16"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR001114",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "02/19/2026",
-            "created_time": "18:16",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "81470",
-            "district_superintendent": [],
-            "id": "01KHWDAABQYYMZJKX7N5T70F35",
-            "name": "Greenwood Central School District",
+            "id": "01K5QK6BBW3S3H5J5SS18AX8DF",
+            "name": "Fellowsville Elementary School",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
@@ -3474,119 +892,105 @@
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "02/19/2026",
-            "updated_time": "18:16"
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/21/2025",
+            "updated_time": "19:14"
         },
         {
             "categories": [
                 "School"
             ],
             "city": null,
-            "code": "OR001124",
+            "code": "OR000039",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "02/19/2026",
-            "created_time": "18:16",
+            "created_date": "09/18/2025",
+            "created_time": "23:39",
             "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KHWDAABQYYMZJKX7N5T70F35",
-            "district_identifier": "81470",
+            "district_id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KHWDAEPM4EBNAF7HR48TQQPS",
-            "name": "Greenwood Elementary School",
+            "id": "01K5GB5RP5REGGF5T1ZP32139T",
+            "name": "Madison Elementary School",
             "principal": [],
             "principal_id": null,
-            "school_identifier": "81470800",
+            "school_identifier": null,
             "state": "West Virginia",
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "02/19/2026",
-            "updated_time": "18:16"
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/18/2025",
+            "updated_time": "23:39"
         },
         {
             "categories": [
                 "School"
             ],
             "city": null,
-            "code": "OR001127",
+            "code": "OR000040",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "02/19/2026",
-            "created_time": "18:16",
+            "created_date": "09/18/2025",
+            "created_time": "23:40",
             "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KHWDAABQYYMZJKX7N5T70F35",
-            "district_identifier": "81470",
+            "district_id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KHWDAFS2V8V6KK3X87KRN9HE",
-            "name": "Greenwood Middle School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "81470801",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "02/19/2026",
-            "updated_time": "18:16"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000478",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:45",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "115",
-            "district_superintendent": [],
-            "id": "01KBGTQZFDC9CHV9TPAFHS8TTM",
-            "name": "Greenwood School District",
+            "id": "01K5GB8MGZYW0D47XBHPVDBTEG",
+            "name": "Madison Middle School",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
@@ -3596,281 +1000,156 @@
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:45"
+            "updated_date": "09/18/2025",
+            "updated_time": "23:41"
         },
         {
             "categories": [
-                "District"
+                "Department"
             ],
             "city": null,
-            "code": "OR000470",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:30",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "106",
-            "district_superintendent": [],
-            "id": "01KBGSX1AS2VCKB4X9DNBHA38R",
-            "name": "H District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:31"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000669",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "15:57",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": null,
-            "district_identifier": "103024603",
-            "district_superintendent": [],
-            "id": "01KFYBVVFVK0B30XDB876GN06W",
-            "name": "Hampton Township School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/26/2026",
-            "updated_time": "15:59"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000599",
+            "code": "OR000079",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "01/22/2026",
-            "created_time": "22:07",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "created_date": "09/22/2025",
+            "created_time": "14:41",
+            "department_id": null,
             "district_id": null,
-            "district_identifier": "206",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KFMQDGM04WEPK8SST4JMWESY",
-            "name": "Harrisburg School District",
+            "id": "01K5SP0M016SRHGY7C5DF2A7M6",
+            "name": "MEDE",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
+            "state": "Maine",
+            "status": "Draft",
             "superintendent": [],
             "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/22/2026",
-            "updated_time": "22:07"
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "14:42"
         },
         {
             "categories": [
-                "District"
+                "Department"
             ],
             "city": null,
-            "code": "OR000727",
+            "code": "OR000081",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "01/27/2026",
-            "created_time": "16:53",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "created_date": "09/22/2025",
+            "created_time": "15:36",
+            "department_id": null,
             "district_id": null,
-            "district_identifier": "033",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KG11F71G3VBJ1G1SSQKNV4MQ",
-            "name": "Harrison County Schools",
+            "id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "name": "NDE",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "16:53"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000479",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:46",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "116",
-            "district_superintendent": [],
-            "id": "01KBGTS7Y58YZS8JQK4T4B8XTS",
-            "name": "Hempfield School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
+            "state": "New York",
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:46"
+            "updated_date": "09/22/2025",
+            "updated_time": "15:36"
         },
         {
             "categories": [
                 "District"
             ],
             "city": null,
-            "code": "OR000521",
-            "county": "",
+            "code": "OR000074",
+            "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "12/02/2025",
-            "created_time": "18:25",
+            "created_date": "09/21/2025",
+            "created_time": "19:13",
             "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
             "district_id": null,
-            "district_identifier": "69",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KBH0F0VEPV9FKTJZ5XSMTYJ2",
-            "name": "Hemphill Independent School District",
+            "id": "01K5QK4N4HXJTDMWV5449FFF2V",
+            "name": "Preston County Schools",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
@@ -3880,241 +1159,50 @@
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:25"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000674",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "16:24",
-            "department_id": "01KFY9K9YFYJJBPBJD3XJD0378",
-            "district_id": null,
-            "district_identifier": "13",
-            "district_superintendent": [],
-            "id": "01KFYDCQFVWR92ASG5J0TRZ4Q0",
-            "name": "Howard County Public Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Maryland",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/26/2026",
-            "updated_time": "16:25"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000471",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:31",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "107",
-            "district_superintendent": [],
-            "id": "01KBGSXTT3DC44KWSNHCN9RAX5",
-            "name": "I District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:31"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000522",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "18:26",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "59",
-            "district_superintendent": [],
-            "id": "01KBH0GC90TD18G87A9DCDYEBV",
-            "name": "Ingleside School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:26"
+            "updated_date": "09/21/2025",
+            "updated_time": "19:13"
         },
         {
             "categories": [
                 "School"
             ],
             "city": null,
-            "code": "OR000915",
+            "code": "OR000057",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "01/29/2026",
-            "created_time": "22:50",
+            "created_date": "09/19/2025",
+            "created_time": "18:17",
             "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KG6TPBFC79S8VYKDKM6F3QQX",
-            "district_identifier": "9021",
+            "district_id": "01K5GB1WZ093D457B5PJ18RRYC",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KG6TPKJ8FG9YFQ3G1B06CNFB",
-            "name": "Iron Ridge High School",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": "9021401",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/29/2026",
-            "updated_time": "22:50"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000480",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:47",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "117",
-            "district_superintendent": [],
-            "id": "01KBGTTRP3VYH0F2QZTQ77JW49",
-            "name": "Iroquois School District",
+            "id": "01K5JB4JH7EW07J8TSA1A5NJDJ",
+            "name": "Salt Rock Elementary School",
             "principal": [],
             "principal_id": null,
             "school_identifier": null,
@@ -4124,645 +1212,179 @@
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:47"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000472",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:31",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "108",
-            "district_superintendent": [],
-            "id": "01KBGSYQR7TKB9T7KNQEZ2D5RY",
-            "name": "J District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:32"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000110",
-            "county": "Jackson County",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "09/24/2025",
-            "created_time": "22:14",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "35",
-            "district_superintendent": [],
-            "id": "01K5ZMP5W09XF19M34N6CVHSQ3",
-            "name": "Jackson County Schools",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [
-                {
-                    "code": "CO000099",
-                    "first_name": "William ",
-                    "last_name": "Hosaflook",
-                    "username": ""
-                }
-            ],
-            "superintendent_id": "01K5ZN31WAAC172TF6NBAKN38E",
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "09/24/2025",
-            "updated_time": "22:31"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000535",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "18:52",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "45",
-            "district_superintendent": [],
-            "id": "01KBH1ZVMHDDVZB6RA4GNAKFD9",
-            "name": "Jasper School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:52"
+            "updated_date": "09/19/2025",
+            "updated_time": "18:17"
         },
         {
             "categories": [
                 "School"
             ],
             "city": null,
-            "code": "OR000600",
+            "code": "OR000038",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "01/22/2026",
-            "created_time": "22:07",
+            "created_date": "09/18/2025",
+            "created_time": "23:38",
             "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KFMQDGM04WEPK8SST4JMWESY",
-            "district_identifier": "206",
+            "district_id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KFMQDH1KHBHF1F8E3QR684M8",
-            "name": "Jefferson High School",
+            "id": "01K5GB4G7A0WSZ2WARA8HTY3ZY",
+            "name": "Scott High School",
             "principal": [],
             "principal_id": null,
-            "school_identifier": "5628",
+            "school_identifier": null,
             "state": "West Virginia",
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/22/2026",
-            "updated_time": "22:07"
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/18/2025",
+            "updated_time": "23:38"
         },
         {
             "categories": [
                 "School"
             ],
-            "city": null,
-            "code": "OR000770",
+            "city": "Anchorage",
+            "code": "OR000101",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "01/27/2026",
-            "created_time": "18:34",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KG177FGQ6H4AJ4QPJ3XFQFK9",
-            "district_identifier": "5002",
+            "created_date": "09/22/2025",
+            "created_time": "19:14",
+            "department_id": "01K5T57VZQRAFFKM31ADV4W7NR",
+            "district_id": "01K5T5APT1TWNEN25G0VRQ88S5",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KG177FY41B7W4ZQB0TMM1HT8",
-            "name": "Jefferson Middle School",
+            "id": "01K5T5JV60VGZTYDBZ9FB8HF9K",
+            "name": "South Anchorage High School",
             "principal": [],
             "principal_id": null,
-            "school_identifier": "202",
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "18:34"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000769",
-            "county": null,
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/27/2026",
-            "created_time": "18:34",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "5002",
-            "district_superintendent": [],
-            "id": "01KG177FGQ6H4AJ4QPJ3XFQFK9",
-            "name": "Jefferson Valley District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "01/27/2026",
-            "updated_time": "18:34"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000481",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:48",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "118",
-            "district_superintendent": [],
-            "id": "01KBGTWJE3VR2PFCHJ4GVA8RE7",
-            "name": "Jenkintown School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
+            "school_identifier": "0204240",
+            "state": "Alaska",
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
             "updated_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "updated_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:48"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000670",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "01/26/2026",
-            "created_time": "16:03",
-            "department_id": "01KC7VYRFQSYE5G348BCQRVJZV",
-            "district_id": null,
-            "district_identifier": "111312804",
-            "district_superintendent": [],
-            "id": "01KFYC6HE5HYYXTWPCH2X4AD9Z",
-            "name": "Juniata Valley School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "Pennsylvania",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "01/26/2026",
-            "updated_time": "16:06"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000473",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:32",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "109",
-            "district_superintendent": [],
-            "id": "01KBGSZKWC2TNXNYVXN2XPPCND",
-            "name": "K District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:38"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000482",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:48",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "119",
-            "district_superintendent": [],
-            "id": "01KBGTY3NBFFS18600VRBW2GGT",
-            "name": "Keystone Oaks School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:49"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000523",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "18:34",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "58",
-            "district_superintendent": [],
-            "id": "01KBH10673EGPH13CEKC3ASBZQ",
-            "name": "Klondike School District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "18:35"
-        },
-        {
-            "categories": [
-                "District"
-            ],
-            "city": null,
-            "code": "OR000487",
-            "county": "",
-            "created_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "created_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "created_date": "12/02/2025",
-            "created_time": "16:58",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": null,
-            "district_identifier": "85",
-            "district_superintendent": [],
-            "id": "01KBGVFSNGGR5XHYK5065HE6EN",
-            "name": "L District",
-            "principal": [],
-            "principal_id": null,
-            "school_identifier": null,
-            "state": "West Virginia",
-            "status": "Active",
-            "superintendent": [],
-            "superintendent_id": null,
-            "updated_by": [
-                {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "last_name": "Admin"
-                }
-            ],
-            "updated_by_account_organizations": [
-                {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
-                }
-            ],
-            "updated_date": "12/02/2025",
-            "updated_time": "16:58"
+            "updated_date": "09/22/2025",
+            "updated_time": "19:18"
         },
         {
             "categories": [
                 "School"
             ],
-            "city": null,
-            "code": "OR000988",
+            "city": "New York",
+            "code": "OR000201",
             "county": null,
             "created_by": [
                 {
-                    "first_name": "West Virginia",
-                    "id": "01K5FNR7VQ9YACD17ACA0MYVNH",
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
                     "last_name": "Admin"
                 }
             ],
             "created_by_account_organizations": [
                 {
-                    "contact_id": "01K5FNR7VQ9YACD17ACA0MYVNH",
-                    "id": "01K5FNR82K7CFJCEPQ5SQ396XF"
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
                 }
             ],
-            "created_date": "02/02/2026",
-            "created_time": "21:45",
-            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
-            "district_id": "01KGH0H1P7CR445KREAT460YGN",
-            "district_identifier": "6392",
+            "created_date": "10/02/2025",
+            "created_time": "20:44",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": "01K5SSE4C8E3JS80VHJPXT6NE0",
+            "district_identifier": null,
             "district_superintendent": [],
-            "id": "01KGH0HMN9BNRFJ2DGYDA2V50M",
-            "name": "Lakeside Elementary School",
+            "id": "01K6M2PW9CF2X3HXVV5Z2BXTCC",
+            "name": "Tuscarora Elementary School",
             "principal": [],
             "principal_id": null,
-            "school_identifier": "639201",
-            "state": "West Virginia",
+            "school_identifier": null,
+            "state": "New York",
             "status": "Active",
             "superintendent": [],
             "superintendent_id": null,
-            "updated_by": [],
-            "updated_by_account_organizations": [],
-            "updated_date": "02/02/2026",
-            "updated_time": "21:45"
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "10/02/2025",
+            "updated_time": "20:44"
         }
     ]
 }

@@ -157,6 +157,7 @@
           "field": "id"
         },
         "from": {
+            "alias": "ccc",
           "entity": "created_by_account_organizations",
           "field": "contact_id"
         }
