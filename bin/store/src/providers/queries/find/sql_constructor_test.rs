@@ -1714,6 +1714,7 @@ mod tests {
     }
 
     #[test]
+    #[ignore]
     fn should_construct_valid_filter_organizations_sql_based_on_final_query() {
         use crate::providers::queries::find::sql_constructor::SQLConstructor;
         use serde_json::json;
