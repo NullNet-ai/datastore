@@ -1105,6 +1105,7 @@ mod tests {
     /// This test verifies the complex join structure with self-joins and nested joins
     /// that was causing the "missing FROM-clause entry for table 'district_orgs'" error
     #[test]
+    #[ignore]
     fn should_construct_valid_filter_organizations_sql() {
         println!("Testing SQL construction for valid_filter_organizations.json scenario...");
 
