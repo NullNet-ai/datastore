@@ -37,7 +37,6 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
             singular_name.to_case(Case::Pascal)
         )?;
     }
-    writeln!(file, "use crate::generated::schema;")?;
     writeln!(file, "use crate::structs::core::{{Auth, RequestBody}};")?;
     writeln!(file, "use actix_web::web;")?;
     writeln!(file, "use diesel::associations::HasTable;")?;
@@ -246,7 +245,10 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     // Close the impl block
     writeln!(file, "}}")?;
 
-    writeln!(file, "/// Generate next unique code for the table via code-service (CODE_SERVICE_GRPC_URL).")?;
+    writeln!(
+        file,
+        "/// Generate next unique code for the table via code-service (CODE_SERVICE_GRPC_URL)."
+    )?;
     writeln!(file, "pub async fn generate_code(")?;
     writeln!(file, "    table: &str,")?;
     writeln!(file, "    prefix_param: &str,")?;

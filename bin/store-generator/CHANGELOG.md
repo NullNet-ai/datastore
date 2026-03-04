@@ -5,6 +5,13 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.19
+### Author
+Kashan
+
+### Fixed
+- **table_enum: remove unused schema import**: The table_enum generator no longer emits `use crate::generated::schema;`. Macros use the full path `crate::generated::schema::...`, so the import was unused and triggered a compiler warning.
+
 ## 0.1.18
 ### Author
 Kashan
