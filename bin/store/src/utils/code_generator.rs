@@ -1,12 +1,14 @@
-//! Code generation via counter-service (gRPC + Redis). Requires CODE_SERVICE_GRPC_URL.
+//! Code generation via code-service (gRPC). Requires CODE_SERVICE_GRPC_URL.
+//! Uses proto/code_service.proto; the service can be deployed as a separate project.
 
+use crate::code_service;
 use diesel::result::Error as DieselError;
 use std::env;
 use std::io;
 use tonic::transport::Channel;
 use tonic::transport::Endpoint;
 
-static CODE_SERVICE_CLIENT: tokio::sync::OnceCell<counter_service::CodeServiceClient<Channel>> =
+static CODE_SERVICE_CLIENT: tokio::sync::OnceCell<code_service::code_service_client::CodeServiceClient<Channel>> =
     tokio::sync::OnceCell::const_new();
 
 fn code_service_err(msg: impl Into<String>) -> DieselError {
@@ -34,7 +36,7 @@ pub fn database_name_from_env() -> String {
         .to_string()
 }
 
-async fn get_client() -> Result<&'static counter_service::CodeServiceClient<Channel>, DieselError> {
+async fn get_client() -> Result<&'static code_service::code_service_client::CodeServiceClient<Channel>, DieselError> {
     if let Some(existing) = CODE_SERVICE_CLIENT.get() {
         return Ok(existing);
     }
@@ -48,7 +50,7 @@ async fn get_client() -> Result<&'static counter_service::CodeServiceClient<Chan
     };
     let endpoint = Endpoint::from_shared(url_with_scheme)
         .map_err(|e| code_service_err(format!("CODE_SERVICE_GRPC_URL invalid: {}", e)))?;
-    let client = counter_service::CodeServiceClient::connect(endpoint)
+    let client = code_service::code_service_client::CodeServiceClient::connect(endpoint)
         .await
         .map_err(|e| {
             log::error!("Code service connect error: {}", e);
@@ -67,7 +69,7 @@ pub async fn generate_code(
     _default_code_param: i32,
 ) -> Result<String, DieselError> {
     let client = get_client().await?;
-    let req = counter_service::GetCodeRequest {
+    let req = code_service::GetCodeRequest {
         database: database_name_from_env(),
         table: table.to_string(),
     };
@@ -81,7 +83,7 @@ pub async fn generate_code(
 /// Generate next unique code for the entity via counter-service.
 pub async fn generate_code_optional(entity: &str) -> Result<Option<String>, DieselError> {
     let client = get_client().await?;
-    let req = counter_service::GetCodeRequest {
+    let req = code_service::GetCodeRequest {
         database: database_name_from_env(),
         table: entity.to_string(),
     };
@@ -101,10 +103,10 @@ pub async fn init_counters(
         return Ok(());
     }
     let client = get_client().await.map_err(|e| e.to_string())?;
-    let configs: Vec<counter_service::CounterConfig> = counters
+    let configs: Vec<code_service::CounterConfig> = counters
         .iter()
         .map(
-            |(entity, prefix, default_code, digits_number)| counter_service::CounterConfig {
+            |(entity, prefix, default_code, digits_number)| code_service::CounterConfig {
                 entity: entity.clone(),
                 prefix: prefix.clone(),
                 default_code: *default_code,
@@ -112,7 +114,7 @@ pub async fn init_counters(
             },
         )
         .collect();
-    let req = counter_service::InitCountersRequest {
+    let req = code_service::InitCountersRequest {
         database: database.to_string(),
         counters: configs,
     };
