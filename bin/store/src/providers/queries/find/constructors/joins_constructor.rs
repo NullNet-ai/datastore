@@ -376,14 +376,12 @@ impl JoinsConstructor {
             };
 
             return format!(
-                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON \"{}\".\"{}\" = \"{}\".\"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = (SELECT \"{}\" FROM \"{}\" WHERE \"{}\" = \"{}\".\"{}\")) AS \"{}\" ON TRUE",
                 join_kind,
                 selected_fields,
                 to_entity, lateral_alias,
-                actual_from_entity, nested_join_alias,
-                lateral_alias, to_field, nested_join_alias, from_field,
                 combined_where,
-                lateral_alias, to_field, nested_join_alias, from_field,
+                lateral_alias, to_field, to_field, actual_from_entity, from_field, nested_join_alias, from_field,
                 to_alias
             );
         }
