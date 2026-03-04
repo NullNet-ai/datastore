@@ -5,6 +5,13 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.18
+### Author
+Kashan
+
+### Changed
+- **table_enum: generate_code uses code-service**: The table_enum generator no longer emits in-DB counter logic. Generated `generate_code` now delegates to `crate::utils::code_generator::generate_code` (code-service over gRPC via `CODE_SERVICE_GRPC_URL`). Removed unused imports from generated `table_enum.rs`: `use crate::database::db` and `use crate::generated::models::counter_model::CounterModel`. Store can deploy independently of counter-service; code generation is handled by the external code-service.
+
 ## 0.1.17
 ### Author
 Kashan
