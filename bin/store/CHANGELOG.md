@@ -5,6 +5,18 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.45
+
+### Author
+Jean
+
+### Changed
+  - ***Concatenated field injection fallback (no alias)***:
+    - In `providers/queries/find/constructors/selections_constructor.rs`, concatenated fields are now auto-injected when `aliased_entity` is missing by falling back to the owning `entity`. The include condition uses both `aliased_entity == table` and `entity == table`, so concatenated expressions are built even without group_by and without an explicit alias.
+    - This affects pluck selections and pluck_object selections via `process_fields_with_concatenation`, and preserves the `COALESCE(...) || ' ' || ...` expression with the configured separator.
+  - ***Logger***:
+    - Change the absolute path of the log dir to `../../logs`, which create logs directory in the root
+
 ## 0.2.44
 
 ### Author
