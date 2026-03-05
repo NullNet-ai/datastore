@@ -668,15 +668,37 @@ impl<'a> WhereConstructor<'a> {
                 }
             }
             FilterOperator::NotEqual => {
-                if values_str.len() == 1 {
-                    format!("{} != {}", field_with_table, values_str[0])
+                if is_array_field && !is_json_field {
+                    if values_str.len() == 1 {
+                        format!("NOT ({} = ANY({}))", values_str[0], base_field)
+                    } else {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| format!("NOT ({} = ANY({}))", v, base_field))
+                            .collect();
+                        format!("({})", conditions.join(" AND "))
+                    }
+                } else if is_json_field {
+                    if values_str.len() == 1 {
+                        format!("NOT ({} @> [{}]::jsonb)", base_field, values_str[0])
+                    } else {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| format!("NOT ({} @> [{}]::jsonb)", base_field, v))
+                            .collect();
+                        format!("({})", conditions.join(" AND "))
+                    }
                 } else {
-                    // Use AND for each item: field != value1 AND field != value2 AND ...
-                    let conditions: Vec<String> = values_str
-                        .iter()
-                        .map(|value| format!("{} != {}", field_with_table, value))
-                        .collect();
-                    format!("({})", conditions.join(" AND "))
+                    if values_str.len() == 1 {
+                        format!("{} != {}", field_with_table, values_str[0])
+                    } else {
+                        // Use AND for each item: field != value1 AND field != value2 AND ...
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|value| format!("{} != {}", field_with_table, value))
+                            .collect();
+                        format!("({})", conditions.join(" AND "))
+                    }
                 }
             }
             FilterOperator::GreaterThan => format!("{} > {}", field_with_table, values_str[0]),
