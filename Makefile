@@ -409,6 +409,16 @@ sync-server:
 	fi
 	@cd bin/server && cargo run
 
+# Build the sync server in production mode
+sync-server-build:
+	@echo "🖥️  Starting sync server..."
+	@# Check if cargo is installed
+	@if ! command -v cargo >/dev/null 2>&1; then \
+		echo "❌ Cargo not found. Please run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd bin/server && cargo build --release
+
 # Run the sync server in production mode
 sync-server-prod:
 	@echo "🖥️  Starting sync server..."

@@ -1,0 +1,61 @@
+stages:
+  - sync-server-build
+  - store-build
+  - update_portainer-qa
+# ------------------------------------ Sync Server Build -------------------------------------------#
+master_sync_build:
+  stage: sync-server-build
+  variables:
+    REGISTRY_ADDRESS: 'registry.dnamicro.com'
+    REGISTRY_USERNAME: 'dna'
+    REGISTRY_PASSWORD: 'aBGioazrbkrFvG5XSdgB'
+    PROJECT_IMAGE_PREFIX: 'skyll'
+  script:
+    - 'docker login $REGISTRY_ADDRESS -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD'
+    - "docker build -t $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID -f ./bin/server/Dockerfile \
+      --build-arg PROJECT=$CI_PROJECT_NAME ."
+    - 'docker tag $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME'
+    - 'docker push $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID'
+    - 'docker push $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME'
+  only:
+    - 'qa'
+# ------------------------------------ Store Build -------------------------------------------#
+master_store_build:
+  stage: store-build
+  variables:
+    REGISTRY_ADDRESS: 'registry.dnamicro.com'
+    REGISTRY_USERNAME: 'dna'
+    REGISTRY_PASSWORD: 'aBGioazrbkrFvG5XSdgB'
+    PROJECT_IMAGE_PREFIX: 'skyll'
+  script:
+    - 'docker login $REGISTRY_ADDRESS -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD'
+    - "docker build -t $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID -f ./bin/store/Dockerfile \
+      --build-arg PROJECT=$CI_PROJECT_NAME ."
+    - 'docker tag $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME'
+    - 'docker push $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME-$CI_PIPELINE_ID'
+    - 'docker push $REGISTRY_ADDRESS/$PROJECT_IMAGE_PREFIX-$CI_PROJECT_NAME:$CI_COMMIT_REF_NAME'
+  only:
+    - 'qa'
+
+#------------------------------------ Update Portainer -------------------------------------------#
+# update_stack:
+#   stage: update_portainer-qa
+#   variables:
+#     ENDPOINT_ID: 15
+#     STACK_ID: 204
+#     PORTAINER_USERNAME: 'ci'
+#     PORTAINER_PASSWORD: 'fZmcpMHDpp63yKiszHL3'
+#     PORTAINER_HOST: https://portainer.dnaqa.net
+#     PORTAINER_YML_FILE: skyll-db-crdt.yml
+#     REGISTRY_ADDRESS: 'registry.dnamicro.com'
+#     FILE_PATH: /var/apps/portainer
+#   script:
+#     - echo 'update portainer qa'
+#     - PORTAINER_HOST=$PORTAINER_HOST portainer login -u $PORTAINER_USERNAME -p $PORTAINER_PASSWORD
+#     - touch $FILE_PATH/$PORTAINER_YML_FILE
+#     - rm -rf  $FILE_PATH/$PORTAINER_YML_FILE && PORTAINER_HOST=$PORTAINER_HOST portainer stackfile $STACK_ID $FILE_PATH/$PORTAINER_YML_FILE
+#     - sed -i "s/${CI_PROJECT_NAME}:.*/${CI_PROJECT_NAME}:${CI_COMMIT_REF_NAME}-${CI_PIPELINE_ID}/g" $FILE_PATH/$PORTAINER_YML_FILE
+#     - echo 'updating admin-portal'
+#     - PORTAINER_HOST=$PORTAINER_HOST portainer stack:update  $ENDPOINT_ID  $STACK_ID  $FILE_PATH/$PORTAINER_YML_FILE
+#   only:
+#     - 'qa'
