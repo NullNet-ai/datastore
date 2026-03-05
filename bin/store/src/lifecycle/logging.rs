@@ -267,7 +267,7 @@ impl LifecycleLogger {
 
             // Check if DEBUG environment variable is set to true
             if env::var("DEBUG").unwrap_or_default().to_lowercase() == "true" {
-                let log_dir = std::path::Path::new("/Users/chaosumaru/Documents/Projects/Platforms/v7/platform/DB/API/rust-projects/crdt-workspace/logs");
+                let log_dir = std::path::Path::new("../../logs");
 
                 // Create logs directory if it doesn't exist
                 if let Err(e) = tokio::fs::create_dir_all(log_dir).await {

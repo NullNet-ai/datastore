@@ -260,7 +260,9 @@ impl SelectionsConstructor {
             let requested = fields.iter().any(|f| f == &concat_field.field_name);
             // Auto-inject concatenated fields when aliased_entity matches the table, even if not explicitly requested
             let should_include = applies_to_table
-                && (requested || concat_field.aliased_entity.as_deref() == Some(table));
+                && (requested
+                    || concat_field.aliased_entity.as_deref() == Some(table)
+                    || concat_field.entity == table);
             if should_include {
                 concatenated_field_names.insert(concat_field.field_name.clone());
                 for source_field in &concat_field.fields {
@@ -311,7 +313,9 @@ impl SelectionsConstructor {
             let requested = fields.iter().any(|f| f == &concat_field.field_name);
             // Auto-inject concatenated fields when aliased_entity matches the table, even if not explicitly requested
             let should_include = applies_to_table
-                && (requested || concat_field.aliased_entity.as_deref() == Some(table));
+                && (requested
+                    || concat_field.aliased_entity.as_deref() == Some(table)
+                    || concat_field.entity == table);
             if should_include {
                 let concatenated_expression = concat_field
                     .fields
