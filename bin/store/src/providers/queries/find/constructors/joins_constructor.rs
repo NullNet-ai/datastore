@@ -376,7 +376,7 @@ impl JoinsConstructor {
             };
 
             return format!(
-                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = (SELECT DISTINCT \"{}\" FROM \"{}\" WHERE \"{}\" = \"{}\".\"{}\")) AS \"{}\" ON TRUE",
+                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = (SELECT DISTINCT \"{}\" FROM \"{}\" WHERE \"{}\" = \"{}\".\"{}\" LIMIT 1)) AS \"{}\" ON TRUE",
                 join_kind,
                 selected_fields,
                 to_entity, lateral_alias,
