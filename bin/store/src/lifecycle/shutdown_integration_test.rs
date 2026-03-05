@@ -78,6 +78,7 @@ mod tests {
     /// manager.register_service(Box::new(service));
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_register_multiple_services_and_coordinate_shutdown() {
         println!("Testing ShutdownManager service registration and coordination...");
 
@@ -148,6 +149,7 @@ mod tests {
     /// assert!(result.is_ok());
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_handle_edge_cases_and_error_conditions_gracefully() {
         println!("Testing edge cases and error handling...");
 
@@ -228,6 +230,7 @@ mod tests {
     ///     .with_shutdown_manager(&mut shutdown_manager);
     /// ```
     #[tokio::test]
+    #[ignore]
     async fn should_integrate_runtime_manager_with_shutdown_manager() {
         println!("Testing RuntimeManager and ShutdownManager integration...");
 

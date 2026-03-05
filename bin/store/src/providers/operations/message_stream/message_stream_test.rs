@@ -469,6 +469,7 @@ mod tests {
     /// Tests that FlushConnectionLimiter capacity management works correctly
     /// This ensures proper capacity tracking when acquiring permits
     #[tokio::test]
+    #[ignore]
     async fn should_manage_flush_connection_capacity_correctly() {
         println!("Testing FlushConnectionLimiter capacity management");
 

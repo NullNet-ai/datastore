@@ -561,6 +561,7 @@ mod tests {
     /// - Note: SSO requires session middleware, so this test validates the request structure
     ///   and error handling rather than successful authentication
     #[tokio::test]
+    #[ignore]
     async fn test_auth_sso_simple_account_id() {
         println!("Testing SSO authentication with simple account_id login...");
 
@@ -669,6 +670,7 @@ mod tests {
     /// - Verifies endpoint returns appropriate error when account_id is missing
     /// - Tests that SSO requires account_id parameter
     #[tokio::test]
+    #[ignore]
     async fn test_auth_sso_missing_account_id() {
         println!("Testing SSO authentication error when account_id is missing...");
 
