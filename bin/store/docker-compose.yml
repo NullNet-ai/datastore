@@ -14,7 +14,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: store
+      POSTGRES_DB: postgres
     restart: always
 
   redis:
@@ -25,3 +25,27 @@ services:
     networks:
       - internal
     restart: unless-stopped
+
+  # Main store application
+  store:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: crdt-store
+    depends_on:
+      - timescaledb
+      - redis
+    env_file:
+      - ../../.env-store
+    environment:
+      REDIS_CONNECTION: "redis://host.docker.internal:6390/0"
+      DATABASE_URL: "postgres://postgres:admin@host.docker.internal:5440/postgres"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "admin"
+      POSTGRES_DB: "postgres"
+      POSTGRES_HOST: "host.docker.internal"
+      POSTGRES_PORT: "5440"
+    ports:
+      - "5000:5000"
+    networks:
+      - internal
