@@ -2885,11 +2885,12 @@ async fn write_query_to_debug_log(
     table: &str,
     is_body_params: bool,
 ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-    use std::path::Path;
-
-    // Create logs directory if it doesn't exist
-    let logs_dir = Path::new("../../logs");
-    tokio::fs::create_dir_all(logs_dir).await?;
+    // Create logs directory in root folder (current directory)
+    let logs_dir = match std::env::current_dir() {
+        Ok(current_dir) => current_dir.join("logs"),
+        Err(e) => return Err(Box::new(e)),
+    };
+    tokio::fs::create_dir_all(&logs_dir).await?;
 
     // Create filename with current date
     let current_date = Local::now().format("%Y-%m-%d_%H-%M-%S").to_string();

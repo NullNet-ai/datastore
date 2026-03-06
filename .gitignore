@@ -2,7 +2,7 @@
 /target/
 **/target/
 
-Cargo.lock
+#Cargo.lock
 # Generated protocol buffer files
 *.pb
 
@@ -41,7 +41,7 @@ Thumbs.db
 
 # Log files
 /logs/
-/bin/store/logs/*
+/bin/**/**/*.log
 
 # Test queries
 /bin/store/tests/*
@@ -58,3 +58,6 @@ Thumbs.db
 
 # Store binary
 /store*
+
+# temp files
+/tmp/*

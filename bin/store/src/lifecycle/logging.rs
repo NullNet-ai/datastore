@@ -267,10 +267,17 @@ impl LifecycleLogger {
 
             // Check if DEBUG environment variable is set to true
             if env::var("DEBUG").unwrap_or_default().to_lowercase() == "true" {
-                let log_dir = std::path::Path::new("../../logs");
+                // Use current directory (root folder) for logs
+                let log_dir = match std::env::current_dir() {
+                    Ok(current_dir) => current_dir.join("logs"),
+                    Err(e) => {
+                        error!("[LOGGING] Failed to get current directory: {}", e);
+                        return;
+                    }
+                };
 
                 // Create logs directory if it doesn't exist
-                if let Err(e) = tokio::fs::create_dir_all(log_dir).await {
+                if let Err(e) = tokio::fs::create_dir_all(&log_dir).await {
                     error!("[LOGGING] Failed to create logs directory: {}", e);
                     return;
                 }
