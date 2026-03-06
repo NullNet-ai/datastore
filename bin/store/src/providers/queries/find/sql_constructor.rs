@@ -1,4 +1,6 @@
-use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
+use crate::utils::helpers::{
+    date_format_wrapper, pluralize_wrapper, time_format_wrapper, timestamp_format_wrapper,
+};
 use crate::{
     providers::queries::find::constructors::{
         group_by_constructor::GroupByConstructor,
@@ -382,10 +384,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                         .next()
                         .map(|s| s.to_string())
                         .unwrap_or(field_expr);
-                    let mut plural_field = field.clone();
-                    if !plural_field.ends_with('s') {
-                        plural_field.push('s');
-                    }
+                    let mut plural_field = pluralize_wrapper(field, 2, Some(false));
                     let selection_alias = format!("{}_{}", to_alias, plural_field);
                     let selection = if !join.nested {
                         let mut where_conditions = Vec::new();

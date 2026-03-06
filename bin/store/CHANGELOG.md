@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.46
+
+### Author
+Jean
+
+### Changed
+  - ***Pluralization***:
+    - Updated all usages of `pluralizer::pluralize` to use `crate::utils::helpers::pluralize_wrapper` for consistent pluralization behavior across the codebase.
+    - Affected files: `initializers/generate_schema.rs`, `providers/queries/find/constructors/where_constructor.rs`, `providers/queries/search_suggestion/utils.rs`, `providers/queries/find/sql_constructor.rs`.
+    - Optimized `pluralize_wrapper` usage to avoid unnecessary cloning.
+
 ## 0.2.45
 
 ### Author

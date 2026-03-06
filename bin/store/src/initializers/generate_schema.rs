@@ -1,3 +1,4 @@
+use crate::utils::helpers::pluralize_wrapper;
 use diesel::sql_query;
 use diesel::sql_types::Text;
 use diesel::QueryableByName;
@@ -153,7 +154,7 @@ impl GenerateSchemaService {
 
         let mut current_parent = parent_field_name.to_string();
         if current_parent.is_empty() {
-            current_parent = pluralizer::pluralize(table, 1, false);
+            current_parent = pluralize_wrapper(table, 1, Some(false));
         }
 
         // For now, return a simple implementation without recursion
