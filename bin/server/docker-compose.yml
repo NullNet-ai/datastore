@@ -6,8 +6,8 @@ networks:
 services:
   sync-server:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: bin/server/Dockerfile
     container_name: crdt-sync-server
     env_file:
       - ../../.env-sync-server
