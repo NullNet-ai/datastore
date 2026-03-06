@@ -103,34 +103,40 @@ mod tests {
     #[test]
     fn test_self_join_district_orgs_issue() {
         let mut pluck_object = HashMap::new();
-        pluck_object.insert("district_orgs".to_string(), vec![
-            "id".to_string(),
-            "code".to_string(),
-            "name".to_string(),
-            "categories".to_string(),
-            "district_id".to_string(),
-            "department_id".to_string(),
-            "city".to_string(),
-            "county".to_string(),
-            "state".to_string(),
-            "school_identifier".to_string(),
-            "district_identifier".to_string(),
-            "status".to_string(),
-            "created_date".to_string(),
-            "created_time".to_string(),
-            "created_by".to_string(),
-            "updated_date".to_string(),
-            "updated_time".to_string(),
-            "updated_by".to_string(),
-            "superintendent_id".to_string(),
-            "principal_id".to_string(),
-        ]);
-        pluck_object.insert("district_superintendent".to_string(), vec![
-            "first_name".to_string(),
-            "code".to_string(),
-            "last_name".to_string(),
-            "username".to_string(),
-        ]);
+        pluck_object.insert(
+            "district_orgs".to_string(),
+            vec![
+                "id".to_string(),
+                "code".to_string(),
+                "name".to_string(),
+                "categories".to_string(),
+                "district_id".to_string(),
+                "department_id".to_string(),
+                "city".to_string(),
+                "county".to_string(),
+                "state".to_string(),
+                "school_identifier".to_string(),
+                "district_identifier".to_string(),
+                "status".to_string(),
+                "created_date".to_string(),
+                "created_time".to_string(),
+                "created_by".to_string(),
+                "updated_date".to_string(),
+                "updated_time".to_string(),
+                "updated_by".to_string(),
+                "superintendent_id".to_string(),
+                "principal_id".to_string(),
+            ],
+        );
+        pluck_object.insert(
+            "district_superintendent".to_string(),
+            vec![
+                "first_name".to_string(),
+                "code".to_string(),
+                "last_name".to_string(),
+                "username".to_string(),
+            ],
+        );
 
         // Create the self join that creates "district_orgs" alias
         let self_join = Join {
@@ -210,22 +216,28 @@ mod tests {
 
         // Mock functions
         let normalize_entity_name = |entity: &str| entity.to_string();
-        
-        let get_field = |table: &str, field: &str, _date_format: &str, _main_table: &str, _timezone: Option<&str>, _with_alias: bool| {
-            format!("\"{}\".\"{}\"", table, field)
-        };
-        
-        let get_field_with_parse_as = |table: &str, field: &str, _date_format: &str, _parse_as: Option<&str>, _main_table: &str, _timezone: Option<&str>, _with_alias: bool| {
-            format!("\"{}\".\"{}\"", table, field)
-        };
-        
-        let build_system_where_clause = |table: &str| {
-            Ok(format!("\"{}\".\"tombstone\" = 0", table))
-        };
-        
-        let build_infix_expression = |_filters: &[FilterCriteria]| {
-            Ok("".to_string())
-        };
+
+        let get_field =
+            |table: &str,
+             field: &str,
+             _date_format: &str,
+             _main_table: &str,
+             _timezone: Option<&str>,
+             _with_alias: bool| { format!("\"{}\".\"{}\"", table, field) };
+
+        let get_field_with_parse_as =
+            |table: &str,
+             field: &str,
+             _date_format: &str,
+             _parse_as: Option<&str>,
+             _main_table: &str,
+             _timezone: Option<&str>,
+             _with_alias: bool| { format!("\"{}\".\"{}\"", table, field) };
+
+        let build_system_where_clause =
+            |table: &str| Ok(format!("\"{}\".\"tombstone\" = 0", table));
+
+        let build_infix_expression = |_filters: &[FilterCriteria]| Ok("".to_string());
 
         let result = SelectionsConstructor::construct_selections(
             &mock_filter,
@@ -239,25 +251,36 @@ mod tests {
         );
 
         println!("Generated selections for self join scenario: {}", result);
-        
+
         // The result should contain selections for both district_orgs and district_superintendent
-        assert!(result.contains("district_orgs"), "Should contain district_orgs selection, but got: {}", result);
-        assert!(result.contains("district_superintendent"), "Should contain district_superintendent selection, but got: {}", result);
+        assert!(
+            result.contains("district_orgs"),
+            "Should contain district_orgs selection, but got: {}",
+            result
+        );
+        assert!(
+            result.contains("district_superintendent"),
+            "Should contain district_superintendent selection, but got: {}",
+            result
+        );
     }
 
     #[test]
     fn test_classroom2_alias_issue() {
         let mut pluck_object = HashMap::new();
-        pluck_object.insert("classroom2".to_string(), vec![
-            "name".to_string(),
-            "code".to_string(),
-            "id".to_string(),
-            "school_id".to_string(),
-        ]);
-        pluck_object.insert("school".to_string(), vec![
-            "id".to_string(),
-            "name".to_string(),
-        ]);
+        pluck_object.insert(
+            "classroom2".to_string(),
+            vec![
+                "name".to_string(),
+                "code".to_string(),
+                "id".to_string(),
+                "school_id".to_string(),
+            ],
+        );
+        pluck_object.insert(
+            "school".to_string(),
+            vec!["id".to_string(), "name".to_string()],
+        );
 
         // Create the first join (non-nested) that creates "classroom2" alias
         let join1 = Join {
@@ -337,22 +360,28 @@ mod tests {
 
         // Mock functions
         let normalize_entity_name = |entity: &str| entity.to_string();
-        
-        let get_field = |table: &str, field: &str, _date_format: &str, _main_table: &str, _timezone: Option<&str>, _with_alias: bool| {
-            format!("\"{}\".\"{}\"", table, field)
-        };
-        
-        let get_field_with_parse_as = |table: &str, field: &str, _date_format: &str, _parse_as: Option<&str>, _main_table: &str, _timezone: Option<&str>, _with_alias: bool| {
-            format!("\"{}\".\"{}\"", table, field)
-        };
-        
-        let build_system_where_clause = |table: &str| {
-            Ok(format!("\"{}\".\"tombstone\" = 0", table))
-        };
-        
-        let build_infix_expression = |_filters: &[FilterCriteria]| {
-            Ok("".to_string())
-        };
+
+        let get_field =
+            |table: &str,
+             field: &str,
+             _date_format: &str,
+             _main_table: &str,
+             _timezone: Option<&str>,
+             _with_alias: bool| { format!("\"{}\".\"{}\"", table, field) };
+
+        let get_field_with_parse_as =
+            |table: &str,
+             field: &str,
+             _date_format: &str,
+             _parse_as: Option<&str>,
+             _main_table: &str,
+             _timezone: Option<&str>,
+             _with_alias: bool| { format!("\"{}\".\"{}\"", table, field) };
+
+        let build_system_where_clause =
+            |table: &str| Ok(format!("\"{}\".\"tombstone\" = 0", table));
+
+        let build_infix_expression = |_filters: &[FilterCriteria]| Ok("".to_string());
 
         let result = SelectionsConstructor::construct_selections(
             &mock_filter,
@@ -366,9 +395,17 @@ mod tests {
         );
 
         println!("Generated selections: {}", result);
-        
+
         // The result should contain selections for both classroom2 and school
-        assert!(result.contains("classroom2"), "Should contain classroom2 selection, but got: {}", result);
-        assert!(result.contains("school"), "Should contain school selection, but got: {}", result);
+        assert!(
+            result.contains("classroom2"),
+            "Should contain classroom2 selection, but got: {}",
+            result
+        );
+        assert!(
+            result.contains("school"),
+            "Should contain school selection, but got: {}",
+            result
+        );
     }
 }

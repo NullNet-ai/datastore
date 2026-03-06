@@ -685,6 +685,17 @@ impl SelectionsConstructor {
         let from_field = &join.field_relation.from.field;
         let to_field = &join.field_relation.to.field;
 
+        // Special handling for self-joins (non-nested):
+        // When joining an alias of the same table (e.g., "district_orgs"),
+        // the correct correlation is: alias.from_field = main_table.to_field
+        // Example: "district_orgs"."district_id" = "organizations"."id"
+        if join.r#type == "self" && !is_nested {
+            return format!(
+                "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                alias, from_field, table, to_field
+            );
+        }
+
         // For nested joins, we need to build the correct join condition
         if is_nested {
             if let Some(prev_join) = previous_join {
@@ -783,7 +794,7 @@ impl SelectionsConstructor {
                 .alias
                 .as_deref()
                 .unwrap_or(&join.field_relation.to.entity);
-            
+
             let from_alias = join
                 .field_relation
                 .from
@@ -794,7 +805,7 @@ impl SelectionsConstructor {
             // Handle fields for this join tables from "to" or "from" (for self-joins)
             let mut fields = None;
             let mut target_alias = "";
-            
+
             // For self-joins, prefer fields from the "from" alias if present
             if join.r#type == "self" {
                 if let Some(from_fields) = request_body.get_pluck_object().get(from_alias) {
@@ -810,7 +821,7 @@ impl SelectionsConstructor {
                     target_alias = to_alias;
                 }
             }
-            
+
             if let Some(fields) = fields {
                 // Skip main table - it's handled separately
                 if target_alias == table {
