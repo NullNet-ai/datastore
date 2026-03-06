@@ -150,8 +150,9 @@ impl Default for EnvConfig {
             postgres_port: std::env::var("POSTGRES_PORT").unwrap_or_else(|_| "5432".to_string()),
 
             // Security
+            // ! JWT webtoken does not allow '$' in secret
             jwt_secret: std::env::var("JWT_SECRET")
-                .unwrap_or_else(|_| "Zt7mK#9xL$4nP@2vR8wY5hB3jF6qN9cX7A1B".to_string()),
+                .unwrap_or_else(|_| "Zt7mK#9xL4nP@2vR8wY5hB3jF6qN9cX7A1B".to_string()),
             jwt_expires_in: std::env::var("JWT_EXPIRES_IN").unwrap_or_else(|_| "24h".to_string()),
             cleanup_password: std::env::var("CLEANUP_PASSWORD")
                 .unwrap_or_else(|_| "admin".to_string()),
