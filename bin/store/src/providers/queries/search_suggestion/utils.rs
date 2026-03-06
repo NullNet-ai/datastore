@@ -3,8 +3,9 @@ use crate::providers::queries::search_suggestion::structs::{
     FormatFilterResponse,
 };
 use crate::structs::core::{ConcatenateField, FilterCriteria, MatchPattern};
-use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
-use pluralizer::pluralize;
+use crate::utils::helpers::{
+    date_format_wrapper, pluralize_wrapper, time_format_wrapper, timestamp_format_wrapper,
+};
 use serde_json::Value;
 use std::collections::{HashMap, HashSet};
 use std::env;
@@ -71,7 +72,7 @@ pub fn format_filters(
 
                 // If not aliased, pluralize the entity
                 if !is_aliased {
-                    filtered_entity = pluralize(&filtered_entity, 2, false);
+                    filtered_entity = pluralize_wrapper(&filtered_entity, 2, Some(false));
                 }
 
                 // Update filtered_fields if this is a search criteria
@@ -200,7 +201,7 @@ pub fn generate_concatenated_expressions(
         .fold(HashMap::new(), |mut acc, concat_field| {
             let entity = concat_field
                 .aliased_entity
-                .unwrap_or_else(|| pluralize(&concat_field.entity, 2, false));
+                .unwrap_or_else(|| pluralize_wrapper(&concat_field.entity, 2, Some(false)));
 
             let concatenated_expression = format!(
                 "({})",
