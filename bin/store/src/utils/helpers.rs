@@ -5,6 +5,7 @@ use crate::generated::table_enum::Table as TableEnum;
 use crate::structs::core::CommandArgs;
 use actix_web::http;
 use diesel::result::Error as DieselError;
+use pluralizer::pluralize;
 use std::env;
 
 pub fn _token_data_extractor(_token: &str) -> String {
@@ -334,4 +335,14 @@ pub fn timestamp_format_wrapper(
         "COALESCE(TO_CHAR({}::TIMESTAMP, '{}'), ''){}",
         timezone_expr, iso_format, alias
     )
+}
+
+pub fn pluralize_wrapper(name: &str, count: isize, is_include_count: Option<bool>) -> String {
+    let mut parts: Vec<String> = name.split('_').map(|s| s.to_string()).collect();
+    if let Some(last) = parts.pop() {
+        let include_count = is_include_count.unwrap_or(false);
+        let plural_last = pluralize(&last, count, include_count);
+        parts.push(plural_last);
+    }
+    parts.join("_")
 }

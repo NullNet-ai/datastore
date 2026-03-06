@@ -2,7 +2,9 @@ use crate::database::schema::verify::field_type_in_table;
 use crate::structs::core::{
     FilterCriteria, FilterOperator, GroupAdvanceFilter, LogicalOperator, MatchPattern,
 };
-use crate::utils::helpers::{date_format_wrapper, time_format_wrapper, timestamp_format_wrapper};
+use crate::utils::helpers::{
+    date_format_wrapper, pluralize_wrapper, time_format_wrapper, timestamp_format_wrapper,
+};
 use crate::utils::sql_sanitizer;
 use serde_json::Value;
 
@@ -589,7 +591,7 @@ impl<'a> WhereConstructor<'a> {
                     }
                 };
 
-        let plural_form = pluralizer::pluralize(&field_name, 2, false);
+        let plural_form = pluralize_wrapper(&field_name, 2, Some(false));
         let is_plural = plural_form == field_name;
 
         // Determine if this operator uses LIKE patterns (needs wildcard escaping)
