@@ -37,14 +37,6 @@ services:
       - redis
     env_file:
       - ../../.env-store
-    environment:
-      REDIS_CONNECTION: "redis://host.docker.internal:6390/0"
-      DATABASE_URL: "postgres://postgres:admin@host.docker.internal:5440/postgres"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "admin"
-      POSTGRES_DB: "postgres"
-      POSTGRES_HOST: "host.docker.internal"
-      POSTGRES_PORT: "5440"
     ports:
       - "5000:5000"
     networks:
