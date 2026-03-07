@@ -511,8 +511,7 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
         // Serialize all messages to CrdtClientMessage structs in memory first (fast — no DB yet).
         // Deserialize value on the server (using existing deserialize_value) so the client
         // receives clean JSON (e.g. value: 0, value: "2026-02-22") instead of serialized form.
-        let mut client_messages: Vec<NewCrdtClientMessage> =
-            Vec::with_capacity(new_messages.len());
+        let mut client_messages: Vec<NewCrdtClientMessage> = Vec::with_capacity(new_messages.len());
         for message in &new_messages {
             let mut message_json: serde_json::Value =
                 serde_json::to_value(message).unwrap_or(serde_json::json!({}));
