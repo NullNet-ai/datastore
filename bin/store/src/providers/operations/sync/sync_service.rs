@@ -642,6 +642,10 @@ async fn sync(
             messages.len()
         );
     }
+
+    // Capture before clock fields are moved into the json! macro below.
+    let client_id = clock.timestamp.node_id.clone();
+
     let result = match HttpTransportDriver
         .post(
             serde_json::json!({
@@ -684,13 +688,223 @@ async fn sync(
         )));
     }
 
-    if let Some(received_messages) = result.get("messages").and_then(|m| m.as_array()) {
-        if !received_messages.is_empty() {
-            log::debug!("{} updates received.", received_messages.len());
-            let receive_result = receive_messages(conn, received_messages.clone())
+    let is_incomplete = result
+        .get("incomplete")
+        .map(|v| {
+            v.as_bool().unwrap_or(false)
+                || v.as_u64().map(|n| n != 0).unwrap_or(false)
+                || v.as_i64().map(|n| n != 0).unwrap_or(false)
+        })
+        .unwrap_or(false);
+
+    if is_incomplete {
+        // Server has more messages than fit in the inline response.
+        // Fetch chunks oldest-first and apply in rolling batches of APPLY_BATCH_SIZE so
+        // we never load the full message set into memory.
+
+        // How many rows the server wrote to crdt_client_messages (included in the response
+        // so we can poll readiness before fetching chunks).
+        let expected_total = result
+            .get("total")
+            .and_then(|t| t.as_u64())
+            .map(|t| t as usize)
+            .unwrap_or(0);
+
+        let chunk_opts = transport_driver::PostOpts {
+            url: options.url.clone(),
+            username: options.username.clone(),
+            password: options.password.clone(),
+        };
+
+        if expected_total > 0 {
+            log::debug!(
+                "Polling server readiness: waiting for {} rows in crdt_client_messages for client_id={}",
+                expected_total,
+                client_id
+            );
+            // Convert error to String immediately so no Box<dyn Error> (which is !Send)
+            // is held across any subsequent .await points.
+            if let Err(err_msg) = HttpTransportDriver
+                .poll_chunk_ready(&client_id, expected_total, &chunk_opts)
                 .await
-                .map_err(error_to_message);
-            if let Err(err_msg) = receive_result {
+                .map_err(|e| e.to_string())
+            {
+                let _ = HttpTransportDriver
+                    .delete_chunks(&client_id, &chunk_opts)
+                    .await;
+                if let Err(stop_err) =
+                    TransactionService::stop_transaction(conn, &transaction_id).await
+                {
+                    log::warn!(
+                        "Failed to stop transaction after readiness poll failure: {}",
+                        stop_err
+                    );
+                }
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Server readiness poll failed: {}", err_msg),
+                )));
+            }
+        }
+
+        let chunk_limit: usize = std::env::var("CHUNK_LIMIT")
+            .unwrap_or_else(|_| "100".to_string())
+            .parse()
+            .unwrap_or(100);
+        const APPLY_BATCH_SIZE: usize = 2000;
+        // How many fetched chunk pages the producer can buffer ahead of the consumer.
+        // Bounded channel provides backpressure: producer blocks when the consumer is slow.
+        const PREFETCH_BUFFER: usize = 30;
+        // Flush pending messages after this many milliseconds even if the batch isn't full yet,
+        // so slow or small chunks don't stall the consumer indefinitely.
+        const FLUSH_TIMEOUT_MS: u64 = 5;
+
+        let mut total_applied = 0usize;
+
+        // Producer task: fetches chunk pages sequentially and sends them into the channel.
+        // Runs concurrently with the consumer so the next HTTP fetch overlaps with the
+        // current receive_messages DB write.
+        let (chunk_tx, mut chunk_rx) =
+            tokio::sync::mpsc::channel::<Result<Vec<Value>, String>>(PREFETCH_BUFFER);
+        let producer_client_id = client_id.clone();
+        let producer_opts = chunk_opts.clone();
+        let producer = tokio::spawn(async move {
+            let mut start = 0usize;
+            loop {
+                let rows = match HttpTransportDriver
+                    .fetch_chunk(&producer_client_id, start, chunk_limit, &producer_opts)
+                    .await
+                    .map_err(|e| e.to_string())
+                {
+                    Ok(r) => r,
+                    Err(e) => {
+                        // Signal error to consumer then stop.
+                        let _ = chunk_tx.send(Err(e)).await;
+                        return;
+                    }
+                };
+
+                if rows.is_empty() {
+                    break; // chunk_tx dropped here → channel closes → consumer loop ends
+                }
+
+                let fetched = rows.len();
+                let transformed: Vec<Value> = rows
+                    .into_iter()
+                    .filter_map(|r| r.get("message").cloned())
+                    .collect();
+                start += fetched;
+
+                // Blocks when channel is full (backpressure): won't fetch ahead more than
+                // PREFETCH_BUFFER pages beyond what the consumer has processed.
+                if chunk_tx.send(Ok(transformed)).await.is_err() {
+                    break; // consumer dropped its receiver (error path), stop fetching
+                }
+            }
+        });
+
+        // Consumer: drains the channel, accumulates into pending.
+        // Flushes when EITHER pending reaches APPLY_BATCH_SIZE OR FLUSH_TIMEOUT_MS elapses
+        // with at least one message waiting — whichever comes first.
+        let mut pending: Vec<Value> = Vec::with_capacity(APPLY_BATCH_SIZE);
+        let mut consumer_error: Option<String> = None;
+        let flush_timeout = std::time::Duration::from_millis(FLUSH_TIMEOUT_MS);
+
+        'consumer: loop {
+            let recv_result =
+                tokio::time::timeout(flush_timeout, chunk_rx.recv()).await;
+
+            match recv_result {
+                Ok(Some(result)) => {
+                    // Received a chunk page from the producer.
+                    let chunk = match result {
+                        Ok(c) => c,
+                        Err(e) => {
+                            consumer_error = Some(format!("Chunk fetch error: {}", e));
+                            break 'consumer;
+                        }
+                    };
+                    pending.extend(chunk);
+
+                    // Flush every full APPLY_BATCH_SIZE batch immediately.
+                    while pending.len() >= APPLY_BATCH_SIZE {
+                        let batch: Vec<Value> = pending.drain(..APPLY_BATCH_SIZE).collect();
+                        total_applied += batch.len();
+                        log::debug!(
+                            "Applying batch of {} messages ({} total so far)",
+                            batch.len(),
+                            total_applied
+                        );
+                        if let Err(err_msg) =
+                            receive_messages(conn, batch).await.map_err(error_to_message)
+                        {
+                            consumer_error = Some(err_msg);
+                            break 'consumer;
+                        }
+                    }
+                }
+                Ok(None) => {
+                    // Channel closed: producer finished (or was dropped on error path).
+                    break 'consumer;
+                }
+                Err(_timeout) => {
+                    // FLUSH_TIMEOUT_MS elapsed with no new chunk — flush partial batch now
+                    // so in-flight messages aren't held up waiting for the buffer to fill.
+                    if !pending.is_empty() {
+                        let batch: Vec<Value> = pending.drain(..).collect();
+                        total_applied += batch.len();
+                        log::debug!(
+                            "Timeout flush: applying {} messages ({} total so far)",
+                            batch.len(),
+                            total_applied
+                        );
+                        if let Err(err_msg) =
+                            receive_messages(conn, batch).await.map_err(error_to_message)
+                        {
+                            consumer_error = Some(err_msg);
+                            break 'consumer;
+                        }
+                    }
+                    // Loop back and wait for next chunk (or channel close).
+                }
+            }
+        }
+
+        // Wait for producer to finish (it may still be running if consumer broke out early).
+        let _ = producer.await;
+
+        if let Some(err_msg) = consumer_error {
+            let _ = HttpTransportDriver
+                .delete_chunks(&client_id, &chunk_opts)
+                .await;
+            if let Err(stop_err) =
+                TransactionService::stop_transaction(conn, &transaction_id).await
+            {
+                log::warn!(
+                    "Failed to stop transaction after chunk error: {}",
+                    stop_err
+                );
+            }
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::Other,
+                err_msg,
+            )));
+        }
+
+        // Flush any tail that did not fill a full APPLY_BATCH_SIZE batch.
+        if !pending.is_empty() {
+            total_applied += pending.len();
+            log::debug!(
+                "Applying final batch of {} messages ({} total)",
+                pending.len(),
+                total_applied
+            );
+            if let Err(err_msg) =
+                receive_messages(conn, pending).await.map_err(error_to_message)
+            {
+                let _ = HttpTransportDriver
+                    .delete_chunks(&client_id, &chunk_opts)
+                    .await;
                 if let Err(stop_err) =
                     TransactionService::stop_transaction(conn, &transaction_id).await
                 {
@@ -704,16 +918,49 @@ async fn sync(
                     err_msg,
                 )));
             }
-            log::debug!(
-                "Synced {} at {}",
-                received_messages.len(),
-                chrono::Utc::now().to_rfc3339()
-            );
+        }
+
+        log::debug!(
+            "Chunk transfer done: {} messages applied for client_id={}",
+            total_applied,
+            client_id
+        );
+        let _ = HttpTransportDriver
+            .delete_chunks(&client_id, &chunk_opts)
+            .await;
+    } else {
+        // Normal path: messages are inline in the initial response
+        if let Some(received_messages) = result.get("messages").and_then(|m| m.as_array()) {
+            if !received_messages.is_empty() {
+                log::debug!("{} updates received.", received_messages.len());
+                let receive_result = receive_messages(conn, received_messages.clone())
+                    .await
+                    .map_err(error_to_message);
+                if let Err(err_msg) = receive_result {
+                    if let Err(stop_err) =
+                        TransactionService::stop_transaction(conn, &transaction_id).await
+                    {
+                        log::warn!(
+                            "Failed to stop transaction after receive_messages error: {}",
+                            stop_err
+                        );
+                    }
+                    return Err(Box::new(std::io::Error::new(
+                        std::io::ErrorKind::Other,
+                        err_msg,
+                    )));
+                }
+                log::debug!(
+                    "Synced {} at {}",
+                    received_messages.len(),
+                    chrono::Utc::now().to_rfc3339()
+                );
+            } else {
+                log::debug!("No new remote updates");
+            }
         } else {
             log::debug!("No new remote updates");
         }
-    } else {
-        log::debug!("No new remote updates");
     }
     log::debug!("Result: {:?}", result);
 
