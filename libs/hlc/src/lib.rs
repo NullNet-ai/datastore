@@ -16,7 +16,8 @@ impl Timestamp {
         }
     }
     pub fn to_string(&self) -> String {
-        format!("{}:{}:{}", self.physical, self.logical, self.node_id)
+        // Pad logical counter to 20 digits (full u64 range) so lexicographic TEXT sort == numeric sort.
+        format!("{}:{:020}:{}", self.physical, self.logical, self.node_id)
     }
 
     pub fn parse(str: String) -> Self {

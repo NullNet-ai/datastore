@@ -14,8 +14,12 @@ pub fn establish_connection() -> DbPool {
     dotenv().ok();
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let manager = ConnectionManager::<PgConnection>::new(database_url);
+    let max_size = env::var("DB_POOL_SIZE")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok())
+        .unwrap_or(25);
     Pool::builder()
-        .max_size(10)
+        .max_size(max_size)
         .build(manager)
         .expect("Failed to create pool")
 }

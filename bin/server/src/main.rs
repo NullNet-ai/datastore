@@ -1,5 +1,5 @@
 use actix_web::{web, App, HttpServer};
-use controllers::main_controllers::{delete_chunk, get_chunk, sync};
+use controllers::main_controllers::{delete_chunk, get_chunk, get_chunk_status, sync};
 use dotenv::dotenv;
 use env_logger::Env;
 use std::env;
@@ -29,7 +29,8 @@ async fn main() -> std::io::Result<()> {
                 .service(
                     web::scope("/sync")
                         .route("/chunk", web::get().to(get_chunk))
-                        .route("/chunk", web::delete().to(delete_chunk)),
+                        .route("/chunk", web::delete().to(delete_chunk))
+                        .route("/chunk/status", web::get().to(get_chunk_status)),
                 )
                 .route("/ping", web::get().to(|| async { "pong" })),
         )

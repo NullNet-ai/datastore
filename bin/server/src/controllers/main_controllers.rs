@@ -1,9 +1,10 @@
 use crate::controllers::gateway;
 use crate::db;
-use crate::models::crdt_client_message::*;
+use crate::models::crdt_client_message::{CrdtClientMessage, NewCrdtClientMessage};
 use crate::models::crdt_messages::CrdtMessage;
 use crate::schema::core::crdt_client_messages::client_id;
 use crate::schema::core::crdt_client_messages::dsl::crdt_client_messages;
+use crate::schema::core::crdt_client_messages::position;
 use crate::schema::core::crdt_client_messages::record_id;
 use diesel::dsl::count;
 
@@ -113,6 +114,51 @@ pub async fn delete_chunk(
     }
 }
 
+/// Returns how many rows are currently stored in `crdt_client_messages` for a given client.
+/// The client polls this until `count >= total` (the total sent in the `incomplete` response)
+/// before starting to fetch chunks.
+pub async fn get_chunk_status(
+    pool: web::Data<db::db::DbPool>,
+    query: web::Query<QueryParams>,
+) -> impl Responder {
+    let pool = pool.clone();
+    let client_id_param = query.client_id.clone();
+
+    let result = web::block(move || {
+        let mut conn = pool.get().map_err(|e| ApiError {
+            status: http::StatusCode::INTERNAL_SERVER_ERROR.as_u16(),
+            message: format!("Failed to get DB connection: {}", e),
+        })?;
+
+        let row_count: i64 = crdt_client_messages
+            .filter(client_id.eq(&client_id_param))
+            .select(count(record_id))
+            .first(&mut conn)
+            .map_err(ApiError::from)?;
+
+        Ok::<_, ApiError>(row_count as usize)
+    })
+    .await;
+
+    match result {
+        Ok(Ok(row_count)) => actix_web::HttpResponse::Ok().json(serde_json::json!({
+            "status": "ok",
+            "data": { "count": row_count }
+        })),
+        Ok(Err(err)) => actix_web::HttpResponse::InternalServerError().json(serde_json::json!({
+            "status": "error",
+            "message": err.message
+        })),
+        Err(err) => {
+            let api_err = ApiError::from(err);
+            actix_web::HttpResponse::InternalServerError().json(serde_json::json!({
+                "status": "error",
+                "message": api_err.message
+            }))
+        }
+    }
+}
+
 pub async fn get_chunk(
     pool: web::Data<db::db::DbPool>,
     query: web::Query<QueryParams>,
@@ -142,10 +188,11 @@ pub async fn get_chunk(
             .first(&mut conn)
             .map_err(ApiError::from)?;
 
-        // Fetch only the requested slice (start..start+limit), not all messages
+        // Fetch only the requested slice (start..start+limit), ordered by position
+        // (BIGSERIAL) which preserves strict insertion order = original timestamp.asc() order.
         let chunk_rows = crdt_client_messages
             .filter(client_id.eq(&client_id_param))
-            .order(record_id)
+            .order(position.asc())
             .offset(start as i64)
             .limit(limit as i64)
             .load::<CrdtClientMessage>(&mut conn)?;
@@ -461,18 +508,16 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
             new_messages.len(),
             outgoing_limit
         );
-        // Store messages in the database instead of sending them.
+        // Serialize all messages to CrdtClientMessage structs in memory first (fast — no DB yet).
         // Deserialize value on the server (using existing deserialize_value) so the client
         // receives clean JSON (e.g. value: 0, value: "2026-02-22") instead of serialized form.
+        let mut client_messages: Vec<NewCrdtClientMessage> =
+            Vec::with_capacity(new_messages.len());
         for message in &new_messages {
-            //remove double quotes from the message
             let mut message_json: serde_json::Value =
                 serde_json::to_value(message).unwrap_or(serde_json::json!({}));
-
-            // Create a new client message record
             match deserialize_value(&message.value) {
                 Ok(deserialized_value) => {
-                    // Update the value field with the deserialized content
                     if let Some(obj) = message_json.as_object_mut() {
                         obj["value"] = deserialized_value;
                     }
@@ -483,48 +528,69 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
                         message.timestamp,
                         err
                     );
-                    // Keep the original value
                 }
             };
-
-            let client_message = CrdtClientMessage {
+            client_messages.push(NewCrdtClientMessage {
                 record_id: Ulid::new().to_string(),
                 client_id: req_client_id.clone(),
                 message: serde_json::to_string(&message_json).unwrap_or_else(|e| {
                     log::error!("Error serializing message: {}", e);
                     "{}".to_string()
                 }),
-            };
-
-            //debug log whenever you are inserting a new message
-            log::debug!(
-                "Inserting message with timestamp {} into database",
-                message.timestamp
-            );
-
-            // Insert into database, ignoring conflicts
-            match diesel::insert_into(crdt_client_messages)
-                .values(&client_message)
-                .on_conflict_do_nothing()
-                .execute(&mut conn)
-            {
-                Ok(_) => {}
-                Err(err) => {
-                    log::error!("Error storing message in database: {}", err);
-                }
-            }
+            });
         }
 
-        // Set incomplete flag and clear messages to avoid sending them
+        let stored_total = client_messages.len();
+
+        // Respond immediately — client will poll /chunk/status until count == total.
+        // The actual DB inserts happen in a background thread so this handler returns right away.
+        let client_id_for_thread = req_client_id.clone();
+        std::thread::spawn(move || {
+            const BATCH_SIZE: usize = 10_000;
+            let mut bg_conn = db::db::get_connection();
+            for (batch_idx, chunk) in client_messages.chunks(BATCH_SIZE).enumerate() {
+                match diesel::insert_into(crdt_client_messages)
+                    .values(chunk)
+                    .on_conflict(record_id)
+                    .do_nothing()
+                    .execute(&mut bg_conn)
+                {
+                    Ok(rows) => {
+                        log::debug!(
+                            "BG insert: batch {} ({} rows) for client_id={}",
+                            batch_idx,
+                            rows,
+                            client_id_for_thread
+                        );
+                    }
+                    Err(err) => {
+                        log::error!(
+                            "BG insert: error on batch {} for client_id={}: {}",
+                            batch_idx,
+                            client_id_for_thread,
+                            err
+                        );
+                    }
+                }
+            }
+            log::info!(
+                "BG insert complete: {} rows stored for client_id={}",
+                stored_total,
+                client_id_for_thread
+            );
+        });
+
         incomplete = 1;
         log::info!(
-            "Sync response: client_id={} returning incomplete=1, messages=[] (client should fetch via /chunk)",
-            req_client_id
+            "Sync response: client_id={} returning incomplete=1, total={} immediately (BG inserts in progress)",
+            req_client_id,
+            stored_total
         );
         let response = serde_json::json!({
             "status": "ok",
             "data": {
                 "incomplete": incomplete,
+                "total": stored_total,
                 "messages": [],
                 "merkle": trie
             }

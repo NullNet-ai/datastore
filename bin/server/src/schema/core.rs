@@ -51,6 +51,9 @@ table! {
         record_id -> Text,
         client_id -> Text,
         message -> Text,
+        // Added by migration 2026-03-07: preserves insertion order so chunks are
+        // returned in the same dependency order messages were originally committed.
+        position -> BigInt,
     }
 }
 
