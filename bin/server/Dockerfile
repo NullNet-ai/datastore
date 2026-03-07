@@ -40,6 +40,8 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,sharing=locked,target=/root/.cache/sccache \
     cargo chef cook --release --recipe-path recipe.json -j "${CARGO_BUILD_JOBS:-1}"
 
+COPY libs libs
+
 # Copy the full workspace
 COPY . .
 

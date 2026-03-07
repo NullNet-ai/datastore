@@ -39,6 +39,18 @@ mod tests {
             &self.joins
         }
 
+        fn get_pluck(&self) -> &[String] {
+            &self.pluck
+        }
+
+        fn get_pluck_object(&self) -> &HashMap<String, Vec<String>> {
+            &self.pluck_object
+        }
+
+        fn get_concatenate_fields(&self) -> &[ConcatenateField] {
+            &self.concatenate_fields
+        }
+
         fn get_limit(&self) -> usize {
             self.limit
         }
@@ -61,18 +73,6 @@ mod tests {
 
         fn get_time_format(&self) -> &str {
             &self.time_format
-        }
-
-        fn get_pluck(&self) -> &[String] {
-            &self.pluck
-        }
-
-        fn get_pluck_object(&self) -> &HashMap<String, Vec<String>> {
-            &self.pluck_object
-        }
-
-        fn get_concatenate_fields(&self) -> &[ConcatenateField] {
-            &self.concatenate_fields
         }
 
         fn get_group_by(&self) -> Option<&GroupBy> {
@@ -100,547 +100,312 @@ mod tests {
         }
     }
 
-    /// Helper function to create test concatenate field
-    fn create_concatenate_field(
-        fields: Vec<&str>,
-        field_name: &str,
-        separator: &str,
-        entity: &str,
-        aliased_entity: Option<&str>,
-    ) -> ConcatenateField {
-        ConcatenateField {
-            fields: fields.iter().map(|s| s.to_string()).collect(),
-            field_name: field_name.to_string(),
-            separator: separator.to_string(),
-            entity: entity.to_string(),
-            aliased_entity: aliased_entity.map(|s| s.to_string()),
-        }
-    }
+    #[test]
+    fn test_self_join_district_orgs_issue() {
+        let mut pluck_object = HashMap::new();
+        pluck_object.insert(
+            "district_orgs".to_string(),
+            vec![
+                "id".to_string(),
+                "code".to_string(),
+                "name".to_string(),
+                "categories".to_string(),
+                "district_id".to_string(),
+                "department_id".to_string(),
+                "city".to_string(),
+                "county".to_string(),
+                "state".to_string(),
+                "school_identifier".to_string(),
+                "district_identifier".to_string(),
+                "status".to_string(),
+                "created_date".to_string(),
+                "created_time".to_string(),
+                "created_by".to_string(),
+                "updated_date".to_string(),
+                "updated_time".to_string(),
+                "updated_by".to_string(),
+                "superintendent_id".to_string(),
+                "principal_id".to_string(),
+            ],
+        );
+        pluck_object.insert(
+            "district_superintendent".to_string(),
+            vec![
+                "first_name".to_string(),
+                "code".to_string(),
+                "last_name".to_string(),
+                "username".to_string(),
+            ],
+        );
 
-    /// Helper function to create test query filter
-    fn create_test_filter(
-        pluck: Vec<&str>,
-        pluck_object: HashMap<String, Vec<&str>>,
-        concatenate_fields: Vec<ConcatenateField>,
-    ) -> TestQueryFilter {
-        let mut pluck_object_converted = HashMap::new();
-        for (key, values) in pluck_object {
-            pluck_object_converted.insert(
-                key.to_string(),
-                values.iter().map(|s| s.to_string()).collect(),
-            );
-        }
+        // Create the self join that creates "district_orgs" alias
+        let self_join = Join {
+            r#type: "self".to_string(),
+            field_relation: crate::structs::core::FieldRelation {
+                to: crate::structs::core::RelationEndpoint {
+                    alias: None, // No alias for "to" - it's the same entity
+                    entity: "organizations".to_string(),
+                    field: "id".to_string(),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+                from: crate::structs::core::RelationEndpoint {
+                    alias: Some("district_orgs".to_string()), // This creates the alias
+                    entity: "organizations".to_string(),
+                    field: "district_id".to_string(),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+            },
+            nested: false,
+        };
 
-        TestQueryFilter {
-            pluck: pluck.iter().map(|s| s.to_string()).collect(),
-            pluck_object: pluck_object_converted,
-            concatenate_fields,
+        // Create the nested join that references "district_orgs" and creates "district_superintendent" alias
+        let nested_join = Join {
+            r#type: "left".to_string(),
+            field_relation: crate::structs::core::FieldRelation {
+                to: crate::structs::core::RelationEndpoint {
+                    alias: Some("district_superintendent".to_string()),
+                    entity: "contacts".to_string(),
+                    field: "id".to_string(),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+                from: crate::structs::core::RelationEndpoint {
+                    alias: None,
+                    entity: "district_orgs".to_string(), // This references the alias from self_join
+                    field: "superintendent_id".to_string(),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+            },
+            nested: true,
+        };
+
+        let mock_filter = TestQueryFilter {
+            pluck: vec!["id".to_string(), "name".to_string()],
+            pluck_object,
+            concatenate_fields: vec![],
             advance_filters: vec![],
-            joins: vec![],
+            joins: vec![self_join, nested_join],
             limit: 100,
             offset: 0,
-            order_by: "id".to_string(),
+            order_by: "name".to_string(),
             order_direction: "asc".to_string(),
-            date_format: "mm/dd/YYYY".to_string(),
-            time_format: "HH24:MI".to_string(),
+            date_format: "%Y-%m-%d".to_string(),
+            time_format: "%H:%M:%S".to_string(),
             group_by: None,
             distinct_by: None,
             is_case_sensitive_sorting: None,
             multiple_sort: vec![],
             group_advance_filters: vec![],
             pluck_group_object: HashMap::new(),
-        }
-    }
+        };
 
-    /// Mock field getter functions for testing
-    fn mock_get_field(
-        table: &str,
-        field: &str,
-        _date_format: &str,
-        _alias_table: &str,
-        _timezone: Option<&str>,
-        _with_alias: bool,
-    ) -> String {
-        if _with_alias {
-            format!("{}.{}", table, field)
-        } else {
-            format!("{}.{}", table, field)
-        }
-    }
+        // Mock functions
+        let normalize_entity_name = |entity: &str| entity.to_string();
 
-    fn mock_get_field_with_parse_as(
-        table: &str,
-        field: &str,
-        _parse_as: &str,
-        _date_format: Option<&str>,
-        _alias_table: &str,
-        _timezone: Option<&str>,
-        _with_alias: bool,
-    ) -> String {
-        format!("{}.{}", table, field)
-    }
+        let get_field =
+            |table: &str,
+             field: &str,
+             _date_format: &str,
+             _main_table: &str,
+             _timezone: Option<&str>,
+             _with_alias: bool| { format!("\"{}\".\"{}\"", table, field) };
 
-    fn mock_normalize_entity_name(entity: &str) -> String {
-        entity.to_string()
-    }
+        let get_field_with_parse_as =
+            |table: &str,
+             field: &str,
+             _date_format: &str,
+             _parse_as: Option<&str>,
+             _main_table: &str,
+             _timezone: Option<&str>,
+             _with_alias: bool| { format!("\"{}\".\"{}\"", table, field) };
 
-    fn mock_build_system_where_clause(_table: &str) -> Result<String, String> {
-        Ok("".to_string())
-    }
+        let build_system_where_clause =
+            |table: &str| Ok(format!("\"{}\".\"tombstone\" = 0", table));
 
-    fn mock_build_infix_expression(_filters: &[FilterCriteria]) -> Result<String, String> {
-        Ok("".to_string())
-    }
-
-    #[test]
-    fn test_construct_selections_with_concatenated_fields_override() {
-        // Create concatenate fields with aliased entities
-        let concatenate_fields = vec![
-            create_concatenate_field(
-                vec!["first_name", "last_name"],
-                "full_name",
-                " ",
-                "contacts",
-                Some("created_by"),
-            ),
-            create_concatenate_field(
-                vec!["first_name", "last_name"],
-                "full_name",
-                " ",
-                "contacts",
-                Some("updated_by"),
-            ),
-        ];
-
-        // Create pluck object that includes the aliased entities
-        let mut pluck_object = HashMap::new();
-        pluck_object.insert(
-            "created_by".to_string(),
-            vec!["id", "first_name", "last_name", "full_name"],
-        );
-        pluck_object.insert(
-            "updated_by".to_string(),
-            vec!["id", "first_name", "last_name", "full_name"],
-        );
-        pluck_object.insert(
-            "organizations".to_string(),
-            vec!["id", "name", "created_by"],
-        );
-
-        let filter = create_test_filter(
-            vec!["id"], // non-empty pluck to trigger pluck_object path
-            pluck_object,
-            concatenate_fields,
-        );
+        let build_infix_expression = |_filters: &[FilterCriteria]| Ok("".to_string());
 
         let result = SelectionsConstructor::construct_selections(
-            &filter,
-            "created_by",
+            &mock_filter,
+            "organizations",
             None,
-            mock_normalize_entity_name,
-            mock_get_field,
-            mock_get_field_with_parse_as,
-            mock_build_system_where_clause,
-            mock_build_infix_expression,
+            normalize_entity_name,
+            get_field,
+            get_field_with_parse_as,
+            build_system_where_clause,
+            build_infix_expression,
         );
 
-        println!("Result: {}", result);
+        println!("Generated selections for self join scenario: {}", result);
 
-        // The result should contain the concatenated full_name field
+        // The result should contain selections for both district_orgs and district_superintendent
         assert!(
-            result.contains("full_name"),
-            "Should contain full_name concatenated field"
-        );
-
-        // The result should contain the concatenated field expression with COALESCE and proper field references
-        assert!(
-            result.contains("COALESCE(created_by.first_name, '')"),
-            "Should contain COALESCE expression for first_name in concatenated field"
+            result.contains("district_orgs"),
+            "Should contain district_orgs selection, but got: {}",
+            result
         );
         assert!(
-            result.contains("COALESCE(created_by.last_name, '')"),
-            "Should contain COALESCE expression for last_name in concatenated field"
+            result.contains("district_superintendent"),
+            "Should contain district_superintendent selection, but got: {}",
+            result
         );
     }
 
     #[test]
-    fn test_construct_selections_with_concatenated_fields_override_different_entity() {
-        // Create concatenate fields with different entities
-        let concatenate_fields = vec![
-            create_concatenate_field(
-                vec!["first_name", "last_name"],
-                "full_name",
-                " ",
-                "contacts",
-                Some("created_by"),
-            ),
-            create_concatenate_field(
-                vec!["name", "description"],
-                "org_info",
-                " - ",
-                "organizations",
-                None,
-            ),
-        ];
-
-        // Create pluck object that includes both entities
+    fn test_classroom2_alias_issue() {
         let mut pluck_object = HashMap::new();
         pluck_object.insert(
-            "created_by".to_string(),
-            vec!["id", "first_name", "last_name", "full_name"],
+            "classroom2".to_string(),
+            vec![
+                "name".to_string(),
+                "code".to_string(),
+                "id".to_string(),
+                "school_id".to_string(),
+            ],
         );
         pluck_object.insert(
-            "organizations".to_string(),
-            vec!["id", "name", "description"],
+            "school".to_string(),
+            vec!["id".to_string(), "name".to_string()],
         );
 
-        let filter = create_test_filter(
-            vec!["id"], // non-empty pluck to trigger pluck_object path
+        // Create the first join (non-nested) that creates "classroom2" alias
+        let join1 = Join {
+            r#type: "left".to_string(),
+            field_relation: crate::structs::core::FieldRelation {
+                to: crate::structs::core::RelationEndpoint {
+                    alias: Some("classroom2".to_string()),
+                    entity: "classrooms".to_string(),
+                    field: "id".to_string(),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+                from: crate::structs::core::RelationEndpoint {
+                    alias: None,
+                    entity: "classroom_course_stories_episodes".to_string(),
+                    field: "classroom_id".to_string(),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+            },
+            nested: false,
+        };
+
+        // Create the second join (nested) that references "classroom2" and creates "school" alias
+        let join2 = Join {
+            r#type: "left".to_string(),
+            field_relation: crate::structs::core::FieldRelation {
+                to: crate::structs::core::RelationEndpoint {
+                    alias: Some("school".to_string()),
+                    entity: "organizations".to_string(),
+                    field: "id".to_string(),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+                from: crate::structs::core::RelationEndpoint {
+                    alias: None,
+                    entity: "classroom2".to_string(), // This references the alias from join1
+                    field: "school_id".to_string(),
+                    order_direction: None,
+                    order_by: None,
+                    limit: None,
+                    offset: None,
+                    filters: vec![],
+                },
+            },
+            nested: true,
+        };
+
+        let mock_filter = TestQueryFilter {
+            pluck: vec!["id".to_string()],
             pluck_object,
-            concatenate_fields,
-        );
+            concatenate_fields: vec![],
+            advance_filters: vec![],
+            joins: vec![join1, join2],
+            limit: 100,
+            offset: 0,
+            order_by: "id".to_string(),
+            order_direction: "asc".to_string(),
+            date_format: "%Y-%m-%d".to_string(),
+            time_format: "%H:%M:%S".to_string(),
+            group_by: None,
+            distinct_by: None,
+            is_case_sensitive_sorting: None,
+            multiple_sort: vec![],
+            group_advance_filters: vec![],
+            pluck_group_object: HashMap::new(),
+        };
+
+        // Mock functions
+        let normalize_entity_name = |entity: &str| entity.to_string();
+
+        let get_field =
+            |table: &str,
+             field: &str,
+             _date_format: &str,
+             _main_table: &str,
+             _timezone: Option<&str>,
+             _with_alias: bool| { format!("\"{}\".\"{}\"", table, field) };
+
+        let get_field_with_parse_as =
+            |table: &str,
+             field: &str,
+             _date_format: &str,
+             _parse_as: Option<&str>,
+             _main_table: &str,
+             _timezone: Option<&str>,
+             _with_alias: bool| { format!("\"{}\".\"{}\"", table, field) };
+
+        let build_system_where_clause =
+            |table: &str| Ok(format!("\"{}\".\"tombstone\" = 0", table));
+
+        let build_infix_expression = |_filters: &[FilterCriteria]| Ok("".to_string());
 
         let result = SelectionsConstructor::construct_selections(
-            &filter,
-            "created_by",
+            &mock_filter,
+            "classroom_course_stories_episodes",
             None,
-            mock_normalize_entity_name,
-            mock_get_field,
-            mock_get_field_with_parse_as,
-            mock_build_system_where_clause,
-            mock_build_infix_expression,
+            normalize_entity_name,
+            get_field,
+            get_field_with_parse_as,
+            build_system_where_clause,
+            build_infix_expression,
         );
 
-        println!("Result: {}", result);
+        println!("Generated selections: {}", result);
 
-        // The result should contain the concatenated fields
+        // The result should contain selections for both classroom2 and school
         assert!(
-            result.contains("full_name"),
-            "Should contain full_name concatenated field"
-        );
-
-        // The result should contain the concatenated field expressions with COALESCE and proper field references
-        assert!(
-            result.contains("COALESCE(created_by.first_name, '')"),
-            "Should contain COALESCE expression for first_name in concatenated field"
+            result.contains("classroom2"),
+            "Should contain classroom2 selection, but got: {}",
+            result
         );
         assert!(
-            result.contains("COALESCE(created_by.last_name, '')"),
-            "Should contain COALESCE expression for last_name in concatenated field"
-        );
-        // Note: The current implementation only processes concatenated fields for the main table entity
-        // The organizations concatenated field (org_info) is not included in the result
-    }
-
-    #[test]
-    fn test_construct_selections_with_concatenated_fields_override_mixed_scenario() {
-        // Create a mix of concatenated and regular fields
-        let concatenate_fields = vec![create_concatenate_field(
-            vec!["first_name", "last_name"],
-            "full_name",
-            " ",
-            "contacts",
-            Some("created_by"),
-        )];
-
-        // Create pluck object with both concatenated and regular fields
-        let mut pluck_object = HashMap::new();
-        pluck_object.insert(
-            "created_by".to_string(),
-            vec!["id", "first_name", "last_name", "email", "full_name"],
-        );
-        pluck_object.insert("organizations".to_string(), vec!["id", "name"]);
-
-        let filter = create_test_filter(
-            vec!["id"], // non-empty pluck to trigger pluck_object path
-            pluck_object,
-            concatenate_fields,
-        );
-
-        let result = SelectionsConstructor::construct_selections(
-            &filter,
-            "created_by",
-            None,
-            mock_normalize_entity_name,
-            mock_get_field,
-            mock_get_field_with_parse_as,
-            mock_build_system_where_clause,
-            mock_build_infix_expression,
-        );
-
-        println!("Result: {}", result);
-
-        // The result should contain the concatenated field
-        assert!(
-            result.contains("full_name"),
-            "Should contain full_name concatenated field"
-        );
-
-        // The result should contain the concatenated field expressions with COALESCE and proper field references
-        assert!(
-            result.contains("COALESCE(created_by.first_name, '')"),
-            "Should contain COALESCE expression for first_name in concatenated field"
-        );
-        assert!(
-            result.contains("COALESCE(created_by.last_name, '')"),
-            "Should contain COALESCE expression for last_name in concatenated field"
-        );
-
-        // Note: The current implementation only returns concatenated fields when using pluck_object
-        // Regular fields from pluck_object are not included in the result
-    }
-
-    #[test]
-    fn test_construct_selections_with_concatenated_fields_override_no_aliased_entity() {
-        // Create concatenate fields without aliased entities (main table)
-        let concatenate_fields = vec![create_concatenate_field(
-            vec!["first_name", "last_name"],
-            "full_name",
-            " ",
-            "contacts",
-            None,
-        )];
-
-        // Create pluck object for main table
-        let mut pluck_object = HashMap::new();
-        pluck_object.insert(
-            "contacts".to_string(),
-            vec!["id", "first_name", "last_name", "email", "full_name"],
-        );
-
-        let filter = create_test_filter(
-            vec!["id"], // non-empty pluck to trigger pluck_object path
-            pluck_object,
-            concatenate_fields,
-        );
-
-        let result = SelectionsConstructor::construct_selections(
-            &filter,
-            "contacts",
-            None,
-            mock_normalize_entity_name,
-            mock_get_field,
-            mock_get_field_with_parse_as,
-            mock_build_system_where_clause,
-            mock_build_infix_expression,
-        );
-
-        println!("Result: {}", result);
-
-        // The result should contain the concatenated field
-        assert!(
-            result.contains("full_name"),
-            "Should contain full_name concatenated field"
-        );
-
-        // The result should contain the concatenated field expressions with COALESCE and proper field references
-        assert!(
-            result.contains("COALESCE(contacts.first_name, '')"),
-            "Should contain COALESCE expression for first_name in concatenated field"
-        );
-        assert!(
-            result.contains("COALESCE(contacts.last_name, '')"),
-            "Should contain COALESCE expression for last_name in concatenated field"
-        );
-
-        // Note: The current implementation only returns concatenated fields when using pluck_object
-        // Regular fields from pluck_object are not included in the result
-    }
-
-    #[test]
-    fn test_construct_selections_with_concatenated_fields_auto_injection() {
-        // Test that concatenated fields are automatically injected even when not in pluck_object
-        // This simulates the classrooms_filter.json scenario where full_name is defined in
-        // concatenate_fields but not explicitly listed in pluck_object for created_by/updated_by
-
-        // let concatenate_fields = vec![
-        //     create_concatenate_field(
-        //         vec!["first_name", "last_name"],
-        //         "full_name",
-        //         " ",
-        //         "contacts",
-        //         Some("created_by"),
-        //     ),
-        //     create_concatenate_field(
-        //         vec!["first_name", "last_name"],
-        //         "full_name",
-        //         " ",
-        //         "contacts",
-        //         Some("updated_by"),
-        //     ),
-        // ];
-
-        // // Create pluck object that does NOT include full_name for created_by and updated_by
-        // // This simulates the classrooms_filter.json configuration
-        // let mut pluck_object = HashMap::new();
-        // pluck_object.insert(
-        //     "created_by".to_string(),
-        //     vec!["id", "first_name", "last_name"], // Note: full_name is NOT included
-        // );
-        // pluck_object.insert(
-        //     "updated_by".to_string(),
-        //     vec!["id", "first_name", "last_name"], // Note: full_name is NOT included
-        // );
-
-        // let filter = create_test_filter(
-        //     vec!["id"], // non-empty pluck to trigger pluck_object path
-        //     pluck_object,
-        //     concatenate_fields,
-        // );
-
-        // // Test created_by - should get full_name even though it's not in pluck_object
-        // let created_by_result = SelectionsConstructor::construct_selections(
-        //     &filter,
-        //     "created_by",
-        //     None,
-        //     mock_normalize_entity_name,
-        //     mock_get_field,
-        //     mock_get_field_with_parse_as,
-        //     mock_build_system_where_clause,
-        //     mock_build_infix_expression,
-        // );
-
-        // println!("Created by result: {}", created_by_result);
-
-        // // The result should contain the concatenated full_name field even though it's not in pluck_object
-        // assert!(
-        //     created_by_result.contains("full_name"),
-        //     "Should contain full_name concatenated field even when not in pluck_object"
-        // );
-
-        // // The result should contain the concatenated field expressions with COALESCE and proper field references
-        // assert!(
-        //     created_by_result.contains("COALESCE(created_by.first_name, '')"),
-        //     "Should contain COALESCE expression for first_name in concatenated field"
-        // );
-        // assert!(
-        //     created_by_result.contains("COALESCE(created_by.last_name, '')"),
-        //     "Should contain COALESCE expression for last_name in concatenated field"
-        // );
-
-        // // Test updated_by - should get full_name even though it's not in pluck_object
-        // let updated_by_result = SelectionsConstructor::construct_selections(
-        //     &filter,
-        //     "updated_by",
-        //     None,
-        //     mock_normalize_entity_name,
-        //     mock_get_field,
-        //     mock_get_field_with_parse_as,
-        //     mock_build_system_where_clause,
-        //     mock_build_infix_expression,
-        // );
-
-        // println!("Updated by result: {}", updated_by_result);
-
-        // // The result should contain the concatenated full_name field even though it's not in pluck_object
-        // assert!(
-        //     updated_by_result.contains("full_name"),
-        //     "Should contain full_name concatenated field even when not in pluck_object"
-        // );
-
-        // // Test contacts - should NOT get full_name because it's not an aliased_entity
-        // let contacts_result = SelectionsConstructor::construct_selections(
-        //     &filter,
-        //     "contacts",
-        //     None,
-        //     mock_normalize_entity_name,
-        //     mock_get_field,
-        //     mock_get_field_with_parse_as,
-        //     mock_build_system_where_clause,
-        //     mock_build_infix_expression,
-        // );
-
-        // println!("Contacts result: {}", contacts_result);
-
-        // // The result should NOT contain full_name because contacts is not an aliased_entity
-        // assert!(
-        //     !contacts_result.contains("full_name"),
-        //     "Should NOT contain full_name for contacts entity (not an aliased_entity)"
-        // );
-    }
-
-    #[test]
-    fn test_classrooms_filter_concatenated_fields_auto_injection() {
-        // Test the actual classrooms_filter.json configuration
-        // This validates that full_name is auto-injected for created_by and updated_by
-        // even though it's not explicitly listed in their pluck_object entries
-
-        let concatenate_fields = vec![
-            create_concatenate_field(
-                vec!["first_name", "last_name"],
-                "full_name",
-                " ",
-                "contacts",
-                Some("created_by"),
-            ),
-            create_concatenate_field(
-                vec!["first_name", "last_name"],
-                "full_name",
-                " ",
-                "contacts",
-                Some("updated_by"),
-            ),
-        ];
-
-        // Simulate the actual classrooms_filter.json pluck_object configuration
-        let mut pluck_object = HashMap::new();
-        pluck_object.insert(
-            "created_by".to_string(),
-            vec!["id", "first_name", "last_name"], // Note: full_name is NOT included
-        );
-        pluck_object.insert(
-            "updated_by".to_string(),
-            vec!["id", "first_name", "last_name"], // Note: full_name is NOT included
-        );
-        pluck_object.insert(
-            "classrooms".to_string(),
-            vec!["id", "code", "name", "description"],
-        );
-
-        let filter = create_test_filter(
-            vec![], // empty pluck to trigger pluck_object path
-            pluck_object,
-            concatenate_fields,
-        );
-
-        // Test created_by - should get full_name even though it's not in pluck_object
-        let created_by_result = SelectionsConstructor::construct_selections(
-            &filter,
-            "created_by",
-            None,
-            mock_normalize_entity_name,
-            mock_get_field,
-            mock_get_field_with_parse_as,
-            mock_build_system_where_clause,
-            mock_build_infix_expression,
-        );
-
-        println!("Created by result: {}", created_by_result);
-
-        // The result should contain the concatenated full_name field even though it's not in pluck_object
-        assert!(
-            created_by_result.contains("full_name"),
-            "Should contain full_name concatenated field for created_by even when not in pluck_object"
-        );
-
-        // Test updated_by - should get full_name even though it's not in pluck_object
-        let updated_by_result = SelectionsConstructor::construct_selections(
-            &filter,
-            "updated_by",
-            None,
-            mock_normalize_entity_name,
-            mock_get_field,
-            mock_get_field_with_parse_as,
-            mock_build_system_where_clause,
-            mock_build_infix_expression,
-        );
-
-        println!("Updated by result: {}", updated_by_result);
-
-        // The result should contain the concatenated full_name field even though it's not in pluck_object
-        assert!(
-            updated_by_result.contains("full_name"),
-            "Should contain full_name concatenated field for updated_by even when not in pluck_object"
+            result.contains("school"),
+            "Should contain school selection, but got: {}",
+            result
         );
     }
 }

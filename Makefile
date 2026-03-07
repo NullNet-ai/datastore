@@ -430,7 +430,7 @@ sync-server-prod:
 	@cd bin/server && cargo run --release
 
 # Run the store
-store: setup-hooks
+store:
 	@echo "🗄️  Starting store..."
 	@# Source Rust environment and check if cargo is installed
 	@export PATH="$$HOME/.cargo/bin:$$PATH" && \

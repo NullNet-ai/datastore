@@ -5,7 +5,7 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.46
+## 0.2.47
 
 ### Author
 Kashan
@@ -25,6 +25,17 @@ Kashan
     - Added `fetch_chunk(client_id, start, limit, opts)` — fetches one page from `/app/sync/chunk` with retry logic.
     - Added `delete_chunks(client_id, opts)` — deletes the server-side buffer via `DELETE /app/sync/chunk`.
     - Added `poll_chunk_ready(client_id, expected_total, opts)` — polls `/app/sync/chunk/status` with exponential backoff until the stored count reaches `expected_total`. No maximum attempt limit so large datasets with millions of records are handled correctly.
+
+## 0.2.46
+
+### Author    
+Jean
+
+### Changed
+  - ***Pluralization***:
+    - Updated all usages of `pluralizer::pluralize` to use `crate::utils::helpers::pluralize_wrapper` for consistent pluralization behavior across the codebase.
+    - Affected files: `initializers/generate_schema.rs`, `providers/queries/find/constructors/where_constructor.rs`, `providers/queries/search_suggestion/utils.rs`, `providers/queries/find/sql_constructor.rs`.
+    - Optimized `pluralize_wrapper` usage to avoid unnecessary cloning.
 
 ## 0.2.45
 

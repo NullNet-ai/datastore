@@ -685,6 +685,17 @@ impl SelectionsConstructor {
         let from_field = &join.field_relation.from.field;
         let to_field = &join.field_relation.to.field;
 
+        // Special handling for self-joins (non-nested):
+        // When joining an alias of the same table (e.g., "district_orgs"),
+        // the correct correlation is: alias.from_field = main_table.to_field
+        // Example: "district_orgs"."district_id" = "organizations"."id"
+        if join.r#type == "self" && !is_nested {
+            return format!(
+                "\"{}\".\"{}\" = \"{}\".\"{}\"",
+                alias, from_field, table, to_field
+            );
+        }
+
         // For nested joins, we need to build the correct join condition
         if is_nested {
             if let Some(prev_join) = previous_join {
@@ -784,17 +795,48 @@ impl SelectionsConstructor {
                 .as_deref()
                 .unwrap_or(&join.field_relation.to.entity);
 
-            // Handle fields for this join tables from "to"
-            if let Some(fields) = request_body.get_pluck_object().get(to_alias) {
+            let from_alias = join
+                .field_relation
+                .from
+                .alias
+                .as_deref()
+                .unwrap_or(&join.field_relation.from.entity);
+
+            // Handle fields for this join tables from "to" or "from" (for self-joins)
+            let mut fields = None;
+            let mut target_alias = "";
+
+            // For self-joins, prefer fields from the "from" alias if present
+            if join.r#type == "self" {
+                if let Some(from_fields) = request_body.get_pluck_object().get(from_alias) {
+                    fields = Some(from_fields);
+                    target_alias = from_alias;
+                } else if let Some(to_fields) = request_body.get_pluck_object().get(to_alias) {
+                    fields = Some(to_fields);
+                    target_alias = to_alias;
+                }
+            } else {
+                if let Some(to_fields) = request_body.get_pluck_object().get(to_alias) {
+                    fields = Some(to_fields);
+                    target_alias = to_alias;
+                }
+            }
+
+            if let Some(fields) = fields {
                 // Skip main table - it's handled separately
-                if to_alias == table {
+                if target_alias == table {
                     continue;
                 }
-                if added_entity_selection.contains(to_alias) {
+                if added_entity_selection.contains(target_alias) {
                     continue;
                 }
 
-                let target_table = &join.field_relation.to.entity;
+                // Determine target table based on which alias we're processing
+                let target_table = if target_alias == from_alias && target_alias != to_alias {
+                    &join.field_relation.from.entity
+                } else {
+                    &join.field_relation.to.entity
+                };
 
                 // Find previous join in chain if exists
                 let previous_join = if join.nested && join_index > 0 {
@@ -820,7 +862,7 @@ impl SelectionsConstructor {
                 let join_condition = Self::build_join_condition_for_alias(
                     request_body,
                     table,
-                    to_alias,
+                    target_alias,
                     join,
                     previous_join,
                 );
@@ -831,7 +873,7 @@ impl SelectionsConstructor {
                     table,
                     timezone,
                     fields,
-                    to_alias,
+                    target_alias,
                     get_field,
                 );
 
@@ -841,7 +883,7 @@ impl SelectionsConstructor {
                     table,
                     timezone,
                     &mut field_pairs,
-                    to_alias,
+                    target_alias,
                     normalize_entity_name,
                     get_field,
                 );
@@ -852,7 +894,7 @@ impl SelectionsConstructor {
                     join,
                     previous_join,
                     table,
-                    to_alias,
+                    target_alias,
                     target_table,
                     &field_pairs,
                     &join_condition,
@@ -861,7 +903,7 @@ impl SelectionsConstructor {
                 );
 
                 join_selections.push(selection);
-                added_entity_selection.insert(to_alias.to_string());
+                added_entity_selection.insert(target_alias.to_string());
             }
         }
 
