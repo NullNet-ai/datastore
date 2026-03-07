@@ -5,6 +5,27 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.46
+
+### Author
+Kashan
+
+### Changed
+  - ***HLC timestamp zero-padding***:
+    - `libs/hlc/src/lib.rs` — `Timestamp::to_string()` now zero-pads the logical counter to 20 digits (`{:020}`), covering the full `u64` range (~18.4 quintillion). Without padding, PostgreSQL's TEXT column `ORDER BY timestamp` and `WHERE timestamp > ?` comparisons were lexicographic, causing counter 10 to sort before counter 1 and breaking `ORDER BY`, `gt()` sync filters, and CRDT conflict resolution in `find_existing_messages`.
+
+  - ***Client sync — streaming chunk processing***:
+    - `sync_service.rs` — the sync loop no longer collects all incoming messages into memory before processing. Instead it fetches one page (`CHUNK_LIMIT`, default 100) from the server at a time, accumulates rows into a rolling `pending` buffer, and flushes to `receive_messages` whenever the buffer reaches 500 (`APPLY_BATCH_SIZE`). A final flush drains any tail that did not fill a full batch. Peak memory usage is now bounded by `CHUNK_LIMIT + APPLY_BATCH_SIZE` rows rather than the total message count.
+
+  - ***Client sync — server readiness polling before chunk fetch***:
+    - `sync_service.rs` — when the server responds with `incomplete: 1`, the client now calls `poll_chunk_ready` before starting to fetch chunks. It polls `/app/sync/chunk/status` with exponential backoff (500 ms → 8 s cap, no maximum attempt limit) until the server confirms `count >= expected_total`. This prevents the client from fetching an empty or partial first chunk while background DB inserts are still in progress.
+
+  - ***Transport driver refactor***:
+    - `transport/transport_driver.rs` — `post()` now only performs the initial POST and returns the server's response immediately; it no longer accumulates chunk pages.
+    - Added `fetch_chunk(client_id, start, limit, opts)` — fetches one page from `/app/sync/chunk` with retry logic.
+    - Added `delete_chunks(client_id, opts)` — deletes the server-side buffer via `DELETE /app/sync/chunk`.
+    - Added `poll_chunk_ready(client_id, expected_total, opts)` — polls `/app/sync/chunk/status` with exponential backoff until the stored count reaches `expected_total`. No maximum attempt limit so large datasets with millions of records are handled correctly.
+
 ## 0.2.45
 
 ### Author
