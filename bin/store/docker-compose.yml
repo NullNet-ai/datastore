@@ -99,7 +99,7 @@ services:
       context: .
       dockerfile: dockerfile
     platform: linux/arm64
-    container_name: crdt-store
+    container_name: crdt-store-
     depends_on:
       - timescaledb
       - redis
