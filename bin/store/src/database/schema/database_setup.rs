@@ -57,15 +57,15 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     if flags.run_cleanup {
         info!("Step 1: Database cleanup requested...");
 
-        // Get the expected password from environment variable
         let expected_password = &config.cleanup_password;
-
-        // Prompt for password
-        print!("Enter password for database cleanup: ");
-        io::stdout().flush()?;
-
-        // Read password securely
-        let entered_password = rpassword::read_password()?;
+        let entered_password = match std::env::var("CLEANUP_PASSWORD_INPUT") {
+            Ok(p) => p,
+            Err(_) => {
+                print!("Enter password for database cleanup: ");
+                io::stdout().flush()?;
+                rpassword::read_password()?
+            }
+        };
 
         if entered_password == *expected_password {
             info!("Password correct. Running database cleanup script...");

@@ -25,13 +25,14 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
     // Only run cleanup if the flag is set
     if cleanup {
         info!("Database cleanup requested...");
-
-        // Prompt for password
-        print!("Enter password for database cleanup: ");
-        io::stdout().flush()?;
-
-        // Read password securely
-        let entered_password = rpassword::read_password()?;
+        let entered_password = match std::env::var("CLEANUP_PASSWORD_INPUT") {
+            Ok(p) => p,
+            Err(_) => {
+                print!("Enter password for database cleanup: ");
+                io::stdout().flush()?;
+                rpassword::read_password()?
+            }
+        };
 
         // Define the expected password (you might want to store this in an environment variable)
         let expected_password = config.cleanup_password;

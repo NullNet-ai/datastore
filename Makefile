@@ -514,7 +514,7 @@ store-clean-setup:
 			if command -v expect >/dev/null 2>&1; then \
 				expect -c ' \
 					set timeout 600; \
-					spawn cargo make clean-setup; \
+					spawn env CLEANUP_PASSWORD_INPUT=admin cargo make clean-setup; \
 					expect "Enter password for database cleanup:"; \
 					send "admin\r"; \
 					expect { \
@@ -535,14 +535,14 @@ store-clean-setup:
 						} \
 					}'; \
 			else \
-				printf "admin\n" | timeout 600 cargo make clean-setup || true; \
+				timeout 600 env CLEANUP_PASSWORD_INPUT=admin cargo make clean-setup || true; \
 			fi; \
 		}; \
 	else \
 		if command -v expect >/dev/null 2>&1; then \
 			expect -c ' \
 				set timeout 600; \
-				spawn /store --cleanup --init-db; \
+				spawn env CLEANUP_PASSWORD_INPUT=admin /store --cleanup --init-db; \
 				expect "Enter password for database cleanup:"; \
 				send "admin\r"; \
 				expect { \
@@ -563,7 +563,7 @@ store-clean-setup:
 					} \
 				}'; \
 		else \
-			printf "admin\n" | timeout 600 /store --cleanup --init-db || true; \
+			timeout 600 env CLEANUP_PASSWORD_INPUT=admin /store --cleanup --init-db || true; \
 		fi; \
 	fi
 
