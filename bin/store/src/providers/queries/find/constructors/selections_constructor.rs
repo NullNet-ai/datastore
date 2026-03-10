@@ -281,13 +281,14 @@ impl SelectionsConstructor {
         }
 
         for field in fields {
-            if concatenated_field_names.contains(field)
-                || concatenated_source_fields.contains(field)
-                || aliased_entities_for_table.contains(field)
-                || all_aliased_entities.contains(field)
-            {
-                continue;
-            }
+            //! Commented out to not ignore concatenated fields in return
+            // if concatenated_field_names.contains(field)
+            //     || concatenated_source_fields.contains(field)
+            //     || aliased_entities_for_table.contains(field)
+            //     || all_aliased_entities.contains(field)
+            // {
+            //     continue;
+            // }
 
             let with_alias = field.ends_with("_date")
                 || field.ends_with("_time")
