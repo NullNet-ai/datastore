@@ -163,6 +163,8 @@ impl MigrationGenerator {
         let mut new_fields = Vec::new();
         let mut removed_fields = Vec::new();
         let mut new_indexes = Vec::new();
+        let mut modified_indexes = Vec::new();
+        let mut removed_indexes = Vec::new();
         let mut new_foreign_keys = Vec::new();
 
         for change in changes {
@@ -171,6 +173,8 @@ impl MigrationGenerator {
                 SchemaChangeType::NewField => new_fields.push(change),
                 SchemaChangeType::RemovedField => removed_fields.push(change),
                 SchemaChangeType::NewIndex => new_indexes.push(change),
+                SchemaChangeType::ModifiedIndex => modified_indexes.push(change),
+                SchemaChangeType::RemovedIndex => removed_indexes.push(change),
                 SchemaChangeType::NewForeignKey => new_foreign_keys.push(change),
             }
         }
@@ -267,6 +271,46 @@ impl MigrationGenerator {
                 }
                 let drop_sql = Self::generate_drop_column_sql(&change.table_name, field_name)?;
                 sql.push_str(&drop_sql);
+                sql.push_str("\n");
+                first_statement = false;
+            }
+        }
+
+        // Drop indexes that were removed from the table definition (e.g. renamed) first.
+        // Then create new/modified indexes so the same name can be reused and dependencies are correct.
+        for change in &removed_indexes {
+            if let Some(index_name) = &change.field_name {
+                if !first_statement {
+                    sql.push_str("--> statement-breakpoint\n");
+                }
+                sql.push_str(&format!("DROP INDEX IF EXISTS \"{}\";\n", index_name));
+                first_statement = false;
+            }
+        }
+
+        // Generate DROP + CREATE INDEX for modified indexes (definition changed).
+        // up.sql: DROP old definition, CREATE new definition.
+        for change in &modified_indexes {
+            if let (Some(index_name), Some(field_definition)) =
+                (&change.field_name, &change.field_definition)
+            {
+                // Split off the old SQL — only the new_def part is needed for up.sql.
+                let new_def = field_definition
+                    .split("__OLDSQL__")
+                    .next()
+                    .unwrap_or(field_definition.as_str());
+
+                if !first_statement {
+                    sql.push_str("--> statement-breakpoint\n");
+                }
+                sql.push_str(&format!(
+                    "DROP INDEX IF EXISTS \"{}\";\n",
+                    index_name
+                ));
+                sql.push_str("--> statement-breakpoint\n");
+                let create_sql =
+                    Self::build_create_index_sql(&change.table_name, index_name, new_def)?;
+                sql.push_str(&create_sql);
                 sql.push_str("\n");
                 first_statement = false;
             }
@@ -377,12 +421,45 @@ impl MigrationGenerator {
                 }
                 SchemaChangeType::NewIndex => {
                     if let Some(field_name) = &change.field_name {
-                        let index_name = format!("idx_{}_{}", change.table_name, field_name);
+                        let index_name = if field_name.starts_with("idx_") {
+                            field_name.clone()
+                        } else {
+                            format!("idx_{}_{}", change.table_name, field_name)
+                        };
                         sql.push_str(&format!(
-                            "DROP INDEX IF EXISTS \"{}\";
-",
+                            "DROP INDEX IF EXISTS \"{}\";\n",
                             index_name
                         ));
+                    }
+                }
+                SchemaChangeType::ModifiedIndex => {
+                    // down.sql: drop the updated index and restore the original definition.
+                    if let (Some(index_name), Some(field_definition)) =
+                        (&change.field_name, &change.field_definition)
+                    {
+                        sql.push_str(&format!("DROP INDEX IF EXISTS \"{}\";\n", index_name));
+                        // The original CREATE INDEX SQL is everything after __OLDSQL__.
+                        if let Some(old_sql) = field_definition.split("__OLDSQL__").nth(1) {
+                            let old_sql = old_sql.trim();
+                            sql.push_str("--> statement-breakpoint\n");
+                            sql.push_str(old_sql);
+                            if !old_sql.ends_with(';') {
+                                sql.push(';');
+                            }
+                            sql.push('\n');
+                        }
+                    }
+                }
+                SchemaChangeType::RemovedIndex => {
+                    // down.sql: re-create the index that was dropped in up.sql.
+                    if let Some(create_sql) = &change.field_definition {
+                        let create_sql = create_sql.trim();
+                        sql.push_str("--> statement-breakpoint\n");
+                        sql.push_str(create_sql);
+                        if !create_sql.ends_with(';') {
+                            sql.push(';');
+                        }
+                        sql.push('\n');
                     }
                 }
                 SchemaChangeType::NewForeignKey => {
@@ -1094,6 +1171,222 @@ mod tests {
         assert!(
             hypertable_pos < index_pos,
             "create_hypertable must appear before CREATE INDEX for the hypertable"
+        );
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // ModifiedIndex tests
+    // ──────────────────────────────────────────────────────────────────────────
+
+    /// up.sql for a ModifiedIndex must DROP the old index then CREATE the new one.
+    #[test]
+    fn test_modified_index_up_sql_drops_then_recreates() {
+        let old_sql =
+            "CREATE INDEX \"idx_users_email\" ON \"users\" USING btree(\"email\");";
+        let new_def = "email,status|btree|false";
+        let field_definition = format!("{}__OLDSQL__{}", new_def, old_sql);
+
+        let changes = vec![SchemaChange {
+            table_name: "users".to_string(),
+            change_type: SchemaChangeType::ModifiedIndex,
+            field_name: Some("idx_users_email".to_string()),
+            field_definition: Some(field_definition),
+        }];
+
+        let up_sql =
+            MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
+
+        // Must DROP the old name first.
+        assert!(
+            up_sql.contains("DROP INDEX IF EXISTS \"idx_users_email\";"),
+            "up.sql must DROP the old index; got:\n{}",
+            up_sql
+        );
+        // Must CREATE with the new columns.
+        assert!(
+            up_sql.contains("CREATE INDEX \"idx_users_email\" ON \"users\""),
+            "up.sql must CREATE the updated index; got:\n{}",
+            up_sql
+        );
+        assert!(
+            up_sql.contains("\"email\""),
+            "up.sql must include new column email; got:\n{}",
+            up_sql
+        );
+        assert!(
+            up_sql.contains("\"status\""),
+            "up.sql must include new column status; got:\n{}",
+            up_sql
+        );
+        // DROP must appear before CREATE.
+        let drop_pos = up_sql.find("DROP INDEX IF EXISTS").unwrap();
+        let create_pos = up_sql.find("CREATE INDEX").unwrap();
+        assert!(
+            drop_pos < create_pos,
+            "DROP INDEX must appear before CREATE INDEX in up.sql"
+        );
+    }
+
+    /// up.sql for a unique ModifiedIndex must emit CREATE UNIQUE INDEX.
+    #[test]
+    fn test_modified_index_up_sql_unique() {
+        let old_sql =
+            "CREATE INDEX \"idx_accounts_code\" ON \"accounts\" USING btree(\"code\");";
+        let new_def = "code|btree|true"; // now unique
+        let field_definition = format!("{}__OLDSQL__{}", new_def, old_sql);
+
+        let changes = vec![SchemaChange {
+            table_name: "accounts".to_string(),
+            change_type: SchemaChangeType::ModifiedIndex,
+            field_name: Some("idx_accounts_code".to_string()),
+            field_definition: Some(field_definition),
+        }];
+
+        let up_sql =
+            MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
+
+        assert!(
+            up_sql.contains("CREATE UNIQUE INDEX"),
+            "up.sql must emit CREATE UNIQUE INDEX; got:\n{}",
+            up_sql
+        );
+    }
+
+    /// down.sql for a ModifiedIndex must DROP the new index and restore the original SQL.
+    #[test]
+    fn test_modified_index_down_sql_restores_original() {
+        let old_sql =
+            "CREATE INDEX \"idx_users_email\" ON \"users\" USING btree(\"email\");";
+        let new_def = "email,status|btree|false";
+        let field_definition = format!("{}__OLDSQL__{}", new_def, old_sql);
+
+        let changes = vec![SchemaChange {
+            table_name: "users".to_string(),
+            change_type: SchemaChangeType::ModifiedIndex,
+            field_name: Some("idx_users_email".to_string()),
+            field_definition: Some(field_definition),
+        }];
+
+        let down_sql =
+            MigrationGenerator::generate_down_sql(&changes, &[]).unwrap();
+
+        // Must DROP the (now-modified) index.
+        assert!(
+            down_sql.contains("DROP INDEX IF EXISTS \"idx_users_email\";"),
+            "down.sql must DROP the modified index; got:\n{}",
+            down_sql
+        );
+        // Must restore the original single-column definition.
+        assert!(
+            down_sql.contains(old_sql.trim_end_matches(';')),
+            "down.sql must contain the original CREATE INDEX SQL; got:\n{}",
+            down_sql
+        );
+        // DROP must appear before the restored CREATE.
+        let drop_pos = down_sql.find("DROP INDEX IF EXISTS").unwrap();
+        let create_pos = down_sql.find("CREATE INDEX").unwrap();
+        assert!(
+            drop_pos < create_pos,
+            "DROP INDEX must appear before CREATE INDEX in down.sql"
+        );
+    }
+
+    /// down.sql must restore original SQL even when it has no trailing semicolon stored.
+    #[test]
+    fn test_modified_index_down_sql_appends_semicolon_if_missing() {
+        let old_sql_no_semi =
+            "CREATE INDEX \"idx_items_name\" ON \"items\" USING btree(\"name\")"; // no ;
+        let field_definition = format!("name|btree|false__OLDSQL__{}", old_sql_no_semi);
+
+        let changes = vec![SchemaChange {
+            table_name: "items".to_string(),
+            change_type: SchemaChangeType::ModifiedIndex,
+            field_name: Some("idx_items_name".to_string()),
+            field_definition: Some(field_definition),
+        }];
+
+        let down_sql =
+            MigrationGenerator::generate_down_sql(&changes, &[]).unwrap();
+
+        // The restored SQL must end with a semicolon.
+        let create_line = down_sql
+            .lines()
+            .find(|l| l.contains("CREATE INDEX"))
+            .expect("down.sql must have a CREATE INDEX line");
+        assert!(
+            create_line.trim_end().ends_with(';'),
+            "restored CREATE INDEX must end with ';'; got: {}",
+            create_line
+        );
+    }
+
+    /// RemovedIndex: up.sql DROPs the index; down.sql re-creates it from stored SQL.
+    #[test]
+    fn test_removed_index_up_drops_down_recreates() {
+        let old_sql =
+            "CREATE INDEX \"idx_test_hypertables_location\" ON \"test_hypertables\" USING btree(\"location\")";
+        let changes = vec![
+            SchemaChange {
+                table_name: "test_hypertables".to_string(),
+                change_type: SchemaChangeType::RemovedIndex,
+                field_name: Some("idx_test_hypertables_location".to_string()),
+                field_definition: Some(old_sql.to_string()),
+            },
+            SchemaChange {
+                table_name: "test_hypertables".to_string(),
+                change_type: SchemaChangeType::NewIndex,
+                field_name: Some("idx_test_hypertables_location_sensor_id".to_string()),
+                field_definition: Some("location,sensor_id|btree|false".to_string()),
+            },
+        ];
+        let up_sql = MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
+        assert!(
+            up_sql.contains("DROP INDEX IF EXISTS \"idx_test_hypertables_location\";"),
+            "up must drop removed index; got:\n{}",
+            up_sql
+        );
+        assert!(
+            up_sql.contains("CREATE INDEX \"idx_test_hypertables_location_sensor_id\""),
+            "up must create new index; got:\n{}",
+            up_sql
+        );
+        let down_sql = MigrationGenerator::generate_down_sql(&changes, &[]).unwrap();
+        assert!(
+            down_sql.contains("CREATE INDEX \"idx_test_hypertables_location\""),
+            "down must re-create removed index; got:\n{}",
+            down_sql
+        );
+    }
+
+    /// A ModifiedIndex with a partial-index (WHERE clause) in the new definition is
+    /// correctly emitted in up.sql.
+    #[test]
+    fn test_modified_index_up_sql_with_where_clause() {
+        let old_sql =
+            "CREATE INDEX \"idx_orders_status\" ON \"orders\" USING btree(\"status\");";
+        let where_json = r#"{"op":"=","column":"tombstone","value":0}"#;
+        let new_def = format!("status|btree|false|{}", where_json);
+        let field_definition = format!("{}__OLDSQL__{}", new_def, old_sql);
+
+        let changes = vec![SchemaChange {
+            table_name: "orders".to_string(),
+            change_type: SchemaChangeType::ModifiedIndex,
+            field_name: Some("idx_orders_status".to_string()),
+            field_definition: Some(field_definition),
+        }];
+
+        let up_sql =
+            MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
+
+        assert!(
+            up_sql.contains("WHERE"),
+            "up.sql must include WHERE clause for partial index; got:\n{}",
+            up_sql
+        );
+        assert!(
+            up_sql.contains("\"tombstone\""),
+            "up.sql must include WHERE predicate column; got:\n{}",
+            up_sql
         );
     }
 }

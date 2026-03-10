@@ -4672,7 +4672,7 @@ dependencies = [
  "sha1",
  "sha2",
  "socketioxide",
- "store-generator 0.1.17",
+ "store-generator 0.1.19",
  "thiserror 1.0.69",
  "time 0.3.47",
  "tokio",
@@ -4688,9 +4688,9 @@ dependencies = [
 
 [[package]]
 name = "store-generator"
-version = "0.1.17"
+version = "0.1.19"
 source = "sparse+https://crates.dnamicro.net/api/v1/crates/"
-checksum = "fd07fb2689afe9221a6009d98374718b4bb80115780feb19e039fa9c7635a2d0"
+checksum = "daa21752196ebab34c41c478206d00d7ba3a221f1aa38e43ff56f4ae372b97e7"
 dependencies = [
  "chrono 0.4.43",
  "env_logger 0.11.9",
@@ -4706,7 +4706,7 @@ dependencies = [
 
 [[package]]
 name = "store-generator"
-version = "0.1.19"
+version = "0.1.20"
 dependencies = [
  "chrono 0.4.43",
  "env_logger 0.11.9",
