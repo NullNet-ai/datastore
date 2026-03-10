@@ -24,6 +24,7 @@ const fields = {
 
   policy: text('policy'),
   protocol: text('protocol'),
+  ipprotocol: text('ipprotocol'),
 
   source_inversed: boolean('source_inversed'),
   source_port_value: text('source_port_value'),
