@@ -1,0 +1,10 @@
+FROM rust:bookworm
+WORKDIR /usr/src/crdt-workspace
+ENV PATH="/usr/local/cargo/bin:/root/.cargo/bin:${PATH}"
+RUN apt-get update && apt-get install -y libpq-dev libssl-dev protobuf-compiler pkg-config make clang lld binutils ca-certificates expect && rm -rf /var/lib/apt/lists/*
+COPY . .
+RUN cargo install cargo-make --locked
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    || true
+CMD ["bash", "-lc", "PORT=6543 make store-clean-setup"]

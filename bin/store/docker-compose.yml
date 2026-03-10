@@ -28,6 +28,23 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+  initializer:
+    build:
+      context: .
+      dockerfile: bin/store/dockerfile.init
+    platform: linux/arm64
+    container_name: store-initializer
+    working_dir: /usr/src/crdt-workspace
+    env_file:
+      - .env-store
+    depends_on:
+      - timescaledb
+      - redis
+    networks:
+      - internal
+    restart: "no"
+    profiles:
+      - init
   # Sync Server
   sync-server:
     build:
@@ -94,12 +111,12 @@ services:
     networks:
       - internal
   # Main store application
-  store:
+  storeskyll:
     build:
       context: .
       dockerfile: dockerfile
     platform: linux/arm64
-    container_name: crdt-store-
+    container_name: crdt-store-skyll
     depends_on:
       - timescaledb
       - redis
