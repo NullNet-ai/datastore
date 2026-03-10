@@ -5,6 +5,28 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.49
+
+### Author
+Jean
+
+### Changed
+  - ***Selections constructor***:
+    - `providers/queries/find/constructors/selections_constructor.rs`
+      - Removed the old skip/continue block (previously commented out).
+      - Simplified concatenated field inclusion: include when `aliased_entity == table`, or when `aliased_entity` is missing and `entity == table`.
+
+## 0.2.48
+
+### Author
+Jean
+
+### Changed
+  - ***Selections constructor***:
+    - `providers/queries/find/constructors/selections_constructor.rs`
+      - Commented out block condition to exclude fields that are being concatenated.
+    - Updated the test scenario in selections constructor
+
 ## 0.2.47
 
 ### Author
