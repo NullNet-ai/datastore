@@ -1,8 +1,6 @@
 use crate::utils::helpers::parse_command_args;
 use crate::{
-    database::{
-        schema::{self, database_setup::DatabaseSetupFlags},
-    },
+    database::schema::{self, database_setup::DatabaseSetupFlags},
     initializers::system_initialization::{init::initialize, structs::EInitializer},
     providers::{
         operations::{
@@ -14,9 +12,7 @@ use crate::{
                 },
             },
         },
-        storage::{
-            cache::{cache, cache_factory::CacheType, CacheConfig},
-        },
+        storage::cache::{cache, cache_factory::CacheType, CacheConfig},
     },
 };
 use dotenv::dotenv;
@@ -99,7 +95,6 @@ pub async fn exec() -> std::io::Result<()> {
     let sender = create_message_channel();
     let arc_sender = Arc::new(sender);
     SENDER.set(arc_sender).expect("Failed to initialize sender");
-
 
     // init batch sync
     if let Err(e) = BatchSyncService::init().await {
