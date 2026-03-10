@@ -23,6 +23,14 @@ pub enum SchemaChangeType {
     NewField,
     RemovedField,
     NewIndex,
+    /// Index already exists but its definition changed. The migration will DROP the old index and
+    /// CREATE a new one with the updated definition.
+    /// `field_definition` encoding: `<new_def>__OLDSQL__<original_create_sql>`
+    /// where `<new_def>` is the same `columns|type|unique[|where_json]` format used by `NewIndex`.
+    ModifiedIndex,
+    /// Index exists in migrations but was removed from the table definition (e.g. renamed or dropped).
+    /// Migration up: DROP INDEX. Down: restore using stored `field_definition` (original CREATE INDEX SQL).
+    RemovedIndex,
     NewForeignKey,
 }
 
@@ -185,13 +193,26 @@ impl SchemaGenerator {
                 if !Self::normalize_index_sql_for_compare(&existing_sql)
                     .eq(&Self::normalize_index_sql_for_compare(&expected_sql))
                 {
-                    return Err(format!(
-                        "Index '{}' was already created with a different definition. \
-                         Already created indexes cannot be modified. \
-                         Update your table definition to match the existing index, or use a new index name. \
-                         Existing index SQL:\n  {}",
-                        index_name, existing_sql
-                    ));
+                    // Definition changed: emit a ModifiedIndex change so the migration generator
+                    // will DROP the old index and CREATE the new one.
+                    let type_str = index_type.as_deref().unwrap_or("btree");
+                    let mut new_def =
+                        format!("{}|{}|{}", columns.join(","), type_str, is_unique);
+                    if let Some(ref w) = where_clause {
+                        if let Ok(json) = serde_json::to_string(w) {
+                            new_def.push_str("|");
+                            new_def.push_str(&json);
+                        }
+                    }
+                    // Encode: new definition + separator + original SQL (used by down.sql to restore)
+                    let field_definition =
+                        format!("{}__OLDSQL__{}", new_def, existing_sql.trim());
+                    changes.push(SchemaChange {
+                        table_name: table_def.name.clone(),
+                        change_type: SchemaChangeType::ModifiedIndex,
+                        field_name: Some(index_name.clone()),
+                        field_definition: Some(field_definition),
+                    });
                 }
                 continue;
             }
@@ -211,6 +232,30 @@ impl SchemaGenerator {
                     change_type: SchemaChangeType::NewIndex,
                     field_name: Some(index_name.clone()),
                     field_definition: Some(field_def),
+                });
+            }
+        }
+
+        // Indexes that exist in migrations but are no longer in the table definition (renamed or removed).
+        let current_index_names: std::collections::HashSet<String> =
+            indexes.iter().map(|(name, _, _, _, _)| name.clone()).collect();
+        for existing_name in Self::get_existing_index_names_for_table(&table_def.name) {
+            if current_index_names.contains(&existing_name) {
+                continue;
+            }
+            // Skip if any current index name is "existing_name_something" (e.g. sensor vs sensor_id from system_indexes).
+            // Avoids false "removed" when migrations use a shorter name and current def uses a longer one.
+            if current_index_names.iter().any(|cur| cur.starts_with(&format!("{}_", existing_name))) {
+                continue;
+            }
+            if let Some(existing_sql) =
+                Self::get_existing_index_sql_from_migrations(&table_def.name, &existing_name)
+            {
+                changes.push(SchemaChange {
+                    table_name: table_def.name.clone(),
+                    change_type: SchemaChangeType::RemovedIndex,
+                    field_name: Some(existing_name),
+                    field_definition: Some(existing_sql),
                 });
             }
         }
@@ -430,6 +475,44 @@ impl SchemaGenerator {
             }
         }
         None
+    }
+
+    /// Return all index names that exist in migrations for the given table.
+    /// Used to detect indexes that were removed from the table definition (emit RemovedIndex).
+    fn get_existing_index_names_for_table(table_name: &str) -> Vec<String> {
+        let mut names = std::collections::HashSet::new();
+        let migrations_dir = paths::database::MIGRATIONS_DIR.as_str();
+        let on_table = format!("ON \"{}\"", table_name);
+        // Match CREATE [UNIQUE] INDEX "index_name" ON "table_name" ...
+        let re = match Regex::new(r#"CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?"([^"]+)"\s+ON"#) {
+            Ok(r) => r,
+            Err(_) => return vec![],
+        };
+        if let Ok(entries) = std::fs::read_dir(migrations_dir) {
+            for entry in entries.flatten() {
+                if let Ok(up_sql) =
+                    std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE))
+                {
+                    if !up_sql.contains(&on_table) {
+                        continue;
+                    }
+                    for line in up_sql.lines() {
+                        let line = line.trim();
+                        if line.starts_with("CREATE ")
+                            && (line.contains("UNIQUE") || line.contains("INDEX"))
+                            && line.contains(&on_table)
+                        {
+                            if let Some(cap) = re.captures(line) {
+                                if let Some(name) = cap.get(1) {
+                                    names.insert(name.as_str().to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        names.into_iter().collect()
     }
 
     /// Normalize CREATE INDEX SQL for comparison (lowercase, collapse whitespace, no trailing semicolon).

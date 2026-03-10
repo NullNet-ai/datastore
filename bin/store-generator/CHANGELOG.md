@@ -5,6 +5,18 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.20
+### Author
+Kashan
+
+### Added
+- **ModifiedIndex and RemovedIndex schema changes**: Indexes can now be changed or removed without hard errors. `ModifiedIndex` is emitted when an index name exists in migrations but its definition (columns, unique, type, where) changed; migration up drops the old index and creates the new one, down restores the original. `RemovedIndex` is emitted for indexes that exist in migrations but are no longer in the table definition (e.g. renamed or dropped); migration up drops them, down re-runs the stored `CREATE INDEX` SQL.
+- **Index emission order in up.sql**: Removed and modified indexes are dropped first, then new and modified indexes are created. The `new_indexes` loop (CREATE INDEX for existing tables) runs after `removed_indexes` and `modified_indexes` so renames (drop old name, create new name) produce correct SQL.
+
+### Fixed
+- **RemovedIndex false positive for naming variants**: An index in migrations is no longer treated as "removed" when any current index name has the form `existing_name + "_" + suffix` (e.g. `idx_..._sensor` vs `idx_..._sensor_id` from system indexes). This avoids dropping indexes that are naming variants of current definitions.
+- **NewIndex down.sql index name**: When reverting a new index, down.sql now uses the index name from the table definition as-is when it already starts with `idx_`, instead of prefixing again and producing names like `idx_table_idx_table_index_name`.
+
 ## 0.1.19
 ### Author
 Kashan
