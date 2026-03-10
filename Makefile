@@ -942,7 +942,7 @@ pm2-delete:
 # =============================================================================
 
 # Docker Compose file path
-DOCKER_COMPOSE_FILE := bin/store/docker-compose.yml
+DOCKER_COMPOSE_FILE := docker-compose.yml
 
 # Start TimescaleDB and Redis services using Docker Compose
 docker-compose-up:
