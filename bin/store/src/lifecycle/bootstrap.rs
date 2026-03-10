@@ -196,7 +196,7 @@ pub async fn exec() -> std::io::Result<()> {
 
     //GRPC config
 
-    let port = env::var("PORT").unwrap_or_else(|_| "3001".to_string());
+    let port = env::var("PORT").unwrap_or_else(|_| "5005".to_string());
     let grpc_port = env::var("GRPC_PORT").unwrap_or_else(|_| "6000".to_string());
     let grpc_url = env::var("GRPC_URL").unwrap_or_else(|_| "127.0.0.1".to_string());
     let grpc_addr = format!("{}:{}", grpc_url, grpc_port);

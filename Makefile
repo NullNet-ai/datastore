@@ -508,42 +508,24 @@ counter-service-test-all: redis-flush counter-service-test counter-service-test-
 # Run the store clean setup
 store-clean-setup:
 	@echo "🧹 Starting store clean setup..."
-	@export PATH="/usr/local/cargo/bin:/root/.cargo/bin:$$PATH"; \
-	if command -v cargo >/dev/null 2>&1 && cargo make --version >/dev/null 2>&1; then \
-		cd bin/store && export PATH="$$HOME/.cargo/bin:$$PATH" && { \
-			if command -v expect >/dev/null 2>&1; then \
-				expect -c ' \
-					set timeout 600; \
-					spawn cargo make clean-setup; \
-					expect { \
-						"Store is running on " { \
-							puts "\n=== Setup completed successfully! ==="; \
-							kill [exp_pid]; \
-							exit 0 \
-						} \
-						"Address already in use" { \
-							puts "\n=== Port conflict, setup complete ==="; \
-							kill [exp_pid]; \
-							exit 0 \
-						} \
-						timeout { \
-							puts "\n=== Timeout (600s) - killing process ==="; \
-							kill [exp_pid]; \
-							exit 1 \
-						} \
-					}'; \
-			else \
-				timeout 600 cargo make clean-setup || true; \
-			fi; \
-		}; \
-	else \
+	@# Check if cargo-make is installed
+	@if ! command -v cargo >/dev/null 2>&1; then \
+		echo "❌ Cargo not found. Please run 'make install' first."; \
+		exit 1; \
+	fi
+	@export PATH="$$HOME/.cargo/bin:$$PATH"; \
+	if ! cargo make --version >/dev/null 2>&1; then \
+		echo "❌ cargo-make not found. Please run 'make install' first."; \
+		exit 1; \
+	fi
+	@cd bin/store && export PATH="$$HOME/.cargo/bin:$$PATH" && { \
 		if command -v expect >/dev/null 2>&1; then \
 			expect -c ' \
 				set timeout 600; \
-				spawn /store --cleanup --init-db; \
+				spawn cargo make clean-setup; \
 				expect { \
-					"Store is running on " { \
-						puts "\n=== Setup completed successfully! ==="; \
+					"Database initialization completed successfully!" { \
+						puts "\n=== Database initialization completed successfully! ==="; \
 						kill [exp_pid]; \
 						exit 0 \
 					} \
@@ -559,9 +541,102 @@ store-clean-setup:
 					} \
 				}'; \
 		else \
-			timeout 600 /store --cleanup --init-db || true; \
+			( cargo make clean-setup > /tmp/store_clean_setup.log 2>&1 & echo $$! > /tmp/store_clean_setup.pid ); \
+			echo "⏳ Waiting for database initialization to complete..."; \
+			for i in $$(seq 1 600); do \
+				if grep -q "Database initialization completed successfully!" /tmp/store_clean_setup.log 2>/dev/null; then \
+					echo "✅ Database initialization completed successfully!"; \
+					kill $$(cat /tmp/store_clean_setup.pid) 2>/dev/null || true; \
+					wait $$(cat /tmp/store_clean_setup.pid) 2>/dev/null || true; \
+					rm -f /tmp/store_clean_setup.log /tmp/store_clean_setup.pid; \
+					exit 0; \
+				fi; \
+				if grep -q "Address already in use" /tmp/store_clean_setup.log 2>/dev/null; then \
+					echo "⚠️  Address already in use, setup considered complete."; \
+					kill $$(cat /tmp/store_clean_setup.pid) 2>/dev/null || true; \
+					wait $$(cat /tmp/store_clean_setup.pid) 2>/dev/null || true; \
+					rm -f /tmp/store_clean_setup.log /tmp/store_clean_setup.pid; \
+					exit 0; \
+				fi; \
+				sleep 1; \
+			done; \
+			echo "⌛ Timeout (600s) without completion log. Stopping process..."; \
+			kill $$(cat /tmp/store_clean_setup.pid) 2>/dev/null || true; \
+			wait $$(cat /tmp/store_clean_setup.pid) 2>/dev/null || true; \
+			rm -f /tmp/store_clean_setup.log /tmp/store_clean_setup.pid; \
+			exit 1; \
 		fi; \
-	fi
+	}
+
+# Store clean setup for the database
+db-clean-setup:
+	@echo "🧹 Running DB clean setup via Diesel + store initializers (no psql)..."
+	@set -e; \
+	# Load environment from .env-store if present
+	if [ -f ".env-store" ]; then \
+		export $$(grep -E '^(DATABASE_URL|POSTGRES_USER|POSTGRES_PASSWORD|POSTGRES_DB|POSTGRES_HOST|POSTGRES_PORT|CLEANUP_PASSWORD)=' .env-store | sed -E 's/[[:space:]]+#.*$$//' | tr -d '\r'); \
+	fi; \
+	# Ensure Docker services (timescaledb, redis) are up if docker-compose is available
+	if command -v docker >/dev/null 2>&1 && command -v docker-compose >/dev/null 2>&1 && [ -f "bin/store/docker-compose.yml" ]; then \
+		echo "🐳 Ensuring timescaledb and redis are running..."; \
+		docker-compose -f bin/store/docker-compose.yml up -d timescaledb redis || true; \
+		sleep 3; \
+	fi; \
+	# Run Diesel migrations (uses DATABASE_URL)
+	if [ -z "$$DATABASE_URL" ]; then \
+		if [ -n "$$POSTGRES_USER" ] && [ -n "$$POSTGRES_PASSWORD" ] && [ -n "$$POSTGRES_DB" ] && [ -n "$$POSTGRES_HOST" ] && [ -n "$$POSTGRES_PORT" ]; then \
+			DATABASE_URL="postgres://$$POSTGRES_USER:$$POSTGRES_PASSWORD@$$POSTGRES_HOST:$$POSTGRES_PORT/$$POSTGRES_DB"; \
+		else \
+			DATABASE_URL="postgres://postgres:admin@localhost:5440/store"; \
+		fi; \
+	fi; \
+	echo "🔗 Using DATABASE_URL=$$DATABASE_URL"; \
+	# Run cleanup + migrations via store (no psql; migrations via Diesel)
+	if [ -x "bin/store/target/release/store" ]; then \
+		( cd bin/store && DATABASE_URL="$$DATABASE_URL" printf "%s\n" "$$CLEANUP_PASSWORD" | ./target/release/store --cleanup > /tmp/store_cleanup.log 2>&1 & echo $$! > /tmp/store_cleanup.pid ); \
+	else \
+		( cd bin/store && DATABASE_URL="$$DATABASE_URL" printf "%s\n" "$$CLEANUP_PASSWORD" | cargo run -- --cleanup > /tmp/store_cleanup.log 2>&1 & echo $$! > /tmp/store_cleanup.pid ); \
+	fi; \
+	echo "⏳ Waiting for Database migrations to complete..."; \
+	for i in $$(seq 1 600); do \
+		if grep -q "Database migrations completed successfully!" /tmp/store_cleanup.log 2>/dev/null; then \
+			echo "✅ Database migrations completed successfully!"; \
+			kill $$(cat /tmp/store_cleanup.pid) 2>/dev/null || true; \
+			wait $$(cat /tmp/store_cleanup.pid) 2>/dev/null || true; \
+			rm -f /tmp/store_cleanup.log /tmp/store_cleanup.pid; \
+			break; \
+		fi; \
+		if grep -q "Incorrect password" /tmp/store_cleanup.log 2>/dev/null; then \
+			echo "❌ Cleanup password incorrect. Aborting."; \
+			kill $$(cat /tmp/store_cleanup.pid) 2>/dev/null || true; \
+			wait $$(cat /tmp/store_cleanup.pid) 2>/dev/null || true; \
+			rm -f /tmp/store_cleanup.log /tmp/store_cleanup.pid; \
+			exit 1; \
+		fi; \
+		sleep 1; \
+	done; \
+	# Run all initializers via store (binary or cargo), stop when initialization completes
+	if [ -x "bin/store/target/release/store" ]; then \
+		( cd bin/store && DATABASE_URL="$$DATABASE_URL" ./target/release/store --init-db > /tmp/store_init_all.log 2>&1 & echo $$! > /tmp/store_init_all.pid ); \
+	else \
+		( cd bin/store && DATABASE_URL="$$DATABASE_URL" cargo run -- --init-db > /tmp/store_init_all.log 2>&1 & echo $$! > /tmp/store_init_all.pid ); \
+	fi; \
+	echo "⏳ Waiting for Database initialization to complete..."; \
+	for i in $$(seq 1 600); do \
+		if grep -q "Database initialization completed successfully!" /tmp/store_init_all.log 2>/dev/null; then \
+			echo "✅ Database initialization completed successfully!"; \
+			kill $$(cat /tmp/store_init_all.pid) 2>/dev/null || true; \
+			wait $$(cat /tmp/store_init_all.pid) 2>/dev/null || true; \
+			rm -f /tmp/store_init_all.log /tmp/store_init_all.pid; \
+			exit 0; \
+		fi; \
+		sleep 1; \
+	done; \
+	echo "⌛ Timeout (600s) waiting for initialization. Stopping process..."; \
+	kill $$(cat /tmp/store_init_all.pid) 2>/dev/null || true; \
+	wait $$(cat /tmp/store_init_all.pid) 2>/dev/null || true; \
+	rm -f /tmp/store_init_all.log /tmp/store_init_all.pid; \
+	exit 1
 
 # Run the store in watch mode
 store-watch:

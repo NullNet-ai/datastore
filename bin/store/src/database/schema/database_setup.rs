@@ -55,10 +55,13 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     // Step 1: Run cleanup if requested
     if flags.run_cleanup {
         info!("Step 1: Database cleanup requested...");
+
         let cleanup_path = exe_base
             .as_ref()
             .map(|b| b.join(paths::database::cleanup_sql_file()))
-            .unwrap_or_else(|| Path::new(&current_dir).join(paths::database::cleanup_sql_file()));
+            .unwrap_or_else(|| {
+                Path::new(&current_dir).join(paths::database::cleanup_sql_file())
+            });
         let cleanup_sql = std::fs::read_to_string(&cleanup_path)
             .unwrap_or_else(|_| paths::database::cleanup_sql_content().to_string());
 
