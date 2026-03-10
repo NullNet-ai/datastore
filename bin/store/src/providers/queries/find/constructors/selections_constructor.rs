@@ -281,14 +281,6 @@ impl SelectionsConstructor {
         }
 
         for field in fields {
-            // Commented out to not ignore concatenated fields in return
-            // if concatenated_field_names.contains(field)
-            //     || concatenated_source_fields.contains(field)
-            //     || aliased_entities_for_table.contains(field)
-            //     || all_aliased_entities.contains(field)
-            // {
-            //     continue;
-            // }
 
             let with_alias = field.ends_with("_date")
                 || field.ends_with("_time")
@@ -305,18 +297,11 @@ impl SelectionsConstructor {
         }
 
         for concat_field in request_body.get_concatenate_fields() {
-            let applies_to_table = concat_field
+            let should_include = concat_field
                 .aliased_entity
                 .as_deref()
-                .map(|a| a == table)
-                .unwrap_or(false)
-                || concat_field.entity == table;
-            let requested = fields.iter().any(|f| f == &concat_field.field_name);
-            // Auto-inject concatenated fields when aliased_entity matches the table, even if not explicitly requested
-            let should_include = applies_to_table
-                && (requested
-                    || concat_field.aliased_entity.as_deref() == Some(table)
-                    || concat_field.entity == table);
+                .map_or(concat_field.entity == table, |a| a == table);
+            // If aliased_entity is equal to main table, or if it's undefined, entity should be equal to the main table.
             if should_include {
                 let concatenated_expression = concat_field
                     .fields
