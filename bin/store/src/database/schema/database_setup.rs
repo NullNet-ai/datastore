@@ -3,9 +3,8 @@ use crate::constants::paths;
 use crate::database::db::create_connection;
 use crate::initializers::system_initialization::init::initialize;
 use crate::initializers::system_initialization::structs::EInitializer;
-use log::{error, info, warn};
+use log::{error, info};
 use std::env;
-use std::io::{self, Write};
 use std::path::Path;
 use std::process::Command;
 use tokio_postgres::Client;
@@ -57,37 +56,18 @@ pub async fn setup_database(flags: DatabaseSetupFlags) -> Result<(), Box<dyn std
     if flags.run_cleanup {
         info!("Step 1: Database cleanup requested...");
 
-        // Get the expected password from environment variable
-        let expected_password = &config.cleanup_password;
+        let cleanup_path = exe_base
+            .as_ref()
+            .map(|b| b.join(paths::database::cleanup_sql_file()))
+            .unwrap_or_else(|| Path::new(&current_dir).join(paths::database::cleanup_sql_file()));
+        let cleanup_sql = std::fs::read_to_string(&cleanup_path)
+            .unwrap_or_else(|_| paths::database::cleanup_sql_content().to_string());
 
-        // Prompt for password
-        print!("Enter password for database cleanup: ");
-        io::stdout().flush()?;
-
-        // Read password securely
-        let entered_password = rpassword::read_password()?;
-
-        if entered_password == *expected_password {
-            info!("Password correct. Running database cleanup script...");
-
-            let cleanup_path = exe_base
-                .as_ref()
-                .map(|b| b.join(paths::database::cleanup_sql_file()))
-                .unwrap_or_else(|| {
-                    Path::new(&current_dir).join(paths::database::cleanup_sql_file())
-                });
-            let cleanup_sql = std::fs::read_to_string(&cleanup_path)
-                .unwrap_or_else(|_| paths::database::cleanup_sql_content().to_string());
-
-            if let Err(e) = execute_sql_script(&db_client, &cleanup_sql).await {
-                return Err(format!("Database cleanup failed: {}", e).into());
-            }
-
-            info!("Database cleanup completed successfully!");
-        } else {
-            warn!("Incorrect password. Skipping database cleanup.");
-            return Err("Cleanup password incorrect".into());
+        if let Err(e) = execute_sql_script(&db_client, &cleanup_sql).await {
+            return Err(format!("Database cleanup failed: {}", e).into());
         }
+
+        info!("Database cleanup completed successfully!");
     }
 
     // Step 2: Run migrations if requested

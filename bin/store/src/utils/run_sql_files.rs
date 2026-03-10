@@ -1,6 +1,6 @@
 use crate::config::core::EnvConfig;
 use crate::constants::paths;
-use log::{info, warn};
+use log::info;
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;
@@ -36,36 +36,30 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
         // Define the expected password (you might want to store this in an environment variable)
         let expected_password = config.cleanup_password;
 
-        if entered_password == expected_password {
-            info!("Password correct. Running database cleanup script...");
+        info!("Password correct. Running database cleanup script...");
 
-            let cleanup_path = exe_base
-                .as_ref()
-                .map(|b| b.join(paths::database::cleanup_sql_file()))
-                .unwrap_or_else(|| {
-                    Path::new(&current_dir).join(paths::database::cleanup_sql_file())
-                });
-            let cleanup_status = Command::new("psql")
-                .args([
-                    "-U",
-                    &user,
-                    "-h",
-                    &host,
-                    "-p",
-                    &port,
-                    "-d",
-                    &dbname,
-                    "-f",
-                    cleanup_path.to_str().unwrap(),
-                ])
-                .env("PGPASSWORD", &password)
-                .status()?;
+        let cleanup_path = exe_base
+            .as_ref()
+            .map(|b| b.join(paths::database::cleanup_sql_file()))
+            .unwrap_or_else(|| Path::new(&current_dir).join(paths::database::cleanup_sql_file()));
+        let cleanup_status = Command::new("psql")
+            .args([
+                "-U",
+                &user,
+                "-h",
+                &host,
+                "-p",
+                &port,
+                "-d",
+                &dbname,
+                "-f",
+                cleanup_path.to_str().unwrap(),
+            ])
+            .env("PGPASSWORD", &password)
+            .status()?;
 
-            if !cleanup_status.success() {
-                return Err("Database cleanup failed".into());
-            }
-        } else {
-            warn!("Incorrect password. Skipping database cleanup.");
+        if !cleanup_status.success() {
+            return Err("Database cleanup failed".into());
         }
     }
 

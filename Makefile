@@ -507,45 +507,15 @@ counter-service-test-all: redis-flush counter-service-test counter-service-test-
 
 # Run the store clean setup
 store-clean-setup:
-	@echo "🧹 Starting store clean setup..."
-	@# Check if cargo-make is installed
+	@echo "🧹 Starting store clean setup (--init-db)..."
+	@# Ensure cargo is installed
 	@if ! command -v cargo >/dev/null 2>&1; then \
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
 	fi
-	@export PATH="$$HOME/.cargo/bin:$$PATH"; \
-	if ! cargo make --version >/dev/null 2>&1; then \
-		echo "❌ cargo-make not found. Please run 'make install' first."; \
-		exit 1; \
-	fi
-	@cd bin/store && export PATH="$$HOME/.cargo/bin:$$PATH" && { \
-		if command -v expect >/dev/null 2>&1; then \
-			expect -c ' \
-				set timeout 600; \
-				spawn cargo make clean-setup; \
-				expect "Enter password for database cleanup:"; \
-				send "admin\r"; \
-				expect { \
-					"Store is running on " { \
-						puts "\n=== Setup completed successfully! ==="; \
-						kill [exp_pid]; \
-						exit 0 \
-					} \
-					"Address already in use" { \
-						puts "\n=== Port conflict, setup complete ==="; \
-						kill [exp_pid]; \
-						exit 0 \
-					} \
-					timeout { \
-						puts "\n=== Timeout (600s) - killing process ==="; \
-						kill [exp_pid]; \
-						exit 1 \
-					} \
-				}'; \
-		else \
-			printf "admin\n" | timeout 600 cargo make clean-setup || true; \
-		fi; \
-	}
+	make db-migrate-up
+	@# Run the store with --init-db to trigger initialization branch in main.rs:98
+	@cd bin/store && RUST_LOG=info cargo run -- --init-db
 
 # Run the store in watch mode
 store-watch:

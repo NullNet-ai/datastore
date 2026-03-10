@@ -8,44 +8,125 @@ services:
     image: timescale/timescaledb:latest-pg15
     container_name: timescaledb
     ports:
-      - "5440:5432"
+      - "0.0.0.0:5440:5432"
     networks:
       - internal
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
       POSTGRES_DB: postgres
+    volumes:
+      - timescaledb_data:/var/lib/postgresql/data
     restart: always
-
   redis:
     image: redis:7
     container_name: redis
     ports:
-      - "6390:6379" # Host:Container mapping
+      - "0.0.0.0:6390:6379" # Host:Container mapping
     networks:
       - internal
+    volumes:
+      - redis_data:/data
     restart: unless-stopped
-
-  # Main store application
-  store:
+  initializer:
     build:
       context: .
-      dockerfile: Dockerfile
-    container_name: crdt-store
+      dockerfile: bin/store/dockerfile.init
+    platform: linux/arm64
+    container_name: store-initializer
+    working_dir: /usr/src/crdt-workspace
+    env_file:
+      - .env-store
+    depends_on:
+      - timescaledb
+      - redis
+    networks:
+      - internal
+    restart: "no"
+    profiles:
+      - init
+  # Sync Server
+  sync-server:
+    build:
+      context: .
+      dockerfile: bin/server/Dockerfile
+    platform: linux/arm64
+    container_name: crdt-sync-server
+    env_file:
+      - .env-sync-server
+    ports:
+      - "0.0.0.0:3002:3002"
+    networks:
+      - internal
+    deploy:
+      replicas: 0
+  # migration:
+  #   image: registry.dnamicro.com/skyll-migration-service:qa-6243
+  #   container_name: migration
+  #   environment:
+  #     MIGRATE_FROM_DATABASE_URL: "postgresql://admin:8FuoryAgBQMzz5MFETQc@pg.platform.dnaqa.net:5434/skyll-qa"
+  #     MIGRATE_TO_DATABASE_URL: "postgres://postgres:admin@timescaledb:5432/skyll-migration"
+  #     # Target store API (write to via create route)
+  #     MIGRATE_TO_STORE_URL: http://storeskyll:5000
+  #     # Store login (same as Login route: POST /api/organizations/auth?app_id: portal)
+  #     MIGRATE_STORE_ACCOUNT_ID: admin@dnamicro.com
+  #     MIGRATE_STORE_ACCOUNT_SECRET: ch@ng3m3Pl3@s3!!
+  #     MIGRATE_STORE_ROOT_ACCOUNT_ID: root
+  #     MIGRATE_STORE_ROOT_ACCOUNT_SECRET: pl3@s3ch@ng3m3!!
+  #     # MIGRATE_METRICS_PORT: 9090
+  #     # MIGRATE_TO_DATABASE_URL: "postgres://admin:admin@localhost:5433/skyll"
+  #     MIGRATE_METRICS_PORT: 9090
+  #     MIGRATE_BATCH_SIZE: 100
+  #     MIGRATE_CONCURRENT: 50
+  #     JWT_SECRET: Ch@ng3m3Pl3@s3!!
+  #   ports:
+  #     - "0.0.0.0:9090:9090"
+  #   networks:
+  #     - internal
+  #   deploy:
+  #     replicas: 0
+  # Counter Service
+  # NOTE: Run this in private profile
+  # Login to private registry
+  # docker login registry.dnamicro.com
+  # docker compose --profile private up -d rust-ctr-svc
+  rust-ctr-svc:
+    image: registry.dnamicro.com/skyll-counter-service:qa-6246
+    container_name: counter-service
+    profiles:
+      - private
+    pull_policy: if_not_present
+    environment:
+      # Redis connection (used by deadpool-redis; also for make redis-flush)
+      REDIS_URL: redis://redis:6379/5
+      # gRPC listen address (host:port)
+      CODE_SERVICE_GRPC_LISTEN: 0.0.0.0:50051
+      # HTTP listen address for POST /migrate (host:port)
+      CODE_SERVICE_HTTP_LISTEN: 0.0.0.0:5006
+      # Log level (e.g. info, debug)
+      RUST_LOG: debug
+    ports:
+      - "0.0.0.0:50051:50051"
+      - "0.0.0.0:5006:5006"
+    networks:
+      - internal
+  # Main store application
+  storeskyll:
+    build:
+      context: .
+      dockerfile: dockerfile
+    platform: linux/arm64
+    container_name: crdt-store-skyll
     depends_on:
       - timescaledb
       - redis
     env_file:
-      - ../../.env-store
-    environment:
-      REDIS_CONNECTION: "redis://host.docker.internal:6390/0"
-      DATABASE_URL: "postgres://postgres:admin@host.docker.internal:5440/postgres"
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "admin"
-      POSTGRES_DB: "postgres"
-      POSTGRES_HOST: "host.docker.internal"
-      POSTGRES_PORT: "5440"
+      - .env-store
     ports:
-      - "5000:5000"
+      - "0.0.0.0:5005:5005"
     networks:
       - internal
+
+volumes:
+  timescaledb_data:
+  redis_data:
