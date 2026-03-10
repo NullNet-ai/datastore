@@ -281,7 +281,7 @@ impl SelectionsConstructor {
         }
 
         for field in fields {
-            //! Commented out to not ignore concatenated fields in return
+            // Commented out to not ignore concatenated fields in return
             // if concatenated_field_names.contains(field)
             //     || concatenated_source_fields.contains(field)
             //     || aliased_entities_for_table.contains(field)
