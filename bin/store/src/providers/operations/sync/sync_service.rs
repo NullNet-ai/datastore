@@ -811,8 +811,7 @@ async fn sync(
         let flush_timeout = std::time::Duration::from_millis(FLUSH_TIMEOUT_MS);
 
         'consumer: loop {
-            let recv_result =
-                tokio::time::timeout(flush_timeout, chunk_rx.recv()).await;
+            let recv_result = tokio::time::timeout(flush_timeout, chunk_rx.recv()).await;
 
             match recv_result {
                 Ok(Some(result)) => {
@@ -835,8 +834,9 @@ async fn sync(
                             batch.len(),
                             total_applied
                         );
-                        if let Err(err_msg) =
-                            receive_messages(conn, batch).await.map_err(error_to_message)
+                        if let Err(err_msg) = receive_messages(conn, batch)
+                            .await
+                            .map_err(error_to_message)
                         {
                             consumer_error = Some(err_msg);
                             break 'consumer;
@@ -858,8 +858,9 @@ async fn sync(
                             batch.len(),
                             total_applied
                         );
-                        if let Err(err_msg) =
-                            receive_messages(conn, batch).await.map_err(error_to_message)
+                        if let Err(err_msg) = receive_messages(conn, batch)
+                            .await
+                            .map_err(error_to_message)
                         {
                             consumer_error = Some(err_msg);
                             break 'consumer;
@@ -877,13 +878,9 @@ async fn sync(
             let _ = HttpTransportDriver
                 .delete_chunks(&client_id, &chunk_opts)
                 .await;
-            if let Err(stop_err) =
-                TransactionService::stop_transaction(conn, &transaction_id).await
+            if let Err(stop_err) = TransactionService::stop_transaction(conn, &transaction_id).await
             {
-                log::warn!(
-                    "Failed to stop transaction after chunk error: {}",
-                    stop_err
-                );
+                log::warn!("Failed to stop transaction after chunk error: {}", stop_err);
             }
             return Err(Box::new(std::io::Error::new(
                 std::io::ErrorKind::Other,
@@ -899,8 +896,9 @@ async fn sync(
                 pending.len(),
                 total_applied
             );
-            if let Err(err_msg) =
-                receive_messages(conn, pending).await.map_err(error_to_message)
+            if let Err(err_msg) = receive_messages(conn, pending)
+                .await
+                .map_err(error_to_message)
             {
                 let _ = HttpTransportDriver
                     .delete_chunks(&client_id, &chunk_opts)
