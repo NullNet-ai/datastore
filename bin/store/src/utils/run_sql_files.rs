@@ -1,6 +1,6 @@
 use crate::config::core::EnvConfig;
 use crate::constants::paths;
-use log::{info};
+use log::info;
 use std::env;
 use std::io::{self, Write};
 use std::path::Path;
@@ -38,31 +38,29 @@ pub fn run_sql_files(cleanup: bool) -> Result<(), Box<dyn std::error::Error>> {
 
         info!("Password correct. Running database cleanup script...");
 
-            let cleanup_path = exe_base
-                .as_ref()
-                .map(|b| b.join(paths::database::cleanup_sql_file()))
-                .unwrap_or_else(|| {
-                    Path::new(&current_dir).join(paths::database::cleanup_sql_file())
-                });
-            let cleanup_status = Command::new("psql")
-                .args([
-                    "-U",
-                    &user,
-                    "-h",
-                    &host,
-                    "-p",
-                    &port,
-                    "-d",
-                    &dbname,
-                    "-f",
-                    cleanup_path.to_str().unwrap(),
-                ])
-                .env("PGPASSWORD", &password)
-                .status()?;
+        let cleanup_path = exe_base
+            .as_ref()
+            .map(|b| b.join(paths::database::cleanup_sql_file()))
+            .unwrap_or_else(|| Path::new(&current_dir).join(paths::database::cleanup_sql_file()));
+        let cleanup_status = Command::new("psql")
+            .args([
+                "-U",
+                &user,
+                "-h",
+                &host,
+                "-p",
+                &port,
+                "-d",
+                &dbname,
+                "-f",
+                cleanup_path.to_str().unwrap(),
+            ])
+            .env("PGPASSWORD", &password)
+            .status()?;
 
-            if !cleanup_status.success() {
-                return Err("Database cleanup failed".into());
-            }
+        if !cleanup_status.success() {
+            return Err("Database cleanup failed".into());
+        }
     }
 
     info!("Running database initialization script...");
