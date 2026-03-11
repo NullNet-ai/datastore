@@ -513,7 +513,7 @@ store-clean-setup:
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
 	fi; \
-	cd bin/store && RUST_LOG=info cargo run -- --init-db
+	cd bin/store && RUST_LOG=info cargo run -- --cleanup --init-db
 
 # Run the store in watch mode
 store-watch:

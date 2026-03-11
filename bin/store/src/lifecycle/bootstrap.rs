@@ -1,4 +1,3 @@
-use crate::utils::helpers::parse_command_args;
 use crate::{
     database::schema::{self, database_setup::DatabaseSetupFlags},
     initializers::system_initialization::{init::initialize, structs::EInitializer},
@@ -6,68 +5,51 @@ use crate::{
         operations::{
             batch_sync::{background_sync, batch_sync::BatchSyncService},
             sync::{
-                message_manager::{create_message_channel, SENDER},
                 transactions::{
                     queue_service::QueueService, transaction_service::TransactionService,
                 },
             },
         },
-        storage::cache::{cache, cache_factory::CacheType, CacheConfig},
     },
 };
 use dotenv::dotenv;
 use env_logger::Env;
 use log::{error, info};
-use std::{env, sync::Arc, time::Duration};
+use crate::config::core::EnvConfig;
+use crate::providers::storage::cache::CacheConfig;
+use std::sync::Arc;
+use crate::providers::operations::sync::message_manager::{create_message_channel, SENDER};
 
 pub async fn exec() -> std::io::Result<()> {
     dotenv().ok();
-
-    let command_args = parse_command_args();
-
     env_logger::Builder::from_env(Env::default().default_filter_or("info"))
         .filter_module("tokio_postgres", log::LevelFilter::Info)
         .init();
-    let cache_type_str = env::var("CACHE_TYPE").unwrap_or_else(|_| "inmemory".to_string());
-    let cache_type = match cache_type_str.as_str() {
-        "redis" => CacheType::Redis,
-        _ => CacheType::InMemory,
-    };
-    let redis_connection = env::var("REDIS_CONNECTION").ok();
-    let ttl = env::var("CACHE_TTL")
-        .ok()
-        .and_then(|ttl_str| ttl_str.parse::<u64>().ok())
-        .map(Duration::from_secs);
 
-    CacheConfig::init(cache_type, redis_connection, ttl);
-    log::info!(
-        "Initialized cache with type: {:?}, TTL: {:?}",
-        cache_type,
-        ttl
+    let env_config = EnvConfig::default();
+    CacheConfig::init(
+        env_config.cache_type.clone(),
+        env_config.redis_connection.clone(),
+        env_config.ttl,
     );
 
-    let _ = cache.cache_type();
-
-    let cleanup = command_args.cleanup;
-    let init_db = command_args.init_db;
-    if cleanup {
-        info!("Running cleanup operation only...");
-        match schema::database_setup::setup_database(DatabaseSetupFlags {
-            run_cleanup: true,
-            run_migrations: true,
-            initialize_services: false,
-            run_init_sql: false,
-        })
-        .await
-        {
-            Ok(_) => {
-                info!("Database cleanup completed successfully!");
-            }
-            Err(e) => {
-                error!("Error during database cleanup: {}", e);
-            }
+    info!("Running cleanup operation only...");
+    match schema::database_setup::setup_database(DatabaseSetupFlags {
+        run_cleanup: true,
+        run_migrations: true,
+        initialize_services: false,
+        run_init_sql: false,
+    })
+    .await
+    {
+        Ok(_) => {
+            info!("Database cleanup and migrations completed successfully!");
+        }
+        Err(e) => {
+            error!("Error during database cleanup and migrations: {}", e);
         }
     }
+
     if let Err(e) = initialize(EInitializer::BACKGROUND_SERVICES_CONFIG, None).await {
         log::error!("Failed to initialize background services: {}", e);
     } else {
@@ -91,11 +73,6 @@ pub async fn exec() -> std::io::Result<()> {
         }
     });
 
-    // Initialize the message sender
-    let sender = create_message_channel();
-    let arc_sender = Arc::new(sender);
-    SENDER.set(arc_sender).expect("Failed to initialize sender");
-
     // init batch sync
     if let Err(e) = BatchSyncService::init().await {
         log::error!("Failed to initialize queue: {}", e);
@@ -109,24 +86,26 @@ pub async fn exec() -> std::io::Result<()> {
         info!("Queue initialized successfully");
     }
 
-    if init_db {
-        info!("Running cleanup operation only...");
-        match schema::database_setup::setup_database(DatabaseSetupFlags {
-            run_cleanup: false,
-            run_migrations: false,
-            initialize_services: true,
-            run_init_sql: true,
-        })
-        .await
-        {
-            Ok(_) => {
-                info!("Database cleanup completed successfully!");
-            }
-            Err(e) => {
-                error!("Error during database cleanup: {}", e);
-            }
+    let sender = create_message_channel();
+    let arc_sender = Arc::new(sender);
+    let _ = SENDER.set(arc_sender);
+
+    info!("Running initialized data operation only...");
+    match schema::database_setup::setup_database(DatabaseSetupFlags {
+        run_cleanup: false,
+        run_migrations: false,
+        initialize_services: true,
+        run_init_sql: true,
+    })
+    .await
+    {
+        Ok(_) => {
+            info!("Database initialized data completed successfully!");
+        }
+        Err(e) => {
+            error!("Error during database initialized data: {}", e);
         }
     }
-
+    info!("Cleanup operation completed successfully!");
     Ok(())
 }
