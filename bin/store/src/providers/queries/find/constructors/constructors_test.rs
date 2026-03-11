@@ -588,7 +588,7 @@ mod tests {
         ]);
 
         let payload = serde_json::json!({
-            "pluck": ["id", "full_name"],
+            "pluck": ["id"],
             "concatenate_fields": expected_concatenated_fields
         });
 

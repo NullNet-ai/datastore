@@ -53,30 +53,6 @@ crdt-workspace/
 └── scripts/                       # Development and deployment scripts
 ```
 
-### Key Directories Explained
-
-- **`bin/store/`** - The main CRDT store implementation with gRPC API
-- **`bin/server/`** - Additional server functionality
-- **`libs/`** - Reusable libraries (HLC and Merkle tree implementations)
-- **`bin/store/src/generated/`** - Auto-generated code from schema and proto definitions
-- **`bin/store/src/database/schema/tables/`** - Individual table schema definitions
-- **`bin/store/migrations/`** - Database migration files
-- **`bin/store/src/builders/generator/`** - Code generation tools and scripts
-- **`bin/store/src/constants/paths.rs`** - Centralized path constants for consistency
-- **`bin/store/src/lifecycle/`** - Application lifecycle management system
-- **`bin/store/src/config/`** - Configuration management system
-- **`bin/store/src/config/core.rs`** - Centralized environment configuration (EnvConfig)
-
-### Path Management
-
-The project uses centralized path constants defined in `bin/store/src/constants/paths.rs` to ensure consistency across all components. This file contains:
-
-- **Database paths** - Schema files, models, migrations, and table definitions
-- **Generated code paths** - Proto files, gRPC controllers, and auto-generated models
-- **Build script paths** - Code generation and build automation scripts
-
-When adding new features or modifying existing ones, always reference these constants rather than hardcoding paths to maintain consistency and ease of maintenance.
-
 ### Lifecycle Management System
 
 The application uses a comprehensive lifecycle management system located in `bin/store/src/lifecycle/` that orchestrates all phases of the application's execution:
@@ -124,27 +100,6 @@ graph TD
     end
 ```
 
-### Configuration Management
-
-The application uses centralized configuration management through the `EnvConfig` structure in `bin/store/src/config/core.rs`:
-
-- **Centralized Environment Variables** - All environment variable access is centralized through `EnvConfig`
-- **Type Safety** - Configuration values are parsed and validated at startup
-- **Consistent Access** - All components receive configuration through dependency injection
-- **Easy Testing** - Configuration can be easily mocked for testing purposes
-
-#### Key Configuration Fields
-
-- `host` - Application host address
-- `port` - HTTP server port
-- `grpc_port` - gRPC server port
-- `grpc_url` - gRPC server URL
-- `socket_host` - WebSocket host
-- `socket_port` - WebSocket port
-- `cache_type` - Cache implementation type (Redis/In-Memory)
-- `redis_connection` - Redis connection string (optional)
-- `ttl` - Cache time-to-live duration (optional)
-
 ## Prerequisites
 
 Before running the installation, ensure you have the following system requirements:
@@ -165,57 +120,18 @@ Before running the installation, ensure you have the following system requiremen
 
 ### Rust Version Requirement
 
-- **Rust 1.86.0** - Specific version required for compatibility
+- **Rust 1.91.0** - Specific version required for compatibility
   - The installer will automatically install and verify this version
   - If you have a different version installed, the installer will prompt you to update
-  - Manual installation: `rustup install 1.86.0 && rustup default 1.86.0`
-
-### Database Requirements
-
-- **TimescaleDB** - Time-series database built on PostgreSQL (version 12 or higher recommended)
-  - On macOS: PostgreSQL will be installed via Homebrew during `make install`, TimescaleDB extension needs to be added separately
-  - On Linux: PostgreSQL will be installed via package manager during `make install`, TimescaleDB extension needs to be added separately
-  - On Windows: PostgreSQL will be installed via Chocolatey during `make install`, TimescaleDB extension needs to be added separately
-  - Manual installation: Ensure PostgreSQL service is running with TimescaleDB extension enabled
-  - Default connection: `postgresql://localhost:5432`
-  - TimescaleDB installation guide: https://docs.timescale.com/install/
+  - Manual installation: `rustup install 1.91.0 && rustup default 1.91.0`
 
 ### Docker Compose
 
-- **Docker Compose file** - Located at `bin/store/docker-compose.yml`
+- **Docker Compose file** - Located at `docker-compose.yml`
 - **Services** - Provides TimescaleDB and Redis services for development
 - **Usage** - Use `make docker-compose-up` to start services
 - **Prerequisites** - Docker Desktop must be installed and running
 - **Error Handling** - Automatic Docker daemon checks with clear error messages
-
-#### Troubleshooting Docker Issues
-
-**Docker daemon not running:**
-
-- **macOS/Windows**: Start Docker Desktop application
-- **Linux**: Run `sudo systemctl start docker` or `sudo service docker start`
-
-**Container name conflicts:**
-
-- Remove existing containers: `docker rm redis timescaledb`
-- Or use: `make docker-compose-down` followed by `make docker-compose-up`
-
-**Permission issues:**
-
-- **Linux**: Add user to docker group: `sudo usermod -aG docker $USER`
-- **macOS/Windows**: Ensure Docker Desktop has proper permissions
-
-### Network Requirements
-
-- Internet connection for downloading Rust toolchain and dependencies
-- Access to crates.io and GitHub for package downloads
-
-### Windows-Specific Requirements
-
-- **PowerShell** - Required for running Windows installation scripts
-- **Administrator privileges** - May be required for Chocolatey installation
-- **Windows 10/11** - Recommended for best compatibility
-- **.NET Framework** - Will be installed automatically with Chocolatey if needed
 
 ## Quick Setup
 
@@ -243,7 +159,7 @@ git remote add origin <your-repository-url>
 git remote -v
 ```
 
-### Step 3: Environment Configuration
+### Step 3: Environment Configuration ( Only run this for development purposes )
 
 Set up your environment variables by copying the sample file:
 
@@ -253,7 +169,9 @@ cp .env-sample .env
 
 Then edit the `.env` file to configure your specific settings (database URLs, API keys, etc.).
 
-### Step 4: One-Command Installation
+NOTE: Do not revise .env-store and .env-sync-server files. They are used for internal purposes.
+
+### Step 4: One-Command Installation ( Only run this for development purposes )
 
 🚀 **After setting up the environment, install the entire project with just one command:**
 
@@ -266,7 +184,7 @@ make install
 This will automatically:
 
 - **Set up environment** by copying `.env-sample` to `.env`
-- **Install Rust 1.86.0** (rustc, cargo, rustup) with version verification
+- **Install Rust 1.91.0** (rustc, cargo, rustup) with version verification
 - **Install PostgreSQL** database server (version 14 on Windows, latest on macOS/Linux) - TimescaleDB extension needs to be added separately
 - **Install Cargo tools**: cargo-make, cargo-watch, diesel_cli
 - **Install Protocol Buffers** compiler
@@ -286,7 +204,7 @@ make verify-install
 
 This command will check:
 
-- Rust 1.86.0 installation and version
+- Rust 1.91.0 installation and version
 - PostgreSQL server availability (TimescaleDB extension should be installed separately)
 - Required Cargo tools (cargo-make, cargo-watch, diesel_cli)
 - Platform-specific dependencies
@@ -297,53 +215,12 @@ This command will check:
 
 ```bash
 # clean up all the tables, and records in the timescale db
+# run this command only once, or when you want to reset the db
 make store-clean-setup
-
-# to migrate the sql files to the timescale db
-make db-migrate-up
 
 # run the store
 make store
 ```
-
-## Manual Prerequisites (if not using installer)
-
-### Build Tools
-
-- **make** - Build automation tool
-  - macOS: `xcode-select --install` or `brew install make`
-  - Ubuntu/Debian: `sudo apt-get install build-essential`
-  - CentOS/RHEL: `sudo yum groupinstall "Development Tools"`
-  - Arch Linux: `sudo pacman -S base-devel`
-  - Windows: Install via Chocolatey `choco install make` or use WSL
-
-### Rust Toolchain
-
-- **Rust 1.86.0** (specific version required for compatibility)
-
-  ```bash
-  # Install rustup if not already installed
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-  # Install and set Rust 1.86.0 as default
-  rustup install 1.86.0
-  rustup default 1.86.0
-  ```
-
-### Database
-
-- **TimescaleDB** (PostgreSQL with TimescaleDB extension, version 12 or higher)
-  - macOS: `brew install postgresql` then add TimescaleDB extension
-  - Ubuntu/Debian: `sudo apt-get install postgresql postgresql-contrib` then add TimescaleDB extension
-  - Windows: `choco install postgresql14` then add TimescaleDB extension
-  - TimescaleDB installation: Follow the official guide at https://docs.timescale.com/install/
-
-### Cargo Tools
-
-- **cargo-make**: `cargo install cargo-make`
-- **cargo-watch**: `cargo install cargo-watch`
-- **diesel_cli**: `cargo install diesel_cli --no-default-features --features postgres`
-
 ## Getting Started (Manual Setup)
 
 1. Clone the repository:
@@ -372,19 +249,13 @@ The project includes a comprehensive Makefile with the following commands:
 ### Setup & Installation
 
 - `make install` - One-command installer for all dependencies (auto-detects macOS/Linux/Windows)
-- `make install-macos` - Install dependencies specifically for macOS with Rust 1.86.0
-- `make install-linux` - Install dependencies specifically for Linux with Rust 1.86.0
-- `make install-windows` - Install dependencies specifically for Windows with Rust 1.86.0
+- `make install-macos` - Install dependencies specifically for macOS with Rust 1.91.0
+- `make install-linux` - Install dependencies specifically for Linux with Rust 1.91.0
+- `make install-windows` - Install dependencies specifically for Windows with Rust 1.91.0
 - `make verify-install` - Verify that all required tools are installed (cross-platform)
-- `make setup-hooks` - Setup git hooks for code quality
 
 ### Development
-
-- `make dev` - Run both server and store in parallel
-- `make server` - Run the server only
-- `make store` - Run the store only
-- `make store-watch` - Run store in watch mode with debug
-- `make store-clean-setup` - Run store clean setup
+- `make store` - Run the store only and make sure all rust docker containers are up and running
 
 ### Store Generators
 
@@ -392,27 +263,12 @@ Code generation is handled by the standalone `store-generator` crate. Use these 
 
 - `make store-generator-schema` - Generate schema, migrations, and models
 - `make store-generator-proto` - Generate proto, gRPC controller, and table enum
-- `make store-generator-all` - Generate all of the above in one run
-
-### Initializer
-
-- `make store-initialize-device` - Initialize device and wait for PostgreSQL listener
-
-### Production
-
-- `make store-build` - Build store in release mode
-- `make store-prod` - Run store in production mode
 
 ### Database Management
 
 - `make db-migrate-generate NAME=migration_name` - Generate new migration
 - `make db-migrate-up` - Run database migrations
 - `make db-migrate-revert` - Revert last migration
-
-### Code Quality
-
-- `make fmt` - Format Rust code across all projects
-- `make fmt-check` - Check code formatting across all projects
 
 ### Git & Version Control
 
@@ -438,37 +294,24 @@ make help
 ```
 
 ## Development Workflow
+1. **Set up your environment**:
+   - Run `docker-compose up -d` to start TimescaleDB and Redis services   
 
-1. Create a new branch for your feature or bug fix:
+2. Create a new branch for your feature or bug fix: (branch: development)
 
    ```bash
    git checkout -b feature/feature-name
    ```
 
-2. Make your changes in the appropriate component:
-
-   - **HLC (Hybrid Logical Clock) changes** go in `libs/hlc/`
-   - **Merkle Tree changes** go in `libs/merkle/`
-   - **Main application changes** go in `bin/main/`
-   - **Server application changes** go in `bin/server/`
-   - **Store application changes** (CRDT implementation) go in `bin/store/`
+3. Make your changes in the appropriate component:
    - **Schema definitions** go in `bin/store/src/database/schema/tables/`
-   - **Generated code** is automatically created in `bin/store/src/generated/`
-   - **Lifecycle management changes** go in `bin/store/src/lifecycle/`
-   - **Configuration changes** go in `bin/store/src/structs/core.rs`
-
-3. Format your code:
-
-   ```bash
-   cargo fmt
-   ```
 
 ## Guidelines in Adding a New Schema
 
 1. Create or Update necessary files
 
    #### Creating a new table schema
-
+   - Reference: bin/store-generator/src/builders/generator/README.md
    - Create a new file in the schema tables directory:
      `bin/store/src/database/schema/tables/<table_name>.rs`
 
@@ -550,9 +393,9 @@ make help
      }
    ```
 
-2. Git add and commit the changes with a proper commit message to track the changes on the files.
+2. Git add and commit the changes with a proper commit message to track the changes on the files or Use **ckpt** for creating a checkpoint of your current changes.
 
-   **Why we need to git add and commit:**
+   **Why we need to git add and commit or use ckpt?**
 
    - **Version Control**: Track all changes made to schema files for historical reference
    - **Change Documentation**: Maintain a clear record of what was modified, when, and why
@@ -563,118 +406,55 @@ make help
    - **Debugging**: Help identify when and where issues were introduced in the schema
    - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
 
-3. Run command for schema generation.
+3. Run command for generating schema, proto, and running migrations.
 
    ```bash
    make store-generator-schema
-   ```
 
-   Or to generate everything (schema, migrations, models, proto, gRPC, table enum) in one run:
+   make store-generator-proto
 
-   ```bash
-   make store-generator-all
-   ```
-
-   Note:
-
-   - You have to enter migration name for the migration file to be created, format will be in `snake case`, better to have standard naming for your migrations files.
-   - Migrations generated will be stored in this directory: `bin/store/migrations`
-
-4. Verify generated files:
-
-   - Check the migration file in the migrations directory: `bin/store/migrations/`
-   - Check the table model file in the generated models directory: `bin/store/src/generated/models/<table_name>_model.rs`, the sorting of fields must be the same with the sorting on the schema in the generated schema file: `bin/store/src/generated/schema.rs`
-   - Check the generated schema file: `bin/store/src/generated/schema.rs`, the table schema must be added to the file.
-
-5. Run command for migration.
-
-   ```bash
    make db-migrate-up
    ```
+   Note:
 
-6. Git add and commit the changes with a proper commit messages, to track and secure the changes.
+   - You have to enter the checkpoint and migration name for the migration file to be created, format will be in `snake case`, better to have standard naming for your migrations files.
+   - Migrations generated will be stored in this directory: `bin/store/migrations`
 
-   **Why we need to git add and commit:**
-
-   - **Version Control**: Track all changes made to schema files for historical reference
-   - **Change Documentation**: Maintain a clear record of what was modified, when, and why
-   - **Rollback Capability**: Enable reverting to previous working states if issues arise
-   - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
-   - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
-   - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
-   - **Debugging**: Help identify when and where issues were introduced in the schema
-   - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
-
-7. Run command for store proto file generation (skip if you used `store-generator-all` in step 3).
-
-   ```bash
-   make store-generator-proto
-   ```
-
-8. Verify generated files:
-
-   - Check the generated table enum file: `bin/store/src/generated/table_enum.rs`
-   - Check the generated gRPC controller file: `bin/store/src/generated/grpc_controller.rs`
-   - Check the generated store.rs file: `bin/store/src/generated/store.rs`
-   - Check the generated store.proto file: `bin/store/src/generated/proto/store.proto`
-
-9. Run command to check the code.
+4. Run command to check the code.
 
    ```bash
    cargo check
    ```
 
-10. Run command to format code.
+8.  Run command to format code.
 
     ```bash
     make fmt
     ```
 
-11. Run command to check the code format.
+9.  Run command to check the code format.
 
     ```bash
     make fmt-check
     ```
 
-12. Git add and commit the changes with a proper commit message, to track and secure the changes.
+10. Git add and commit the changes with a proper commit message to track the changes on the files or Use **ckpt** for creating a checkpoint of your current changes.
 
-    **Why we need to git add and commit:**
+   **Why we need to git add and commit or use ckpt?**
 
-    - **Version Control**: Track all changes made to schema files for historical reference
-    - **Change Documentation**: Maintain a clear record of what was modified, when, and why
-    - **Rollback Capability**: Enable reverting to previous working states if issues arise
-    - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
-    - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
-    - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
-    - **Debugging**: Help identify when and where issues were introduced in the schema
-    - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
+   - **Version Control**: Track all changes made to schema files for historical reference
+   - **Change Documentation**: Maintain a clear record of what was modified, when, and why
+   - **Rollback Capability**: Enable reverting to previous working states if issues arise
+   - **Conflict Resolution**: Provide restore points when merge conflicts or errors occur
+   - **Team Collaboration**: Allow multiple developers to track and understand schema evolution
+   - **Migration Safety**: Ensure schema changes are properly versioned before running migrations
+   - **Debugging**: Help identify when and where issues were introduced in the schema
+   - **Deployment Tracking**: Maintain synchronization between code changes and database migrations
 
-13. Run command to run the store.
+11. Run command to run the store.
     ```bash
     make store
     ```
-
-## Table Deletion Process
-
-To remove a table from the store:
-
-1. **Delete the table definition** from the schema tables directory:
-   - Remove `bin/store/src/database/schema/tables/<table_name>.rs`
-
-2. **Add the table name to system_tables** so the generator skips creating controllers and `table_enum` for it:
-   - Edit `bin/store/src/database/schema/system_tables.rs`
-   - Add the table name to the `SYSTEM_TABLES` array
-
-3. **Run the store generator** (proto, gRPC controller, table enum):
-   ```bash
-   make store-generator-proto
-   ```
-
-4. **Manually delete generated artifacts**:
-   - Remove the table definition from `bin/store/src/generated/schema.rs`
-   - Remove the model file `bin/store/src/generated/models/<table_name>_model.rs`
-
-> **Note:** If the table exists in the database, create and run a migration to drop it (e.g. `DROP TABLE "<table_name>"`) before or after these steps.
 
 ## Contributing Guidelines
 
@@ -682,4 +462,3 @@ To remove a table from the store:
 2. Write clear commit messages
 3. Include tests for new functionality
 4. Update documentation as needed
-5. Make sure all tests pass before submitting PR

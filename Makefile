@@ -508,14 +508,12 @@ counter-service-test-all: redis-flush counter-service-test counter-service-test-
 # Run the store clean setup
 store-clean-setup:
 	@echo "🧹 Starting store clean setup (--init-db)..."
-	@# Ensure cargo is installed
-	@if ! command -v cargo >/dev/null 2>&1; then \
+	@export PATH="/usr/local/cargo/bin:/root/.cargo/bin:$$HOME/.cargo/bin:$$PATH"; \
+	if ! command -v cargo >/dev/null 2>&1; then \
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
-	fi
-	make db-migrate-up
-	@# Run the store with --init-db to trigger initialization branch in main.rs:98
-	@cd bin/store && RUST_LOG=info cargo run -- --init-db
+	fi; \
+	cd bin/store && RUST_LOG=info cargo run -- --init-db
 
 # Run the store in watch mode
 store-watch:
@@ -823,12 +821,12 @@ db-migrate-generate:
 # Run migrations
 db-migrate-up:
 	@echo "⬆️  Running database migrations..."
-	@# Check if diesel CLI is installed
-	@if ! command -v diesel >/dev/null 2>&1; then \
+	@export PATH="/usr/local/cargo/bin:/root/.cargo/bin:$$HOME/.cargo/bin:$$PATH"; \
+	if ! command -v diesel >/dev/null 2>&1; then \
 		echo "❌ Diesel CLI not found. Please run 'make install' first."; \
 		exit 1; \
-	fi
-	@cd bin/store && diesel migration run
+	fi; \
+	cd bin/store && diesel migration run
 
 # Revert last migration
 db-migrate-revert:
@@ -944,7 +942,7 @@ pm2-delete:
 # =============================================================================
 
 # Docker Compose file path
-DOCKER_COMPOSE_FILE := bin/store/docker-compose.yml
+DOCKER_COMPOSE_FILE := docker-compose.yml
 
 # Start TimescaleDB and Redis services using Docker Compose
 docker-compose-up:
