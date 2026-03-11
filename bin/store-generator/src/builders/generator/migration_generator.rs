@@ -303,10 +303,7 @@ impl MigrationGenerator {
                 if !first_statement {
                     sql.push_str("--> statement-breakpoint\n");
                 }
-                sql.push_str(&format!(
-                    "DROP INDEX IF EXISTS \"{}\";\n",
-                    index_name
-                ));
+                sql.push_str(&format!("DROP INDEX IF EXISTS \"{}\";\n", index_name));
                 sql.push_str("--> statement-breakpoint\n");
                 let create_sql =
                     Self::build_create_index_sql(&change.table_name, index_name, new_def)?;
@@ -426,10 +423,7 @@ impl MigrationGenerator {
                         } else {
                             format!("idx_{}_{}", change.table_name, field_name)
                         };
-                        sql.push_str(&format!(
-                            "DROP INDEX IF EXISTS \"{}\";\n",
-                            index_name
-                        ));
+                        sql.push_str(&format!("DROP INDEX IF EXISTS \"{}\";\n", index_name));
                     }
                 }
                 SchemaChangeType::ModifiedIndex => {
@@ -1181,8 +1175,7 @@ mod tests {
     /// up.sql for a ModifiedIndex must DROP the old index then CREATE the new one.
     #[test]
     fn test_modified_index_up_sql_drops_then_recreates() {
-        let old_sql =
-            "CREATE INDEX \"idx_users_email\" ON \"users\" USING btree(\"email\");";
+        let old_sql = "CREATE INDEX \"idx_users_email\" ON \"users\" USING btree(\"email\");";
         let new_def = "email,status|btree|false";
         let field_definition = format!("{}__OLDSQL__{}", new_def, old_sql);
 
@@ -1193,8 +1186,7 @@ mod tests {
             field_definition: Some(field_definition),
         }];
 
-        let up_sql =
-            MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
+        let up_sql = MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
 
         // Must DROP the old name first.
         assert!(
@@ -1230,8 +1222,7 @@ mod tests {
     /// up.sql for a unique ModifiedIndex must emit CREATE UNIQUE INDEX.
     #[test]
     fn test_modified_index_up_sql_unique() {
-        let old_sql =
-            "CREATE INDEX \"idx_accounts_code\" ON \"accounts\" USING btree(\"code\");";
+        let old_sql = "CREATE INDEX \"idx_accounts_code\" ON \"accounts\" USING btree(\"code\");";
         let new_def = "code|btree|true"; // now unique
         let field_definition = format!("{}__OLDSQL__{}", new_def, old_sql);
 
@@ -1242,8 +1233,7 @@ mod tests {
             field_definition: Some(field_definition),
         }];
 
-        let up_sql =
-            MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
+        let up_sql = MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
 
         assert!(
             up_sql.contains("CREATE UNIQUE INDEX"),
@@ -1255,8 +1245,7 @@ mod tests {
     /// down.sql for a ModifiedIndex must DROP the new index and restore the original SQL.
     #[test]
     fn test_modified_index_down_sql_restores_original() {
-        let old_sql =
-            "CREATE INDEX \"idx_users_email\" ON \"users\" USING btree(\"email\");";
+        let old_sql = "CREATE INDEX \"idx_users_email\" ON \"users\" USING btree(\"email\");";
         let new_def = "email,status|btree|false";
         let field_definition = format!("{}__OLDSQL__{}", new_def, old_sql);
 
@@ -1267,8 +1256,7 @@ mod tests {
             field_definition: Some(field_definition),
         }];
 
-        let down_sql =
-            MigrationGenerator::generate_down_sql(&changes, &[]).unwrap();
+        let down_sql = MigrationGenerator::generate_down_sql(&changes, &[]).unwrap();
 
         // Must DROP the (now-modified) index.
         assert!(
@@ -1294,8 +1282,7 @@ mod tests {
     /// down.sql must restore original SQL even when it has no trailing semicolon stored.
     #[test]
     fn test_modified_index_down_sql_appends_semicolon_if_missing() {
-        let old_sql_no_semi =
-            "CREATE INDEX \"idx_items_name\" ON \"items\" USING btree(\"name\")"; // no ;
+        let old_sql_no_semi = "CREATE INDEX \"idx_items_name\" ON \"items\" USING btree(\"name\")"; // no ;
         let field_definition = format!("name|btree|false__OLDSQL__{}", old_sql_no_semi);
 
         let changes = vec![SchemaChange {
@@ -1305,8 +1292,7 @@ mod tests {
             field_definition: Some(field_definition),
         }];
 
-        let down_sql =
-            MigrationGenerator::generate_down_sql(&changes, &[]).unwrap();
+        let down_sql = MigrationGenerator::generate_down_sql(&changes, &[]).unwrap();
 
         // The restored SQL must end with a semicolon.
         let create_line = down_sql
@@ -1362,8 +1348,7 @@ mod tests {
     /// correctly emitted in up.sql.
     #[test]
     fn test_modified_index_up_sql_with_where_clause() {
-        let old_sql =
-            "CREATE INDEX \"idx_orders_status\" ON \"orders\" USING btree(\"status\");";
+        let old_sql = "CREATE INDEX \"idx_orders_status\" ON \"orders\" USING btree(\"status\");";
         let where_json = r#"{"op":"=","column":"tombstone","value":0}"#;
         let new_def = format!("status|btree|false|{}", where_json);
         let field_definition = format!("{}__OLDSQL__{}", new_def, old_sql);
@@ -1375,8 +1360,7 @@ mod tests {
             field_definition: Some(field_definition),
         }];
 
-        let up_sql =
-            MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
+        let up_sql = MigrationGenerator::generate_up_sql(&changes, &[]).unwrap();
 
         assert!(
             up_sql.contains("WHERE"),

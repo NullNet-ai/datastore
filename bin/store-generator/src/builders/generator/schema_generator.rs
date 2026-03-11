@@ -196,8 +196,7 @@ impl SchemaGenerator {
                     // Definition changed: emit a ModifiedIndex change so the migration generator
                     // will DROP the old index and CREATE the new one.
                     let type_str = index_type.as_deref().unwrap_or("btree");
-                    let mut new_def =
-                        format!("{}|{}|{}", columns.join(","), type_str, is_unique);
+                    let mut new_def = format!("{}|{}|{}", columns.join(","), type_str, is_unique);
                     if let Some(ref w) = where_clause {
                         if let Ok(json) = serde_json::to_string(w) {
                             new_def.push_str("|");
@@ -205,8 +204,7 @@ impl SchemaGenerator {
                         }
                     }
                     // Encode: new definition + separator + original SQL (used by down.sql to restore)
-                    let field_definition =
-                        format!("{}__OLDSQL__{}", new_def, existing_sql.trim());
+                    let field_definition = format!("{}__OLDSQL__{}", new_def, existing_sql.trim());
                     changes.push(SchemaChange {
                         table_name: table_def.name.clone(),
                         change_type: SchemaChangeType::ModifiedIndex,
@@ -237,15 +235,20 @@ impl SchemaGenerator {
         }
 
         // Indexes that exist in migrations but are no longer in the table definition (renamed or removed).
-        let current_index_names: std::collections::HashSet<String> =
-            indexes.iter().map(|(name, _, _, _, _)| name.clone()).collect();
+        let current_index_names: std::collections::HashSet<String> = indexes
+            .iter()
+            .map(|(name, _, _, _, _)| name.clone())
+            .collect();
         for existing_name in Self::get_existing_index_names_for_table(&table_def.name) {
             if current_index_names.contains(&existing_name) {
                 continue;
             }
             // Skip if any current index name is "existing_name_something" (e.g. sensor vs sensor_id from system_indexes).
             // Avoids false "removed" when migrations use a shorter name and current def uses a longer one.
-            if current_index_names.iter().any(|cur| cur.starts_with(&format!("{}_", existing_name))) {
+            if current_index_names
+                .iter()
+                .any(|cur| cur.starts_with(&format!("{}_", existing_name)))
+            {
                 continue;
             }
             if let Some(existing_sql) =
@@ -484,7 +487,9 @@ impl SchemaGenerator {
         let migrations_dir = paths::database::MIGRATIONS_DIR.as_str();
         let on_table = format!("ON \"{}\"", table_name);
         // Match CREATE [UNIQUE] INDEX "index_name" ON "table_name" ...
-        let re = match Regex::new(r#"CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?"([^"]+)"\s+ON"#) {
+        let re = match Regex::new(
+            r#"CREATE\s+(?:UNIQUE\s+)?INDEX\s+(?:IF\s+NOT\s+EXISTS\s+)?"([^"]+)"\s+ON"#,
+        ) {
             Ok(r) => r,
             Err(_) => return vec![],
         };
