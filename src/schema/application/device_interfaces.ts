@@ -19,6 +19,7 @@ const fields = {
   ),
   name: text('name'),
   device: text('device'),
+  description: text('description'),
 }
 
 const config = (table) => ({
