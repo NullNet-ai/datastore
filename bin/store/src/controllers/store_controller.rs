@@ -1168,6 +1168,20 @@ pub async fn get_by_filter(
         }
     };
 
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+    if !is_root_controller && (table == "pg_matviews" || table == "procedures") {
+        return HttpResponse::Forbidden().json(ApiResponse {
+            success: false,
+            message: "Access denied: root privileges required".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
@@ -1175,19 +1189,12 @@ pub async fn get_by_filter(
         .map(|s| s == "root")
         .unwrap_or(false);
 
-    // Perform different operations based on controller type
     if is_root_controller {
-        log::info!(
-            "Processing get_by_filter via root controller for table: {}",
-            table
-        );
-        // Add any root-specific logic here
-    } else {
-        log::info!(
-            "Processing get_by_filter via simple controller for table: {}",
-            table
-        );
-        // Add any simple controller-specific logic here
+        match table.as_str() {
+            "pg_matviews" => return exec_pg_matviews_filter(parameters.clone()).await,
+            "procedures" => return exec_procedures_filter(parameters.clone()).await,
+            _ => {}
+        }
     }
 
     let validation = Validation::new(&parameters, &table);
@@ -1314,6 +1321,26 @@ pub async fn count_by_filter(
             None
         }
     };
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+    if !is_root_controller && (table == "pg_matviews" || table == "procedures") {
+        return HttpResponse::Forbidden().json(ApiResponse {
+            success: false,
+            message: "Access denied: root privileges required".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if is_root_controller {
+        match table.as_str() {
+            "pg_matviews" => return exec_pg_matviews_count(parameters.clone()).await,
+            "procedures" => return exec_procedures_count(parameters.clone()).await,
+            _ => {}
+        }
+    }
 
     let validation = Validation::new(&parameters, &table);
     let ApiResponse {
@@ -2981,5 +3008,393 @@ pub async fn verify_schema(
         exists: true,
         available_fields,
         missing_fields,
+    })
+}
+
+async fn exec_pg_matviews_filter(parameters: GetByFilter) -> HttpResponse {
+    log::debug!("exec_pg_matviews_filter: {:?}", parameters);
+    let mut conn = db::get_async_connection().await;
+    let effective_params = parameters.clone();
+    let mut query = format!("SELECT matviewname AS name FROM pg_matviews");
+    if !effective_params.advance_filters.is_empty() {
+        let mut mapped_filters: Vec<crate::structs::core::FilterCriteria> = Vec::new();
+        let filters = &effective_params.advance_filters;
+        let len = filters.len();
+        let mut i = 0;
+        while i < len {
+            match &filters[i] {
+                crate::structs::core::FilterCriteria::Criteria {
+                    field,
+                    entity,
+                    operator,
+                    values,
+                    case_sensitive,
+                    parse_as,
+                    match_pattern,
+                    is_search,
+                    has_group_count,
+                } => {
+                    if field == "name" {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: "matviewname".to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
+                    }
+                    i += 1;
+                }
+                crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
+                    let has_prev = mapped_filters
+                        .last()
+                        .map(|f| matches!(f, crate::structs::core::FilterCriteria::Criteria { .. }))
+                        .unwrap_or(false);
+                    if has_prev {
+                        let mut found_next = false;
+                        let mut j = i + 1;
+                        while j < len {
+                            if let crate::structs::core::FilterCriteria::Criteria { field, .. } =
+                                &filters[j]
+                            {
+                                if field == "name" {
+                                    found_next = true;
+                                    break;
+                                }
+                            }
+                            j += 1;
+                        }
+                        if found_next {
+                            mapped_filters.push(
+                                crate::structs::core::FilterCriteria::LogicalOperator {
+                                    operator: operator.clone(),
+                                },
+                            );
+                        }
+                    }
+                    i += 1;
+                }
+            }
+        }
+        if !mapped_filters.is_empty() {
+            let wc = crate::providers::queries::find::constructors::where_constructor::WhereConstructor::new(
+                "pg_matviews",
+                None,
+                true,
+                effective_params.timezone.as_deref(),
+            );
+            match wc.build_infix_expression(
+                &mapped_filters,
+                &[],
+                &effective_params.date_format,
+                &effective_params.time_format,
+            ) {
+                Ok(expr) if !expr.is_empty() => {
+                    query.push_str(" WHERE ");
+                    query.push_str(&expr);
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: format!("Invalid filters: {}", e),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+        }
+    }
+    if effective_params.limit > 0 {
+        query.push_str(&format!(" LIMIT {}", effective_params.limit));
+    }
+    if effective_params.offset > 0 {
+        query.push_str(&format!(" OFFSET {}", effective_params.offset));
+    }
+    log::debug!("@@@query: {:?}", query);
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .collect();
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Materialized views list retrieved".to_string(),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+async fn exec_procedures_filter(parameters: GetByFilter) -> HttpResponse {
+    let mut conn = db::get_async_connection().await;
+    let effective_params = parameters.clone();
+    
+    let mut query = format!(
+        "SELECT routine_name AS name FROM information_schema.routines WHERE routine_type = 'PROCEDURE' AND routine_schema NOT IN ('pg_catalog', 'information_schema', '_timescaledb_functions', '_timescaledb_internal') AND routine_name LIKE 'udp_%'",
+    );
+    
+    // query.push_str(" ORDER BY specific_schema, routine_name");
+   
+    if !effective_params.advance_filters.is_empty() {
+        let mut mapped_filters: Vec<crate::structs::core::FilterCriteria> = Vec::new();
+        let filters = &effective_params.advance_filters;
+        let len = filters.len();
+        let mut i = 0;
+        while i < len {
+            match &filters[i] {
+                crate::structs::core::FilterCriteria::Criteria {
+                    field,
+                    entity,
+                    operator,
+                    values,
+                    case_sensitive,
+                    parse_as,
+                    match_pattern,
+                    is_search,
+                    has_group_count,
+                } => {
+                    if field == "name" {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: "routine_name".to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
+                    }
+                    i += 1;
+                }
+                crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
+                    let has_prev = mapped_filters
+                        .last()
+                        .map(|f| matches!(f, crate::structs::core::FilterCriteria::Criteria { .. }))
+                        .unwrap_or(false);
+                    if has_prev {
+                        let mut found_next = false;
+                        let mut j = i + 1;
+                        while j < len {
+                            if let crate::structs::core::FilterCriteria::Criteria { field, .. } =
+                                &filters[j]
+                            {
+                                if field == "name" {
+                                    found_next = true;
+                                    break;
+                                }
+                            }
+                            j += 1;
+                        }
+                        if found_next {
+                            mapped_filters.push(
+                                crate::structs::core::FilterCriteria::LogicalOperator {
+                                    operator: operator.clone(),
+                                },
+                            );
+                        }
+                    }
+                    i += 1;
+                }
+            }
+        }
+        if !mapped_filters.is_empty() {
+            let wc = crate::providers::queries::find::constructors::where_constructor::WhereConstructor::new(
+                "information_schema.routines",
+                None,
+                true,
+                effective_params.timezone.as_deref(),
+            );
+            match wc.build_infix_expression(
+                &mapped_filters,
+                &[],
+                &effective_params.date_format,
+                &effective_params.time_format,
+            ) {
+                Ok(expr) if !expr.is_empty() => {
+                    let expr_simple = expr
+                        .replace("\"information_schema\".\"routines\".", "")
+                        .replace("\"information_schema.routines\".", "")
+                        .replace("\"information_schema\".\"routines\"", "routine_name")
+                        .replace("\"information_schema.routines\"", "routine_name")
+                        .replace("\"routines\".", "");
+                    query.push_str(" AND ");
+                    query.push_str(&expr_simple);
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: format!("Invalid filters: {}", e),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+        }
+    }
+   
+    if effective_params.limit > 0 {
+        query.push_str(&format!(" LIMIT {}", effective_params.limit));
+    }
+    if effective_params.offset > 0 {
+        query.push_str(&format!(" OFFSET {}", effective_params.offset));
+    }
+    log::debug!("@@@query: {:?}", query);
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .collect();
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Procedures list retrieved".to_string(),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+async fn exec_pg_matviews_count(parameters: GetByFilter) -> HttpResponse {
+    let mut base_query = "SELECT COUNT(*) AS count FROM pg_matviews".to_string();
+    if !parameters.advance_filters.is_empty() {
+        let sc = crate::providers::queries::find::sql_constructor::SQLConstructor::new(
+            parameters.clone(),
+            "pg_matviews".to_string(),
+            true,
+            parameters.timezone.clone(),
+        );
+        match sc.build_infix_expression(&parameters.advance_filters) {
+            Ok(expr) if !expr.is_empty() => {
+                base_query.push_str(" WHERE ");
+                base_query.push_str(&expr);
+            }
+            Ok(_) => {}
+            Err(e) => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: format!("Invalid filters: {}", e),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    }
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", base_query);
+    let mut conn = db::get_async_connection().await;
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let count_value: i64 = results
+        .get(0)
+        .and_then(|r| r.row_to_json.as_ref())
+        .and_then(|j| j.get("count"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Count completed for pg_matviews".to_string(),
+        count: count_value as i32,
+        data: vec![serde_json::json!({ "count": count_value })],
+    })
+}
+
+async fn exec_procedures_count(parameters: GetByFilter) -> HttpResponse {
+    let mut base_query = String::from(
+        "SELECT COUNT(*) AS count FROM information_schema.routines WHERE routine_type = 'PROCEDURE'",
+    );
+    if !parameters.advance_filters.is_empty() {
+        let sc = crate::providers::queries::find::sql_constructor::SQLConstructor::new(
+            parameters.clone(),
+            "information_schema.routines".to_string(),
+            true,
+            parameters.timezone.clone(),
+        );
+        match sc.build_infix_expression(&parameters.advance_filters) {
+            Ok(expr) if !expr.is_empty() => {
+                base_query.push_str(" AND ");
+                base_query.push_str(&expr);
+            }
+            Ok(_) => {}
+            Err(e) => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: format!("Invalid filters: {}", e),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    }
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", base_query);
+    let mut conn = db::get_async_connection().await;
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let count_value: i64 = results
+        .get(0)
+        .and_then(|r| r.row_to_json.as_ref())
+        .and_then(|j| j.get("count"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Count completed for procedures".to_string(),
+        count: count_value as i32,
+        data: vec![serde_json::json!({ "count": count_value })],
     })
 }

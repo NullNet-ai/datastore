@@ -114,7 +114,7 @@ impl SelectionsConstructor {
             );
             selections.push(default_id);
         }
-
+        log::debug!("selections: {:?}", selections);
         selections.join(", ")
     }
 
