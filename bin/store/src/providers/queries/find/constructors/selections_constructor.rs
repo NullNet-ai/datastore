@@ -281,7 +281,6 @@ impl SelectionsConstructor {
         }
 
         for field in fields {
-
             let with_alias = field.ends_with("_date")
                 || field.ends_with("_time")
                 || field.eq_ignore_ascii_case("timestamp");

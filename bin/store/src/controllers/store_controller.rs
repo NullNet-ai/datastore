@@ -3058,8 +3058,9 @@ async fn exec_pg_matviews_filter(parameters: GetByFilter) -> HttpResponse {
                         let mut found_next = false;
                         let mut j = i + 1;
                         while j < len {
-                            if let crate::structs::core::FilterCriteria::Criteria { field, .. } =
-                                &filters[j]
+                            if let crate::structs::core::FilterCriteria::Criteria {
+                                field, ..
+                            } = &filters[j]
                             {
                                 if field == "name" {
                                     found_next = true;
@@ -3146,13 +3147,13 @@ async fn exec_pg_matviews_filter(parameters: GetByFilter) -> HttpResponse {
 async fn exec_procedures_filter(parameters: GetByFilter) -> HttpResponse {
     let mut conn = db::get_async_connection().await;
     let effective_params = parameters.clone();
-    
+
     let mut query = format!(
         "SELECT routine_name AS name FROM information_schema.routines WHERE routine_type = 'PROCEDURE' AND routine_schema NOT IN ('pg_catalog', 'information_schema', '_timescaledb_functions', '_timescaledb_internal') AND routine_name LIKE 'udp_%'",
     );
-    
+
     // query.push_str(" ORDER BY specific_schema, routine_name");
-   
+
     if !effective_params.advance_filters.is_empty() {
         let mut mapped_filters: Vec<crate::structs::core::FilterCriteria> = Vec::new();
         let filters = &effective_params.advance_filters;
@@ -3195,8 +3196,9 @@ async fn exec_procedures_filter(parameters: GetByFilter) -> HttpResponse {
                         let mut found_next = false;
                         let mut j = i + 1;
                         while j < len {
-                            if let crate::structs::core::FilterCriteria::Criteria { field, .. } =
-                                &filters[j]
+                            if let crate::structs::core::FilterCriteria::Criteria {
+                                field, ..
+                            } = &filters[j]
                             {
                                 if field == "name" {
                                     found_next = true;
@@ -3252,7 +3254,7 @@ async fn exec_procedures_filter(parameters: GetByFilter) -> HttpResponse {
             }
         }
     }
-   
+
     if effective_params.limit > 0 {
         query.push_str(&format!(" LIMIT {}", effective_params.limit));
     }
