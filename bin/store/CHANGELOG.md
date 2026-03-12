@@ -5,6 +5,28 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.50
+
+### Author
+Jean
+
+### Changed
+  - ***Registration flow and organization initialization***:
+    - `providers/operations/organizations/organization_service.rs`
+      - Ensure `account_organizations` is initialized for both new and existing accounts.
+      - When `is_invited=true`, require a non-empty `account_organization_id`.
+      - Keep accounts under their personal organization (do not update to team organization).
+      - When creating the personal organization during register, use `["Personal"]` categories.
+      - `create_new_organization` returns an existing organization when the requested ID already exists.
+
+  - ***Registration tests***:
+    - `controllers/organization_controller_test.rs`
+      - Added coverage for register behavior with/without `organization_id`, and for avoiding duplicate `account_organizations`.
+
+  - ***Query constructor tests***:
+    - `providers/queries/find/constructors/constructors_test.rs`
+      - Ensure test state is initialized where required and validate nested-join concatenation for `created_by.full_name`.
+
 ## 0.2.49
 
 ### Author

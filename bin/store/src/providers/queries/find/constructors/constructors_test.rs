@@ -573,6 +573,7 @@ mod tests {
     /// Test constructing concatenated fields for pluck selections without aliased entity
     #[test]
     fn should_construct_concatenated_fields_for_pluck_selections_without_aliased_entity() {
+        crate::test_init::init_test_state();
         let env_config = EnvConfig::default();
         let expected_concatenated_fields = serde_json::json!([
             {
@@ -1184,6 +1185,110 @@ mod tests {
         assert!(
             query.contains("\"joined_org_owner\".\"id\" = \"samples\".\"organization_id\""),
             "Query WHERE should contain join condition, got: {}",
+            query
+        );
+    }
+
+    #[test]
+    fn should_construct_nested_join_created_by_full_name_expression() {
+        crate::test_init::init_test_state();
+        let env_config = EnvConfig::default();
+
+        let expected_joins = serde_json::json!([
+            {
+                "type": "left",
+                "field_relation": {
+                    "to": {
+                        "alias": "created_by_account_organizations",
+                        "entity": "account_organizations",
+                        "field": "id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    },
+                    "from": {
+                        "entity": "contacts",
+                        "field": "created_by",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    }
+                },
+                "nested": false
+            },
+            {
+                "type": "left",
+                "field_relation": {
+                    "to": {
+                        "alias": "created_by",
+                        "entity": "contacts",
+                        "field": "id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    },
+                    "from": {
+                        "entity": "created_by_account_organizations",
+                        "field": "contact_id",
+                        "order_direction": null,
+                        "order_by": null,
+                        "limit": null,
+                        "offset": null
+                    }
+                },
+                "nested": true
+            }
+        ]);
+
+        let payload = serde_json::json!({
+            "pluck": ["id"],
+            "pluck_object": {
+                "created_by_account_organizations": ["id", "contact_id"],
+                "created_by": ["id", "first_name", "last_name"],
+                "contacts": ["id", "first_name", "last_name", "created_by"]
+            },
+            "offset": 0,
+            "limit": 100,
+            "joins": expected_joins,
+            "group_advance_filters": [],
+            "distinct_by": "",
+            "time_format": "HH24:MI",
+            "concatenate_fields": [{
+                "fields": ["first_name", "last_name"],
+                "field_name": "full_name",
+                "separator": " ",
+                "entity": "contacts",
+                "aliased_entity": "created_by"
+            }]
+        });
+
+        let table = String::from("contacts");
+        let is_root = false;
+        let timezone = None;
+
+        let query_result = get_raw_query(
+            &payload,
+            &table,
+            is_root,
+            timezone,
+            Some(env_config.default_organization_id.to_string()),
+        );
+
+        assert!(
+            query_result.is_ok(),
+            "Failed to generate query: {:?}",
+            query_result.err()
+        );
+        let query = query_result.unwrap();
+
+        let expected_full_name_substring = "'full_name', (COALESCE(\"created_by\".\"first_name\", '') || ' ' || COALESCE(\"created_by\".\"last_name\", ''))";
+        assert!(
+            query.contains(expected_full_name_substring),
+            "Query should contain full_name concatenation for created_by. Expected substring: {}. Query: {}",
+            expected_full_name_substring,
             query
         );
     }

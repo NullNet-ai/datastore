@@ -104,7 +104,11 @@ pub async fn register(
     } else {
         Ulid::new().to_string()
     };
-    let created_by_override = Some(default_account_organization_id.clone());
+    let created_by_override = responsible_account_organization_id
+        .clone()
+        .filter(|account_organization_id| !account_organization_id.is_empty())
+        .or_else(|| Some(default_account_organization_id.clone()));
+
     let mut account_organization = AccountOrganizationModel {
         id: Some(default_account_organization_id.clone()),
         code: helpers::generate_code("account_organizations").await?,
@@ -126,12 +130,6 @@ pub async fn register(
             )
         })?;
 
-    sync_service::insert(
-        &"account_organizations".to_string(),
-        account_organization_json_initial.clone(),
-    )
-    .await?;
-
     let mut _account_id = if is_request {
         Ulid::new().to_string()
     } else {
@@ -142,7 +140,10 @@ pub async fn register(
         }
     };
     let is_contact_account = account_type == AccountType::Contact;
-    let mut team_organization_id: Option<String> = None;
+    let mut team_organization_id: Option<String> = params
+        .organization_id
+        .clone()
+        .filter(|organization_id| !organization_id.is_empty());
 
     let query_result = accounts::table
         .filter(
@@ -220,15 +221,39 @@ pub async fn register(
                     "device_id": existing_account_org.device_id,
                 }));
             } else {
+                if is_invited && account_organization_id.is_empty() {
+                    return Err(ApiError::new(
+                        StatusCode::BAD_REQUEST,
+                        "Account Organization ID is required if Account is invited",
+                    ));
+                }
+                // Initialize Account Organization if existing Account and Team Org
+                sync_service::insert(
+                    &"account_organizations".to_string(),
+                    account_organization_json_initial.clone(),
+                )
+                .await?;
+
                 // assign to account_organization
                 team_organization_id = Some(existing_team_org.id.clone().unwrap_or_default());
             }
+        } else {
+            // Initialize Account Organization if existing Account and not existing Team Org
+            sync_service::insert(
+                &"account_organizations".to_string(),
+                account_organization_json_initial.clone(),
+            )
+            .await?;
         }
     } else {
+        // Initialize Account Organization if not existing Account
+        sync_service::insert(
+            &"account_organizations".to_string(),
+            account_organization_json_initial.clone(),
+        )
+        .await?;
         //create a personal organization (use static ID only when set by initializers, e.g. super admin / system device)
-        let personal_categories = organization_categories
-            .clone()
-            .unwrap_or_else(|| vec!["Personal".to_string()]);
+        let personal_categories = vec!["Personal".to_string()];
         let personal_organization_id = create_new_organization(
             "Personal Organization".to_string(),
             personal_categories,
@@ -294,22 +319,24 @@ pub async fn register(
         .await?,
     );
 
-    // Ensure the account points to the team/default organization
-    if let Some(ref team_org_id) = team_organization_id {
-        let update_result = diesel::update(accounts::table.filter(accounts::id.eq(&_account_id)))
-            .set(accounts::organization_id.eq(team_org_id.clone()))
-            .execute(&mut conn)
-            .await;
+    // Commented out as account will be under its personal organization only
+    // and not on the team organization
+    // // Ensure the account points to the team/default organization
+    // if let Some(ref team_org_id) = team_organization_id {
+    //     let update_result = diesel::update(accounts::table.filter(accounts::id.eq(&_account_id)))
+    //         .set(accounts::organization_id.eq(team_org_id.clone()))
+    //         .execute(&mut conn)
+    //         .await;
 
-        match update_result {
-            Ok(_) => log::info!(
-                "Updated account {} organization_id to {}",
-                _account_id,
-                team_org_id
-            ),
-            Err(e) => log::warn!("Failed to update account organization_id: {}", e),
-        }
-    }
+    //     match update_result {
+    //         Ok(_) => log::info!(
+    //             "Updated account {} organization_id to {}",
+    //             _account_id,
+    //             team_org_id
+    //         ),
+    //         Err(e) => log::warn!("Failed to update account organization_id: {}", e),
+    //     }
+    // }
 
     if is_contact_account && (!is_invited || !is_request) {
         match async {
@@ -684,6 +711,25 @@ pub async fn create_new_organization(
     let formatted_time = now.format("%H:%M:%S").to_string(); // Format time in 24-hour format
 
     let id = organization_id.unwrap_or_else(|| Ulid::new().to_string());
+
+    let mut conn = db::get_async_connection().await;
+    let existing_organization = organizations::table
+        .filter(
+            organizations::id
+                .eq(&id)
+                .and(organizations::tombstone.eq(0)),
+        )
+        .first::<OrganizationModel>(&mut conn)
+        .await
+        .optional()?;
+
+    if let Some(existing_organization) = existing_organization {
+        log::warn!(
+            "Organization {} already exists",
+            existing_organization.name.clone().unwrap_or_default()
+        );
+        return Ok(existing_organization.id.unwrap_or(id));
+    }
 
     // Ensure code is not NULL by generating one if not provided (prefer counters)
     let final_code = if let Some(c) = code {
