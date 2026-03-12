@@ -1,24 +1,20 @@
+use crate::config::core::EnvConfig;
+use crate::providers::operations::sync::message_manager::{create_message_channel, SENDER};
+use crate::providers::storage::cache::CacheConfig;
 use crate::{
     database::schema::{self, database_setup::DatabaseSetupFlags},
     initializers::system_initialization::{init::initialize, structs::EInitializer},
-    providers::{
-        operations::{
-            batch_sync::{background_sync, batch_sync::BatchSyncService},
-            sync::{
-                transactions::{
-                    queue_service::QueueService, transaction_service::TransactionService,
-                },
-            },
+    providers::operations::{
+        batch_sync::{background_sync, batch_sync::BatchSyncService},
+        sync::transactions::{
+            queue_service::QueueService, transaction_service::TransactionService,
         },
     },
 };
 use dotenv::dotenv;
 use env_logger::Env;
 use log::{error, info};
-use crate::config::core::EnvConfig;
-use crate::providers::storage::cache::CacheConfig;
 use std::sync::Arc;
-use crate::providers::operations::sync::message_manager::{create_message_channel, SENDER};
 
 pub async fn exec() -> std::io::Result<()> {
     dotenv().ok();

@@ -892,9 +892,9 @@ mod tests {
 
         // Most importantly, it should not return the deserialization error
         assert!(
-            !body_str.contains("Account deserialization error"),
-            "Should not return account deserialization error for regular accounts with is_root=true"
-        );
+        !body_str.contains("Account deserialization error"),
+        "Should not return account deserialization error for regular accounts with is_root=true"
+    );
     }
 
     /// Tests regular account authentication with is_root=true should not cause deserialization errors:
@@ -1064,5 +1064,421 @@ mod tests {
             "Registration test completed successfully - code and created_by should be assigned"
         );
         println!("To verify in database, run: SELECT code, created_by FROM organizations WHERE organization_id IN (SELECT organization_id FROM accounts WHERE account_id = 'charlyn3344@dnamicro.com');");
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_register_without_organization_id() {
+        crate::test_init::init_test_state();
+        if crate::providers::operations::sync::message_manager::SENDER
+            .get()
+            .is_none()
+        {
+            let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel::<
+                crate::generated::models::crdt_message_model::CrdtMessageModel,
+            >();
+
+            let _ = crate::providers::operations::sync::message_manager::SENDER
+                .set(std::sync::Arc::new(sender));
+
+            tokio::spawn(async move { while receiver.recv().await.is_some() {} });
+        }
+
+        println!("Testing user registration without organization ID...");
+
+        // Create test application
+        let app = test::init_service(App::new().route(
+            "/register",
+            web::post().to(OrganizationsController::register),
+        ))
+        .await;
+
+        // Create a test request without organization_id
+        let req_body = serde_json::json!({
+            "data": {
+                "account_type": "contact",
+                "organization_name": "global-organization",
+                "account_id": "test_user@dnamicro.com",
+                "account_secret": "sillyisland63!!",
+                "first_name": "Test",
+                "last_name": "User",
+                "is_new_user": true,
+                "account_organization_categories": ["Internal User"],
+                "account_organization_status": "Active",
+                "account_status": "Active",
+                "contact_categories": ["Contact", "User"]
+            }
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/register")
+            .set_json(&req_body)
+            .to_request();
+
+        // Call the endpoint
+        let resp = test::call_service(&app, req).await;
+        let status = resp.status();
+        println!("Response status: {}", status);
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Response body: {}", body_str);
+
+        // Expect success: register should create a Personal org and a Team org even without input organization_id
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "Registration without organization_id should succeed"
+        );
+
+        // Validate response structure: should include organization_id (team org) and account_organization_id
+        let response_json: serde_json::Value =
+            serde_json::from_str(&body_str).expect("Response should be valid JSON");
+
+        let org_id = response_json
+            .get("organization_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert!(
+            !org_id.is_empty(),
+            "Response should include non-empty organization_id when organization_id is omitted"
+        );
+        assert!(
+            response_json.get("account_organization_id").is_some(),
+            "Response should include account_organization_id"
+        );
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_register_with_organization_id_returns_same_organization_id() {
+        crate::test_init::init_test_state();
+        if crate::providers::operations::sync::message_manager::SENDER
+            .get()
+            .is_none()
+        {
+            let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel::<
+                crate::generated::models::crdt_message_model::CrdtMessageModel,
+            >();
+
+            let _ = crate::providers::operations::sync::message_manager::SENDER
+                .set(std::sync::Arc::new(sender));
+
+            tokio::spawn(async move { while receiver.recv().await.is_some() {} });
+        }
+
+        println!("Testing user registration with organization ID...");
+
+        let expected_organization_id = "01KKFF4KBXPNNNAJ0MBQR1ZVC4";
+
+        let app = test::init_service(App::new().route(
+            "/register",
+            web::post().to(OrganizationsController::register),
+        ))
+        .await;
+
+        let req_body = serde_json::json!({
+            "data": {
+                "account_type": "contact",
+                "organization_id": expected_organization_id,
+                "organization_name": "Sample Organization",
+                "account_id": "test_user_with_org1@dnamicro.com",
+                "account_secret": "sillyisland63!!",
+                "first_name": "Test",
+                "last_name": "User",
+                "is_new_user": true,
+                "account_organization_categories": ["Internal User"],
+                "account_organization_status": "Active",
+                "account_status": "Active",
+                "contact_categories": ["Contact", "User"]
+            }
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/register")
+            .set_json(&req_body)
+            .to_request();
+
+        let resp = test::call_service(&app, req).await;
+        let status = resp.status();
+        println!("Response status: {}", status);
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Response body: {}", body_str);
+
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "Registration with organization_id should succeed"
+        );
+
+        let response_json: serde_json::Value =
+            serde_json::from_str(&body_str).expect("Response should be valid JSON");
+
+        let returned_org_id = response_json
+            .get("organization_id")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert_eq!(
+            returned_org_id, expected_organization_id,
+            "Response organization_id should match request organization_id"
+        );
+        assert!(
+            response_json.get("account_organization_id").is_some(),
+            "Response should include account_organization_id"
+        );
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_register_does_not_update_existing_organization_categories() {
+        crate::test_init::init_test_state();
+        if crate::providers::operations::sync::message_manager::SENDER
+            .get()
+            .is_none()
+        {
+            let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel::<
+                crate::generated::models::crdt_message_model::CrdtMessageModel,
+            >();
+
+            let _ = crate::providers::operations::sync::message_manager::SENDER
+                .set(std::sync::Arc::new(sender));
+
+            tokio::spawn(async move { while receiver.recv().await.is_some() {} });
+        }
+
+        let existing_organization_id = "01JBHKXHYSKPP247HZZWHA3JCT";
+
+        let before_categories = {
+            use crate::database::db;
+            use crate::generated::models::organization_model::OrganizationModel;
+            use crate::generated::schema::organizations;
+            use diesel::prelude::*;
+            use diesel::OptionalExtension;
+            use diesel_async::RunQueryDsl;
+
+            let mut conn = db::get_async_connection().await;
+            let org = organizations::table
+                .filter(organizations::id.eq(existing_organization_id))
+                .first::<OrganizationModel>(&mut conn)
+                .await
+                .optional()
+                .expect("Failed to query existing organization");
+
+            let org = org.expect("Precondition failed: organization must exist");
+            org.categories.clone()
+        };
+
+        println!(
+            "Before register: organization {} categories = {:?}",
+            existing_organization_id, before_categories
+        );
+
+        let app = test::init_service(App::new().route(
+            "/register",
+            web::post().to(OrganizationsController::register),
+        ))
+        .await;
+
+        let req_body = serde_json::json!({
+            "data": {
+                "account_type": "contact",
+                "organization_id": existing_organization_id,
+                "organization_name": "Existing Organization",
+                "organization_categories": ["Testing"],
+                "account_id": "test_existing_org_categories@dnamicro.com",
+                "account_secret": "sillyisland63!!",
+                "first_name": "Test",
+                "last_name": "User",
+                "is_new_user": true,
+                "account_organization_categories": ["Internal User"],
+                "account_organization_status": "Active",
+                "account_status": "Active",
+                "contact_categories": ["Contact", "User"]
+            }
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/register")
+            .set_json(&req_body)
+            .to_request();
+
+        let resp = test::call_service(&app, req).await;
+        let status = resp.status();
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Register response status: {}", status);
+        println!("Register response body: {}", body_str);
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "Registration with existing organization_id should succeed"
+        );
+
+        let after_categories = {
+            use crate::database::db;
+            use crate::generated::models::organization_model::OrganizationModel;
+            use crate::generated::schema::organizations;
+            use diesel::prelude::*;
+            use diesel::OptionalExtension;
+            use diesel_async::RunQueryDsl;
+
+            let mut conn = db::get_async_connection().await;
+            let org = organizations::table
+                .filter(organizations::id.eq(existing_organization_id))
+                .first::<OrganizationModel>(&mut conn)
+                .await
+                .optional()
+                .expect("Failed to query existing organization after register");
+
+            let org = org.expect("Organization must exist after register");
+            org.categories.clone()
+        };
+
+        println!(
+            "After register: organization {} categories = {:?}",
+            existing_organization_id, after_categories
+        );
+
+        assert_eq!(
+            after_categories, before_categories,
+            "Register must not update categories for an existing organization"
+        );
+
+        if after_categories == Some(vec!["Testing".to_string()]) {
+            panic!(
+                "Organization categories were updated to [\"Testing\"], but Register must not edit an existing organization"
+            );
+        }
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_register_existing_account_does_not_create_duplicate_account_organization() {
+        crate::test_init::init_test_state();
+        if crate::providers::operations::sync::message_manager::SENDER
+            .get()
+            .is_none()
+        {
+            let (sender, mut receiver) = tokio::sync::mpsc::unbounded_channel::<
+                crate::generated::models::crdt_message_model::CrdtMessageModel,
+            >();
+
+            let _ = crate::providers::operations::sync::message_manager::SENDER
+                .set(std::sync::Arc::new(sender));
+
+            tokio::spawn(async move { while receiver.recv().await.is_some() {} });
+        }
+
+        let existing_organization_id = "01JBHKXHYSKPP247HZZWHA3JCT";
+        let existing_account_email = "admin@dnamicro.com";
+
+        let (existing_account_id, before_count) = {
+            use crate::database::db;
+            use crate::generated::models::account_model::AccountModel;
+            use crate::generated::schema::{account_organizations, accounts};
+            use diesel::prelude::*;
+            use diesel::OptionalExtension;
+            use diesel_async::RunQueryDsl;
+
+            let mut conn = db::get_async_connection().await;
+
+            let account = accounts::table
+                .filter(accounts::account_id.eq(existing_account_email))
+                .first::<AccountModel>(&mut conn)
+                .await
+                .optional()
+                .expect("Failed to query existing account");
+
+            let account = account.expect("Precondition failed: admin account must exist");
+            let account_id = account
+                .id
+                .clone()
+                .expect("Precondition failed: admin account must have id");
+
+            let count: i64 = account_organizations::table
+                .filter(
+                    account_organizations::organization_id
+                        .eq(existing_organization_id)
+                        .and(account_organizations::account_id.eq(&account_id)),
+                )
+                .count()
+                .get_result(&mut conn)
+                .await
+                .expect("Failed to count account_organizations before register");
+
+            (account_id, count)
+        };
+
+        assert_eq!(
+            before_count, 1,
+            "Precondition failed: expected exactly one account_organizations row for admin account in org {}",
+            existing_organization_id
+        );
+
+        let app = test::init_service(App::new().route(
+            "/register",
+            web::post().to(OrganizationsController::register),
+        ))
+        .await;
+
+        let req_body = serde_json::json!({
+            "data": {
+                "account_type": "contact",
+                "organization_id": existing_organization_id,
+                "organization_name": "Existing Organization",
+                "account_id": existing_account_email,
+                "account_secret": "not_used_but_required",
+                "first_name": "Super",
+                "last_name": "Admin",
+                "is_new_user": false
+            }
+        });
+
+        let req = test::TestRequest::post()
+            .uri("/register")
+            .set_json(&req_body)
+            .to_request();
+
+        let resp = test::call_service(&app, req).await;
+        let status = resp.status();
+        let body = test::read_body(resp).await;
+        let body_str = String::from_utf8_lossy(&body);
+        println!("Register response status: {}", status);
+        println!("Register response body: {}", body_str);
+        assert_eq!(
+            status,
+            StatusCode::OK,
+            "Registration for existing account in existing organization should succeed"
+        );
+
+        let after_count = {
+            use crate::database::db;
+            use crate::generated::schema::account_organizations;
+            use diesel::prelude::*;
+            use diesel_async::RunQueryDsl;
+
+            let mut conn = db::get_async_connection().await;
+            let count: i64 = account_organizations::table
+                .filter(
+                    account_organizations::organization_id
+                        .eq(existing_organization_id)
+                        .and(account_organizations::account_id.eq(&existing_account_id)),
+                )
+                .count()
+                .get_result(&mut conn)
+                .await
+                .expect("Failed to count account_organizations after register");
+            count
+        };
+
+        assert_eq!(
+            after_count, before_count,
+            "Register must not create another account_organizations record for an existing account in the same organization"
+        );
+        assert_eq!(
+            after_count, 1,
+            "Expected exactly one account_organizations row for admin account in org {} after register",
+            existing_organization_id
+        );
     }
 }
