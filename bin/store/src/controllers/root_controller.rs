@@ -158,3 +158,15 @@ create_root_wrapper!(root_verify_schema => verify_schema,
     auth: HttpRequest,
     request_body: actix_web::web::Json<crate::controllers::store_controller::SchemaVerificationRequest>
 );
+
+create_root_wrapper!(root_create_materialized_view => create_materialized_view,
+    auth: HttpRequest,
+    table: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<serde_json::Value>
+);
+
+create_root_wrapper!(root_create_procedure => create_procedure,
+    auth: HttpRequest,
+    name: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<serde_json::Value>
+);

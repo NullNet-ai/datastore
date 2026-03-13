@@ -43,6 +43,7 @@ use tokio::io::AsyncWriteExt;
 // use diesel::sql_types::*;
 // use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
+use diesel::sql_query;
 
 use super::common_controller::{perform_upsert, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
@@ -3009,6 +3010,159 @@ pub async fn verify_schema(
         available_fields,
         missing_fields,
     })
+}
+
+pub async fn create_materialized_view(
+    auth: HttpRequest,
+    table: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let table_name = table.into_inner();
+    let extensions = auth.extensions();
+    let auth_data = match extensions.get::<Auth>() {
+        Some(data) => data,
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: "Authentication information not available".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+    if !is_root_controller || !auth_data.is_root_account {
+        return HttpResponse::Unauthorized().json(ApiResponse {
+            success: false,
+            message: "Unauthorized: only root can create materialized views".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if table_name.is_empty()
+        || !table_name
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.')
+    {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid materialized view name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = match request_body.get("unsafe_query").and_then(|v| v.as_str()) {
+        Some(q) if !q.trim().is_empty() => q.trim(),
+        _ => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "unsafe_query is required".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let sql = format!("CREATE MATERIALIZED VIEW {} AS {}", table_name, unsafe_query);
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Materialized view created".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to create materialized view: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn create_procedure(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let procedure_name_raw = name.into_inner();
+    let extensions = auth.extensions();
+    let auth_data = match extensions.get::<Auth>() {
+        Some(data) => data,
+        None => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: "Authentication information not available".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+    if !is_root_controller || !auth_data.is_root_account {
+        return HttpResponse::Unauthorized().json(ApiResponse {
+            success: false,
+            message: "Unauthorized: only root can create procedures".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if procedure_name_raw.is_empty()
+        || !procedure_name_raw
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.')
+    {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid procedure name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let procedure_name = if procedure_name_raw.starts_with("udp_") {
+        procedure_name_raw
+    } else {
+        format!("udp_{}", procedure_name_raw)
+    };
+    let unsafe_query = match request_body.get("unsafe_query").and_then(|v| v.as_str()) {
+        Some(q) if !q.trim().is_empty() => q.trim(),
+        _ => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "unsafe_query is required".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let sql = format!(
+        "CREATE OR REPLACE PROCEDURE {}() LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
+        procedure_name, unsafe_query
+    );
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Procedure created".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to create procedure: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
 }
 
 async fn exec_pg_matviews_filter(parameters: GetByFilter) -> HttpResponse {
