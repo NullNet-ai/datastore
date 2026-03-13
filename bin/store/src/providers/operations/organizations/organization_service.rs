@@ -158,17 +158,7 @@ pub async fn register(
     let existing_account = query_result?;
 
     // Query for organizations counter
-    let organizations_counter = counters::table
-        .filter(counters::entity.eq("organizations"))
-        .first::<CounterModel>(&mut conn)
-        .await
-        .optional()?;
 
-    let _contacts_counter = counters::table
-        .filter(counters::entity.eq("contacts"))
-        .first::<CounterModel>(&mut conn)
-        .await
-        .optional()?;
 
     if let Some(existing_account) = existing_account {
         let account_id_value = existing_account.id.ok_or_else(|| {
@@ -258,14 +248,7 @@ pub async fn register(
             "Personal Organization".to_string(),
             personal_categories,
             params.initial_personal_organization_id.clone(),
-            if organizations_counter.is_some() {
-                match helpers::generate_code("organizations").await {
-                    Ok(code) => code,
-                    Err(_) => None,
-                }
-            } else {
-                None
-            },
+            helpers::generate_code("organizations").await?,
             created_by_override.clone(),
         )
         .await?;
@@ -309,11 +292,7 @@ pub async fn register(
                 .to_string(),
             team_categories,
             params.organization_id.clone(),
-            if organizations_counter.is_some() {
-                helpers::generate_code("organizations").await?
-            } else {
-                None
-            },
+            helpers::generate_code("organizations").await?,
             created_by_override.clone(),
         )
         .await?,
@@ -363,11 +342,7 @@ pub async fn register(
                     last_name: Some(last_name.clone()),
                     categories: Some(contact_categories.clone().unwrap_or_else(|| vec!["Contact".to_string()])),
                     account_id: Some(_account_id.clone()),
-                    code: if _contacts_counter.is_some() {
-                        helpers::generate_code("contacts").await?
-                    } else {
-                        Some(format!("C{}", Ulid::new().to_string().chars().take(8).collect::<String>()))
-                    },
+                    code: helpers::generate_code("contacts").await?,
                     tombstone: Some(0),
                     status: Some("Active".to_string()),
                     created_date: Some(formatted_date.clone()),
