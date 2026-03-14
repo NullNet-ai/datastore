@@ -3,7 +3,7 @@ use crate::controllers::common_controller::{
     convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
     process_and_update_record, process_records,
 };
-use crate::database::db::create_connection;
+use crate::database::db::{create_connection, DatabaseTypeConverter};
 use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
 use crate::providers::queries::aggregation_filter::AggregationSQLConstructor;
 use crate::providers::queries::batch_update::BatchUpdateSQLConstructor;
@@ -22,8 +22,8 @@ use crate::structs::core::{
 use crate::structs::core::{FilterCriteria, FilterOperator};
 use crate::utils::helpers::{normalize_date_format, table_exists};
 use crate::utils::sql_sanitizer::{
-    contains_dangerous_removal_statements, validate_execute_payloads, validate_select_limits,
-    validate_update_has_where, sanitize_values,
+    contains_dangerous_removal_statements, sanitize_values, validate_execute_payloads,
+    validate_select_limits, validate_update_has_where,
 };
 use crate::{db, providers};
 use actix_multipart::Multipart;
@@ -3664,14 +3664,40 @@ pub async fn call_procedure(
         format!("({})", args_sql_parts.join(", "))
     };
     let sql = format!("CALL {}{};", proc_name, args_signature);
-    let mut conn = db::get_async_connection().await;
-    match sql_query(&sql).execute(&mut conn).await {
-        Ok(_) => HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: "Procedure executed".to_string(),
-            count: 0,
-            data: vec![],
-        }),
+    let client = match create_connection().await {
+        Ok(c) => c,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to connect to database: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    match client.query(&sql, &[]).await {
+        Ok(rows) => {
+            let mut data = Vec::new();
+            for row in rows {
+                match DatabaseTypeConverter::row_to_json(&row) {
+                    Ok(json_value) => data.push(json_value),
+                    Err(err) => {
+                        return HttpResponse::InternalServerError().json(ApiResponse {
+                            success: false,
+                            message: format!("Failed to convert result row: {}", err),
+                            count: 0,
+                            data: vec![],
+                        })
+                    }
+                }
+            }
+            HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: "Procedure executed".to_string(),
+                count: data.len() as i32,
+                data,
+            })
+        }
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
             message: format!("Failed to execute procedure: {}", e),
@@ -3726,31 +3752,74 @@ pub async fn call_function(
     } else {
         format!("({})", args_sql_parts.join(", "))
     };
-    let mut conn = db::get_async_connection().await;
-    let inner = format!("SELECT * FROM {}{}", func_name, args_signature);
-    let final_query = format!("SELECT to_json(t) AS row_to_json FROM ({}) t", inner);
-    match diesel::dsl::sql_query(&final_query)
-        .load::<DynamicResult>(&mut conn)
-        .await
-    {
-        Ok(results) => {
-            let data: Vec<serde_json::Value> = results
-                .into_iter()
-                .filter_map(|r| r.row_to_json)
-                .collect();
-            HttpResponse::Ok().json(ApiResponse {
+    let client = match create_connection().await {
+        Ok(c) => c,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to connect to database: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let try_set_query = format!("SELECT * FROM {}{}", func_name, args_signature);
+    match client.query(&try_set_query, &[]).await {
+        Ok(rows) => {
+            let mut data = Vec::new();
+            for row in rows {
+                match DatabaseTypeConverter::row_to_json(&row) {
+                    Ok(json_value) => data.push(json_value),
+                    Err(err) => {
+                        return HttpResponse::InternalServerError().json(ApiResponse {
+                            success: false,
+                            message: format!("Failed to convert result row: {}", err),
+                            count: 0,
+                            data: vec![],
+                        })
+                    }
+                }
+            }
+            return HttpResponse::Ok().json(ApiResponse {
                 success: true,
                 message: "Function executed".to_string(),
                 count: data.len() as i32,
                 data,
-            })
+            });
         }
-        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
-            success: false,
-            message: format!("Failed to execute function: {}", e),
-            count: 0,
-            data: vec![],
-        }),
+        Err(_) => {
+            let scalar_query = format!("SELECT {}{} AS result", func_name, args_signature);
+            match client.query(&scalar_query, &[]).await {
+                Ok(rows) => {
+                    let mut data = Vec::new();
+                    for row in rows {
+                        match DatabaseTypeConverter::row_to_json(&row) {
+                            Ok(json_value) => data.push(json_value),
+                            Err(err) => {
+                                return HttpResponse::InternalServerError().json(ApiResponse {
+                                    success: false,
+                                    message: format!("Failed to convert result row: {}", err),
+                                    count: 0,
+                                    data: vec![],
+                                })
+                            }
+                        }
+                    }
+                    HttpResponse::Ok().json(ApiResponse {
+                        success: true,
+                        message: "Function executed".to_string(),
+                        count: data.len() as i32,
+                        data,
+                    })
+                }
+                Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+                    success: false,
+                    message: format!("Failed to execute function: {}", e),
+                    count: 0,
+                    data: vec![],
+                }),
+            }
+        }
     }
 }
 
@@ -4219,7 +4288,10 @@ pub async fn delete_procedure(
     } else {
         "()".to_string()
     };
-    let sql = format!("DROP PROCEDURE IF EXISTS {}{} CASCADE;", procedure_name, args_signature);
+    let sql = format!(
+        "DROP PROCEDURE IF EXISTS {}{} CASCADE;",
+        procedure_name, args_signature
+    );
     let mut conn = db::get_async_connection().await;
     match sql_query(&sql).execute(&mut conn).await {
         Ok(_) => HttpResponse::Ok().json(ApiResponse {
@@ -4341,7 +4413,10 @@ pub async fn delete_function(
     } else {
         "()".to_string()
     };
-    let sql = format!("DROP FUNCTION IF EXISTS {}{} CASCADE;", func_name, args_signature);
+    let sql = format!(
+        "DROP FUNCTION IF EXISTS {}{} CASCADE;",
+        func_name, args_signature
+    );
     let mut conn = db::get_async_connection().await;
     match sql_query(&sql).execute(&mut conn).await {
         Ok(_) => HttpResponse::Ok().json(ApiResponse {

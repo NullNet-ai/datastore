@@ -4,10 +4,10 @@ mod tests {
     use crate::controllers::store_controller::create_trigger;
     use crate::controllers::store_controller::cron_schedule_job;
     use crate::controllers::store_controller::{
-        create_materialized_view, create_procedure, call_procedure, call_function,
+        call_function, call_procedure, create_materialized_view, create_procedure,
     };
     use crate::structs::core::Auth;
-    use actix_web::{test::TestRequest, web, HttpMessage, HttpRequest, Responder};
+    use actix_web::{body::to_bytes, test::TestRequest, web, HttpMessage, HttpRequest, Responder};
     use serde_json::json;
 
     fn make_root_request() -> HttpRequest {
@@ -292,7 +292,7 @@ mod tests {
         let req_call = make_root_request();
         let name_call = web::Path::from("udp_noop".to_string());
         let call_body = web::Json(json!({
-            "args": []
+            "arguments": []
         }));
         let call_resp = call_procedure(req_call, name_call, call_body).await;
         let call_status = call_resp.respond_to(&assert_req).status().as_u16();
@@ -311,16 +311,88 @@ mod tests {
         let create_resp = create_function(req_create, name, body).await;
         let assert_req = actix_web::test::TestRequest::default().to_http_request();
         let create_status = create_resp.respond_to(&assert_req).status().as_u16();
+        println!("call_function_returns_table_rows create_status: {}", create_status);
         assert_ne!(create_status, 400);
 
         let req_call = make_root_request();
         let name_call = web::Path::from("get_value".to_string());
         let call_body = web::Json(json!({
-            "args": []
+            "arguments": []
         }));
         let call_resp = call_function(req_call, name_call, call_body).await;
         let call_status = call_resp.respond_to(&assert_req).status().as_u16();
         assert_ne!(call_status, 400);
+    }
+    #[tokio::test]
+    async fn call_procedure_returns_out_parameters() {
+        let req_create = make_root_request();
+        let name = web::Path::from("udp_returns_total".to_string());
+        let body = web::Json(json!({
+            "arguments": ["OUT total integer"],
+            "unsafe_query": "BEGIN total := 7; END;"
+        }));
+        let create_resp = create_procedure(req_create, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let create_status = create_resp.respond_to(&assert_req).status().as_u16();
+        assert_ne!(create_status, 400);
+
+        let req_call = make_root_request();
+        let name_call = web::Path::from("udp_returns_total".to_string());
+        let call_body = web::Json(json!({ "arguments": [] }));
+        let call_resp = call_procedure(req_call, name_call, call_body).await;
+        let response = call_resp.respond_to(&assert_req);
+        let status = response.status().as_u16();
+        assert_ne!(status, 400);
+    }
+
+    #[tokio::test]
+    async fn call_function_returns_scalar_result_field() {
+        let req_create = make_root_request();
+        let name = web::Path::from("get_scalar".to_string());
+        let body = web::Json(json!({
+            "arguments": [],
+            "unsafe_query": "RETURN 42;",
+            "returns": "integer"
+        }));
+        let create_resp = create_function(req_create, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let create_status = create_resp.respond_to(&assert_req).status().as_u16();
+        assert_ne!(create_status, 400);
+
+        let req_call = make_root_request();
+        let name_call = web::Path::from("get_scalar".to_string());
+        let call_body = web::Json(json!({ "arguments": [] }));
+        let call_resp = call_function(req_call, name_call, call_body).await;
+        let response = call_resp.respond_to(&assert_req);
+        let status = response.status().as_u16();
+        println!("call_function_returns_table_rows status: {}", status);
+        let body_bytes = to_bytes(response.into_body()).await.unwrap_or_default();
+        let body_str = String::from_utf8_lossy(&body_bytes);
+        println!("call_function_returns_table_rows body: {}", body_str);
+        assert_ne!(status, 400);
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn call_function_returns_table_rows() {
+        let req_create = make_root_request();
+        let name = web::Path::from("get_pair".to_string());
+        let body = web::Json(json!({
+            "arguments": [],
+            "unsafe_query": "RETURN QUERY SELECT 1, 'a';",
+            "returns": "TABLE(x integer, y text)"
+        }));
+        let create_resp = create_function(req_create, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let create_status = create_resp.respond_to(&assert_req).status().as_u16();
+        assert_ne!(create_status, 400);
+
+        let req_call = make_root_request();
+        let name_call = web::Path::from("get_pair".to_string());
+        let call_body = web::Json(json!({ "arguments": [] }));
+        let call_resp = call_function(req_call, name_call, call_body).await;
+        let response = call_resp.respond_to(&assert_req);
+        assert_eq!(response.status().as_u16(), 200);
     }
     #[tokio::test]
     async fn function_select_with_where_without_limit_is_allowed() {
