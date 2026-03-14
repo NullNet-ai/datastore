@@ -437,4 +437,109 @@ mod tests {
         let status = resp.respond_to(&assert_req).status().as_u16();
         assert_ne!(status, 400);
     }
+
+    // ===== Idempotency tests =====
+    #[tokio::test]
+    async fn matview_idempotent_creation_does_not_return_bad_request() {
+        let req1 = make_root_request();
+        let table1 = web::Path::from("active_contacts_view".to_string());
+        let body1 = web::Json(json!({
+            "unsafe_query": "SELECT id FROM contacts WHERE status = 'Active' LIMIT 1"
+        }));
+        let resp1 = create_materialized_view(req1, table1, body1).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let status1 = resp1.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status1, 400);
+
+        let req2 = make_root_request();
+        let table2 = web::Path::from("active_contacts_view".to_string());
+        let body2 = web::Json(json!({
+            "unsafe_query": "SELECT id FROM contacts WHERE status = 'Active' LIMIT 1"
+        }));
+        let resp2 = create_materialized_view(req2, table2, body2).await;
+        let status2 = resp2.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status2, 400);
+    }
+
+    #[tokio::test]
+    async fn procedure_idempotent_creation_does_not_return_bad_request() {
+        let req1 = make_root_request();
+        let name1 = web::Path::from("udp_idem_proc".to_string());
+        let body1 = web::Json(json!({
+            "unsafe_query": "SELECT 1 LIMIT 1;"
+        }));
+        let resp1 = create_procedure(req1, name1, body1).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let status1 = resp1.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status1, 400);
+
+        let req2 = make_root_request();
+        let name2 = web::Path::from("udp_idem_proc".to_string());
+        let body2 = web::Json(json!({
+            "unsafe_query": "SELECT 1 LIMIT 1;"
+        }));
+        let resp2 = create_procedure(req2, name2, body2).await;
+        let status2 = resp2.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status2, 400);
+    }
+
+    #[tokio::test]
+    async fn function_idempotent_creation_does_not_return_bad_request() {
+        let req1 = make_root_request();
+        let name1 = web::Path::from("calc_sum_idem".to_string());
+        let body1 = web::Json(json!({
+            "arguments": ["a integer", "b integer"],
+            "unsafe_query": "RETURN a + b;",
+            "returns": "integer"
+        }));
+        let resp1 = create_function(req1, name1, body1).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let status1 = resp1.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status1, 400);
+
+        let req2 = make_root_request();
+        let name2 = web::Path::from("calc_sum_idem".to_string());
+        let body2 = web::Json(json!({
+            "arguments": ["a integer", "b integer"],
+            "unsafe_query": "RETURN a + b;",
+            "returns": "integer"
+        }));
+        let resp2 = create_function(req2, name2, body2).await;
+        let status2 = resp2.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status2, 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_idempotent_structured_does_not_return_bad_request() {
+        let req1 = make_root_request();
+        let table1 = web::Path::from("contacts".to_string());
+        let body1 = web::Json(json!({
+            "trigger": {
+                "name": "trg_contacts_touch_idem",
+                "timing": "BEFORE",
+                "event": ["UPDATE"],
+                "level": "ROW"
+            },
+            "unsafe_query": "RETURN NEW;"
+        }));
+        let resp1 = create_trigger(req1, table1, body1).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let status1 = resp1.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status1, 400);
+
+        let req2 = make_root_request();
+        let table2 = web::Path::from("contacts".to_string());
+        let body2 = web::Json(json!({
+            "trigger": {
+                "name": "trg_contacts_touch_idem",
+                "timing": "BEFORE",
+                "event": ["UPDATE"],
+                "level": "ROW"
+            },
+            "unsafe_query": "RETURN NEW;"
+        }));
+        let resp2 = create_trigger(req2, table2, body2).await;
+        let status2 = resp2.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status2, 400);
+    }
 }

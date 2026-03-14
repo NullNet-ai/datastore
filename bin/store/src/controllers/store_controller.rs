@@ -3198,7 +3198,7 @@ pub async fn create_materialized_view(
     };
     let unsafe_query = normalize_whitespace_outside_strings(&unsafe_query_raw);
     let sql = format!(
-        "CREATE MATERIALIZED VIEW {} AS {}",
+        "CREATE MATERIALIZED VIEW IF NOT EXISTS {} AS {}",
         table_name, unsafe_query
     );
     let mut conn = db::get_async_connection().await;
@@ -3618,7 +3618,16 @@ pub async fn create_trigger(
                 })
             }
         };
-        let sql = normalize_whitespace_outside_strings(raw);
+        let mut sql = normalize_whitespace_outside_strings(raw);
+        let trimmed = sql.trim_start();
+        let upper = trimmed.to_uppercase();
+        if upper.starts_with("CREATE TRIGGER ") {
+            let rest = &trimmed["CREATE TRIGGER ".len()..];
+            sql = format!("CREATE OR REPLACE TRIGGER {}", rest);
+        } else if upper.starts_with("CREATE CONSTRAINT TRIGGER ") {
+            let rest = &trimmed["CREATE CONSTRAINT TRIGGER ".len()..];
+            sql = format!("CREATE OR REPLACE CONSTRAINT TRIGGER {}", rest);
+        }
         let mut conn = db::get_async_connection().await;
         return match sql_query(&sql).execute(&mut conn).await {
             Ok(_) => HttpResponse::Ok().json(ApiResponse {
@@ -3746,9 +3755,9 @@ pub async fn create_trigger(
         .unwrap_or(false);
     let mut sql = String::new();
     if constraint {
-        sql.push_str("CREATE CONSTRAINT TRIGGER ");
+        sql.push_str("CREATE OR REPLACE CONSTRAINT TRIGGER ");
     } else {
-        sql.push_str("CREATE TRIGGER ");
+        sql.push_str("CREATE OR REPLACE TRIGGER ");
     }
     sql.push_str(&name);
     sql.push(' ');
