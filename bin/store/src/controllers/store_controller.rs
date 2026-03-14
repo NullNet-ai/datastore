@@ -3588,6 +3588,304 @@ pub async fn create_function(
     }
 }
 
+pub async fn create_trigger(
+    auth: HttpRequest,
+    table: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let table_name = table.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&table_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid table name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let trigger_obj = request_body.get("trigger");
+    if trigger_obj.is_none() {
+        let raw = match request_body.get("unsafe_query").and_then(|v| v.as_str()) {
+            Some(s) => s.trim(),
+            None => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Either trigger object or unsafe_query is required".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
+        };
+        let sql = normalize_whitespace_outside_strings(raw);
+        let mut conn = db::get_async_connection().await;
+        return match sql_query(&sql).execute(&mut conn).await {
+            Ok(_) => HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: "Trigger created".to_string(),
+                count: 0,
+                data: vec![],
+            }),
+            Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to create trigger: {}", e),
+                count: 0,
+                data: vec![],
+            }),
+        };
+    }
+    let trig = trigger_obj.unwrap();
+    let timing = trig
+        .get("timing")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_uppercase())
+        .unwrap_or_default();
+    if timing != "BEFORE" && timing != "AFTER" && timing != "INSTEAD OF" {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid trigger timing".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let events = match trig.get("event") {
+        Some(Value::Array(arr)) if !arr.is_empty() => {
+            let mut parts: Vec<String> = Vec::new();
+            for v in arr {
+                if let Some(s) = v.as_str() {
+                    let e = s.trim().to_uppercase();
+                    if e == "INSERT" || e == "UPDATE" || e == "DELETE" || e == "TRUNCATE" {
+                        parts.push(e);
+                    } else {
+                        return HttpResponse::BadRequest().json(ApiResponse {
+                            success: false,
+                            message: "Invalid trigger event".to_string(),
+                            count: 0,
+                            data: vec![],
+                        });
+                    }
+                } else {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: "Invalid trigger event".to_string(),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+            parts.join(" OR ")
+        }
+        _ => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "Trigger event is required".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let level = trig
+        .get("level")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_uppercase())
+        .unwrap_or("STATEMENT".to_string());
+    if level != "ROW" && level != "STATEMENT" {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid trigger level".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let name = trig
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| {
+            let base = table_name
+                .split('.')
+                .last()
+                .unwrap_or(&table_name)
+                .to_string();
+            format!("trg_{}_{}", base, Ulid::new())
+        });
+    if !validate_identifier(&name, false) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid trigger name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let referenced_table = trig
+        .get("referenced_table")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string());
+    if let Some(ref rt) = referenced_table {
+        if !validate_identifier(rt, true) {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "Invalid referenced table".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    }
+    let constraint = trig.get("constraint").and_then(|v| v.as_bool()).unwrap_or(false);
+    let deferrable = trig.get("deferrable").and_then(|v| v.as_bool()).unwrap_or(false);
+    let initially_deferred = trig
+        .get("initially_deferred")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let mut sql = String::new();
+    if constraint {
+        sql.push_str("CREATE CONSTRAINT TRIGGER ");
+    } else {
+        sql.push_str("CREATE TRIGGER ");
+    }
+    sql.push_str(&name);
+    sql.push(' ');
+    sql.push_str(&timing);
+    sql.push(' ');
+    sql.push_str(&events);
+    sql.push_str(" ON ");
+    sql.push_str(&table_name);
+    if let Some(rt) = referenced_table {
+        sql.push_str(" FROM ");
+        sql.push_str(&rt);
+    }
+    if constraint {
+        if deferrable && initially_deferred {
+            sql.push_str(" DEFERRABLE INITIALLY DEFERRED");
+        } else if deferrable {
+            sql.push_str(" DEFERRABLE");
+        } else {
+            sql.push_str(" NOT DEFERRABLE");
+        }
+    }
+    if let Some(tr) = trig.get("transition_relations").and_then(|v| v.as_object()) {
+        let mut parts: Vec<String> = Vec::new();
+        if let Some(ot) = tr.get("old_table").and_then(|v| v.as_str()) {
+            let alias = ot.trim().to_string();
+            if !validate_identifier(&alias, false) {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Invalid old_table alias".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+            parts.push(format!("OLD TABLE AS {}", alias));
+        }
+        if let Some(nt) = tr.get("new_table").and_then(|v| v.as_str()) {
+            let alias = nt.trim().to_string();
+            if !validate_identifier(&alias, false) {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Invalid new_table alias".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+            parts.push(format!("NEW TABLE AS {}", alias));
+        }
+        if !parts.is_empty() {
+            sql.push_str(" REFERENCING ");
+            sql.push_str(&parts.join(" "));
+        }
+    }
+    sql.push_str(" FOR EACH ");
+    sql.push_str(&level);
+    if let Some(cond) = trig.get("condition").and_then(|v| v.as_str()) {
+        let c = cond.trim();
+        if !c.is_empty() {
+            sql.push_str(" WHEN ( ");
+            sql.push_str(c);
+            sql.push_str(" )");
+        }
+    }
+    let unsafe_query_raw = match request_body.get("unsafe_query").and_then(|v| v.as_str()) {
+        Some(s) => s.trim().to_string(),
+        None => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "unsafe_query is required to build trigger function".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if contains_dangerous_removal_statements(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_select_limits(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_update_has_where(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(unsafe_query_for_validation);
+    let fn_name = format!("fn_trg_{}", Ulid::new());
+    let fn_sql = format!(
+        "CREATE OR REPLACE FUNCTION {}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
+        fn_name, unsafe_query
+    );
+    sql.push_str(" EXECUTE FUNCTION ");
+    sql.push_str(&fn_name);
+    sql.push_str("()");
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&fn_sql).execute(&mut conn).await {
+        Ok(_) => {}
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to create trigger function: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    }
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Trigger created".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to create trigger: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
 async fn exec_pg_matviews_filter(parameters: GetByFilter) -> HttpResponse {
     log::debug!("exec_pg_matviews_filter: {:?}", parameters);
     let mut conn = db::get_async_connection().await;

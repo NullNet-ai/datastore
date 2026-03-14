@@ -1,7 +1,8 @@
 #[cfg(test)]
 mod tests {
-    use crate::controllers::store_controller::{create_materialized_view, create_procedure};
     use crate::controllers::store_controller::create_function;
+    use crate::controllers::store_controller::create_trigger;
+    use crate::controllers::store_controller::{create_materialized_view, create_procedure};
     use crate::structs::core::Auth;
     use actix_web::{test::TestRequest, web, HttpMessage, HttpRequest, Responder};
     use serde_json::json;
@@ -165,7 +166,8 @@ mod tests {
     async fn function_rejects_destructive_statements() {
         let req = make_root_request();
         let name = web::Path::from("calc_sum".to_string());
-        let body = web::Json(json!({"unsafe_query": "DELETE FROM x WHERE id = 1;", "returns": "void"}));
+        let body =
+            web::Json(json!({"unsafe_query": "DELETE FROM x WHERE id = 1;", "returns": "void"}));
         let resp = create_function(req, name, body).await;
         let assert_req = actix_web::test::TestRequest::default().to_http_request();
         assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
@@ -195,7 +197,8 @@ mod tests {
     async fn function_rejects_destructive_execute_payload() {
         let req = make_root_request();
         let name = web::Path::from("calc_sum".to_string());
-        let body = web::Json(json!({"unsafe_query": "EXECUTE $$ TRUNCATE x $$;", "returns": "void"}));
+        let body =
+            web::Json(json!({"unsafe_query": "EXECUTE $$ TRUNCATE x $$;", "returns": "void"}));
         let resp = create_function(req, name, body).await;
         let assert_req = actix_web::test::TestRequest::default().to_http_request();
         assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
@@ -266,6 +269,170 @@ mod tests {
             "returns": "integer"
         }));
         let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let status = resp.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status, 400);
+    }
+
+    // ===== Trigger tests =====
+    #[tokio::test]
+    async fn trigger_missing_both_trigger_and_unsafe_query_returns_bad_request() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({}));
+        let resp = create_trigger(req, table, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_invalid_timing_returns_bad_request() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({
+            "trigger": {
+                "name": "trg_contacts_touch",
+                "timing": "AFTERX",
+                "event": ["UPDATE"],
+                "level": "ROW"
+            },
+            "unsafe_query": "RETURN NEW;"
+        }));
+        let resp = create_trigger(req, table, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_invalid_event_returns_bad_request() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({
+            "trigger": {
+                "timing": "AFTER",
+                "event": ["BAD"],
+                "level": "STATEMENT"
+            },
+            "unsafe_query": "RETURN NULL;"
+        }));
+        let resp = create_trigger(req, table, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_invalid_level_returns_bad_request() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({
+            "trigger": {
+                "timing": "BEFORE",
+                "event": ["UPDATE"],
+                "level": "ROWX"
+            },
+            "unsafe_query": "RETURN NEW;"
+        }));
+        let resp = create_trigger(req, table, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_invalid_name_returns_bad_request() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({
+            "trigger": {
+                "name": "invalid-name",
+                "timing": "BEFORE",
+                "event": ["UPDATE"],
+                "level": "ROW"
+            },
+            "unsafe_query": "RETURN NEW;"
+        }));
+        let resp = create_trigger(req, table, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_invalid_referenced_table_returns_bad_request() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({
+            "trigger": {
+                "timing": "AFTER",
+                "event": ["INSERT"],
+                "level": "STATEMENT",
+                "referenced_table": "invalid-table"
+            },
+            "unsafe_query": "RETURN NULL;"
+        }));
+        let resp = create_trigger(req, table, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_invalid_transition_alias_returns_bad_request() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({
+            "trigger": {
+                "timing": "AFTER",
+                "event": ["INSERT"],
+                "level": "STATEMENT",
+                "transition_relations": { "old_table": "old-alias" }
+            },
+            "unsafe_query": "RETURN NULL;"
+        }));
+        let resp = create_trigger(req, table, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_structured_missing_unsafe_query_returns_bad_request() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({
+            "trigger": {
+                "timing": "AFTER",
+                "event": ["INSERT"],
+                "level": "ROW"
+            }
+        }));
+        let resp = create_trigger(req, table, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_raw_sql_executes_or_errors_but_not_bad_request() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({
+            "unsafe_query": "CREATE TRIGGER trg_tmp AFTER INSERT ON contacts FOR EACH ROW EXECUTE FUNCTION fn_tmp()"
+        }));
+        let resp = create_trigger(req, table, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let status = resp.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status, 400);
+    }
+
+    #[tokio::test]
+    async fn trigger_structured_valid_input_attempts_execution() {
+        let req = make_root_request();
+        let table = web::Path::from("contacts".to_string());
+        let body = web::Json(json!({
+            "trigger": {
+                "timing": "BEFORE",
+                "event": ["UPDATE"],
+                "level": "ROW"
+            },
+            "unsafe_query": "RETURN NEW;"
+        }));
+        let resp = create_trigger(req, table, body).await;
         let assert_req = actix_web::test::TestRequest::default().to_http_request();
         let status = resp.respond_to(&assert_req).status().as_u16();
         assert_ne!(status, 400);

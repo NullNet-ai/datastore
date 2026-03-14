@@ -176,3 +176,9 @@ create_root_wrapper!(root_create_function => create_function,
     name: actix_web::web::Path<String>,
     request_body: actix_web::web::Json<serde_json::Value>
 );
+
+create_root_wrapper!(root_create_trigger => create_trigger,
+    auth: HttpRequest,
+    table: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<serde_json::Value>
+);
