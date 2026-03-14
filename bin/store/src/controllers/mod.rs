@@ -13,3 +13,4 @@ mod health_controller_test;
 mod organization_controller_test;
 mod root_controller_test;
 mod store_controller_test;
+mod procedure_matview_tests;
