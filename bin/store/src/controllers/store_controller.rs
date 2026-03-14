@@ -20,10 +20,13 @@ use crate::structs::core::{
     QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
 use crate::structs::core::{FilterCriteria, FilterOperator};
-use crate::utils::helpers::{normalize_date_format, table_exists};
+use crate::utils::helpers::{
+    normalize_date_format, table_exists, ensure_root_access, validate_identifier,
+    require_unsafe_query_raw, format_diesel_error,
+};
 use crate::utils::sql_sanitizer::{
     contains_dangerous_removal_statements, sanitize_values, validate_execute_payloads,
-    validate_select_limits, validate_update_has_where,
+    validate_select_limits, validate_update_has_where, normalize_whitespace_outside_strings,
 };
 use crate::{db, providers};
 use actix_multipart::Multipart;
@@ -118,111 +121,7 @@ impl From<serde_json::Error> for ApiError {
     }
 }
 
-fn normalize_whitespace_outside_strings(s: &str) -> String {
-    let mut out = String::with_capacity(s.len());
-    let mut chars = s.chars().peekable();
-    enum State {
-        Normal,
-        SingleQuote,
-        DollarQuote(String),
-    }
-    let mut state = State::Normal;
-    let mut last_space = false;
-    while let Some(c) = chars.next() {
-        match state {
-            State::Normal => {
-                if c == '\'' {
-                    state = State::SingleQuote;
-                    out.push(c);
-                    last_space = false;
-                } else if c == '$' {
-                    let mut tag = String::new();
-                    let mut consumed = 0;
-                    let mut matched = false;
-                    let mut tmp = chars.clone();
-                    while let Some(nc) = tmp.next() {
-                        consumed += 1;
-                        if nc == '$' {
-                            matched = true;
-                            break;
-                        } else if nc.is_ascii_alphanumeric() || nc == '_' {
-                            tag.push(nc);
-                        } else {
-                            matched = false;
-                            break;
-                        }
-                    }
-                    if matched {
-                        out.push('$');
-                        out.push_str(&tag);
-                        out.push('$');
-                        for _ in 0..consumed {
-                            chars.next();
-                        }
-                        state = State::DollarQuote(tag);
-                        last_space = false;
-                    } else {
-                        out.push(c);
-                        last_space = false;
-                    }
-                } else if c.is_whitespace() {
-                    if !last_space {
-                        out.push(' ');
-                        last_space = true;
-                    }
-                } else {
-                    out.push(c);
-                    last_space = false;
-                }
-            }
-            State::SingleQuote => {
-                out.push(c);
-                if c == '\'' {
-                    if let Some('\'') = chars.peek() {
-                        out.push('\'');
-                        chars.next();
-                    } else {
-                        state = State::Normal;
-                    }
-                }
-            }
-            State::DollarQuote(ref tag) => {
-                if c == '$' {
-                    let mut tmp = chars.clone();
-                    let mut matched_all = true;
-                    for ch in tag.chars() {
-                        if let Some(nc) = tmp.next() {
-                            if nc != ch {
-                                matched_all = false;
-                                break;
-                            }
-                        } else {
-                            matched_all = false;
-                            break;
-                        }
-                    }
-                    if matched_all {
-                        if let Some(nc) = tmp.next() {
-                            if nc == '$' {
-                                out.push('$');
-                                out.push_str(tag);
-                                out.push('$');
-                                for _ in 0..(tag.len() + 1) {
-                                    chars.next();
-                                }
-                                state = State::Normal;
-                                last_space = false;
-                                continue;
-                            }
-                        }
-                    }
-                }
-                out.push(c);
-            }
-        }
-    }
-    out.trim().to_string()
-}
+ 
 pub async fn update_record(
     auth: HttpRequest,
     path_params: web::Path<(String, String)>,
@@ -329,59 +228,7 @@ pub async fn update_record(
     }
 }
 
-fn ensure_root_access(auth: &HttpRequest) -> Result<(), HttpResponse> {
-    let extensions = auth.extensions();
-    let auth_data = match extensions.get::<Auth>() {
-        Some(data) => data,
-        None => {
-            return Err(HttpResponse::InternalServerError().json(ApiResponse {
-                success: false,
-                message: "Authentication information not available".to_string(),
-                count: 0,
-                data: vec![],
-            }))
-        }
-    };
-    let is_root_controller = is_root_controller_request(auth);
-    if !is_root_controller || !auth_data.is_root_account {
-        return Err(HttpResponse::Unauthorized().json(ApiResponse {
-            success: false,
-            message: "Unauthorized: only root can perform this action".to_string(),
-            count: 0,
-            data: vec![],
-        }));
-    }
-    Ok(())
-}
-
-fn is_root_controller_request(auth: &HttpRequest) -> bool {
-    let extensions = auth.extensions();
-    let controller_type = extensions.get::<Option<String>>();
-    controller_type
-        .and_then(|opt| opt.as_ref())
-        .map(|s| s == "root")
-        .unwrap_or(false)
-}
-
-fn validate_identifier(name: &str, allow_dot: bool) -> bool {
-    if name.is_empty() {
-        return false;
-    }
-    name.chars()
-        .all(|c| c.is_ascii_alphanumeric() || c == '_' || (allow_dot && c == '.'))
-}
-
-fn require_unsafe_query_raw(body: &serde_json::Value) -> Result<String, HttpResponse> {
-    match body.get("unsafe_query").and_then(|v| v.as_str()) {
-        Some(q) if !q.trim().is_empty() => Ok(q.trim().to_string()),
-        _ => Err(HttpResponse::BadRequest().json(ApiResponse {
-            success: false,
-            message: "unsafe_query is required".to_string(),
-            count: 0,
-            data: vec![],
-        })),
-    }
-}
+ 
 
 pub async fn create_record(
     auth: HttpRequest,
@@ -3211,7 +3058,7 @@ pub async fn create_materialized_view(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to create materialized view: {}", e),
+            message: format!("Failed to create materialized view: {}", format_diesel_error(&e)),
             count: 0,
             data: vec![],
         }),
@@ -3394,7 +3241,7 @@ pub async fn create_procedure(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to create procedure: {}", e),
+            message: format!("Failed to create procedure: {}", format_diesel_error(&e)),
             count: 0,
             data: vec![],
         }),
@@ -3597,7 +3444,7 @@ pub async fn create_function(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to create function: {}", e),
+            message: format!("Failed to create function: {}", format_diesel_error(&e)),
             count: 0,
             data: vec![],
         }),
@@ -3698,12 +3545,27 @@ pub async fn call_procedure(
                 data,
             })
         }
-        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
-            success: false,
-            message: format!("Failed to execute procedure: {}", e),
-            count: 0,
-            data: vec![],
-        }),
+        Err(e) => {
+            let mut msg = format!("Failed to execute procedure: {}", e);
+            if let Some(db_err) = e.as_db_error() {
+                {
+                    let code = db_err.code();
+                    msg = format!("{} (SQLSTATE {})", msg, code.code());
+                }
+                if let Some(detail) = db_err.detail() {
+                    msg = format!("{}; detail: {}", msg, detail);
+                }
+                if let Some(hint) = db_err.hint() {
+                    msg = format!("{}; hint: {}", msg, hint);
+                }
+            }
+            HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: msg,
+                count: 0,
+                data: vec![],
+            })
+        }
     }
 }
 
@@ -3787,7 +3649,7 @@ pub async fn call_function(
                 data,
             });
         }
-        Err(_) => {
+        Err(e) => {
             let scalar_query = format!("SELECT {}{} AS result", func_name, args_signature);
             match client.query(&scalar_query, &[]).await {
                 Ok(rows) => {
@@ -3812,12 +3674,40 @@ pub async fn call_function(
                         data,
                     })
                 }
-                Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
-                    success: false,
-                    message: format!("Failed to execute function: {}", e),
-                    count: 0,
-                    data: vec![],
-                }),
+                Err(e2) => {
+                    let mut msg = format!("Failed to execute function: {}", e);
+                    if let Some(db_err) = e.as_db_error() {
+                        {
+                            let code = db_err.code();
+                            msg = format!("{} (SQLSTATE {})", msg, code.code());
+                        }
+                        if let Some(detail) = db_err.detail() {
+                            msg = format!("{}; detail: {}", msg, detail);
+                        }
+                        if let Some(hint) = db_err.hint() {
+                            msg = format!("{}; hint: {}", msg, hint);
+                        }
+                    }
+                    let mut msg2 = format!("Fallback scalar query failed: {}", e2);
+                    if let Some(db_err2) = e2.as_db_error() {
+                        {
+                            let code = db_err2.code();
+                            msg2 = format!("{} (SQLSTATE {})", msg2, code.code());
+                        }
+                        if let Some(detail) = db_err2.detail() {
+                            msg2 = format!("{}; detail: {}", msg2, detail);
+                        }
+                        if let Some(hint) = db_err2.hint() {
+                            msg2 = format!("{}; hint: {}", msg2, hint);
+                        }
+                    }
+                    HttpResponse::InternalServerError().json(ApiResponse {
+                        success: false,
+                        message: format!("{}; {}", msg, msg2),
+                        count: 0,
+                        data: vec![],
+                    })
+                }
             }
         }
     }
@@ -3873,7 +3763,7 @@ pub async fn create_trigger(
             }),
             Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
-                message: format!("Failed to create trigger: {}", e),
+                message: format!("Failed to create trigger: {}", format_diesel_error(&e)),
                 count: 0,
                 data: vec![],
             }),
@@ -4114,7 +4004,10 @@ pub async fn create_trigger(
         Err(e) => {
             return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
-                message: format!("Failed to create trigger function: {}", e),
+                message: format!(
+                    "Failed to create trigger function: {}",
+                    format_diesel_error(&e)
+                ),
                 count: 0,
                 data: vec![],
             })
@@ -4129,7 +4022,7 @@ pub async fn create_trigger(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to create trigger: {}", e),
+            message: format!("Failed to create trigger: {}", format_diesel_error(&e)),
             count: 0,
             data: vec![],
         }),
@@ -4163,7 +4056,7 @@ pub async fn delete_materialized_view(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to delete materialized view: {}", e),
+            message: format!("Failed to delete materialized view: {}", format_diesel_error(&e)),
             count: 0,
             data: vec![],
         }),
@@ -4302,7 +4195,7 @@ pub async fn delete_procedure(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to delete procedure: {}", e),
+            message: format!("Failed to delete procedure: {}", format_diesel_error(&e)),
             count: 0,
             data: vec![],
         }),
@@ -4427,7 +4320,7 @@ pub async fn delete_function(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to delete function: {}", e),
+            message: format!("Failed to delete function: {}", format_diesel_error(&e)),
             count: 0,
             data: vec![],
         }),
@@ -4472,7 +4365,7 @@ pub async fn delete_trigger(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to delete trigger: {}", e),
+            message: format!("Failed to delete trigger: {}", format_diesel_error(&e)),
             count: 0,
             data: vec![],
         }),

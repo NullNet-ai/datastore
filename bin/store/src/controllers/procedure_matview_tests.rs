@@ -311,7 +311,10 @@ mod tests {
         let create_resp = create_function(req_create, name, body).await;
         let assert_req = actix_web::test::TestRequest::default().to_http_request();
         let create_status = create_resp.respond_to(&assert_req).status().as_u16();
-        println!("call_function_returns_table_rows create_status: {}", create_status);
+        println!(
+            "call_function_returns_table_rows create_status: {}",
+            create_status
+        );
         assert_ne!(create_status, 400);
 
         let req_call = make_root_request();

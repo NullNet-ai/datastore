@@ -492,6 +492,111 @@ pub fn validate_select_limits(sql: &str) -> Result<(), String> {
     Ok(())
 }
 
+pub fn normalize_whitespace_outside_strings(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars().peekable();
+    enum State {
+        Normal,
+        SingleQuote,
+        DollarQuote(String),
+    }
+    let mut state = State::Normal;
+    let mut last_space = false;
+    while let Some(c) = chars.next() {
+        match state {
+            State::Normal => {
+                if c == '\'' {
+                    state = State::SingleQuote;
+                    out.push(c);
+                    last_space = false;
+                } else if c == '$' {
+                    let mut tag = String::new();
+                    let mut consumed = 0;
+                    let mut matched = false;
+                    let mut tmp = chars.clone();
+                    while let Some(nc) = tmp.next() {
+                        consumed += 1;
+                        if nc == '$' {
+                            matched = true;
+                            break;
+                        } else if nc.is_ascii_alphanumeric() || nc == '_' {
+                            tag.push(nc);
+                        } else {
+                            matched = false;
+                            break;
+                        }
+                    }
+                    if matched {
+                        out.push('$');
+                        out.push_str(&tag);
+                        out.push('$');
+                        for _ in 0..consumed {
+                            chars.next();
+                        }
+                        state = State::DollarQuote(tag);
+                        last_space = false;
+                    } else {
+                        out.push(c);
+                        last_space = false;
+                    }
+                } else if c.is_whitespace() {
+                    if !last_space {
+                        out.push(' ');
+                        last_space = true;
+                    }
+                } else {
+                    out.push(c);
+                    last_space = false;
+                }
+            }
+            State::SingleQuote => {
+                out.push(c);
+                if c == '\'' {
+                    if let Some('\'') = chars.peek() {
+                        out.push('\'');
+                        chars.next();
+                    } else {
+                        state = State::Normal;
+                    }
+                }
+            }
+            State::DollarQuote(ref tag) => {
+                if c == '$' {
+                    let mut tmp = chars.clone();
+                    let mut matched_all = true;
+                    for ch in tag.chars() {
+                        if let Some(nc) = tmp.next() {
+                            if nc != ch {
+                                matched_all = false;
+                                break;
+                            }
+                        } else {
+                            matched_all = false;
+                            break;
+                        }
+                    }
+                    if matched_all {
+                        if let Some(nc) = tmp.next() {
+                            if nc == '$' {
+                                out.push('$');
+                                out.push_str(tag);
+                                out.push('$');
+                                for _ in 0..(tag.len() + 1) {
+                                    chars.next();
+                                }
+                                state = State::Normal;
+                                last_space = false;
+                                continue;
+                            }
+                        }
+                    }
+                }
+                out.push(c);
+            }
+        }
+    }
+    out.trim().to_string()
+}
 pub fn validate_update_has_where(sql: &str) -> Result<(), String> {
     let cleaned = strip_strings_and_comments(sql);
     for stmt in cleaned.split(';') {
