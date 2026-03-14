@@ -5,6 +5,18 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.52
+
+### Author
+Jean
+
+### Fixed
+  - ***Nested selections — self-join alias handling***:
+    - `providers/queries/find/constructors/selections_constructor.rs`
+      - Use a distinct subquery alias for self joins to avoid alias collisions.
+      - Adjust join conditions and selected field pairs to reference the local alias.
+      - Fix self-join field mapping in the join condition for non-nested joins.
+
 ## 0.2.51
 
 ### Author
