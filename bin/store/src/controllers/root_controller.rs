@@ -182,3 +182,8 @@ create_root_wrapper!(root_create_trigger => create_trigger,
     table: actix_web::web::Path<String>,
     request_body: actix_web::web::Json<serde_json::Value>
 );
+
+create_root_wrapper!(root_cron_schedule_job => cron_schedule_job,
+    auth: HttpRequest,
+    request_body: actix_web::web::Json<serde_json::Value>
+);

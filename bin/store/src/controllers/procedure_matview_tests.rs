@@ -2,6 +2,7 @@
 mod tests {
     use crate::controllers::store_controller::create_function;
     use crate::controllers::store_controller::create_trigger;
+    use crate::controllers::store_controller::cron_schedule_job;
     use crate::controllers::store_controller::{create_materialized_view, create_procedure};
     use crate::structs::core::Auth;
     use actix_web::{test::TestRequest, web, HttpMessage, HttpRequest, Responder};
@@ -541,5 +542,54 @@ mod tests {
         let resp2 = create_trigger(req2, table2, body2).await;
         let status2 = resp2.respond_to(&assert_req).status().as_u16();
         assert_ne!(status2, 400);
+    }
+    // ===== Cron schedule tests =====
+    #[tokio::test]
+    async fn cron_missing_fields_returns_bad_request() {
+        let req = make_root_request();
+        let body = web::Json(json!({}));
+        let resp = cron_schedule_job(req, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn cron_destructive_sql_returns_bad_request() {
+        let req = make_root_request();
+        let body = web::Json(json!({
+            "name": "process_event_queue",
+            "format": "*/1 * * * *",
+            "statement": "TRUNCATE contacts"
+        }));
+        let resp = cron_schedule_job(req, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn cron_update_requires_where_returns_bad_request() {
+        let req = make_root_request();
+        let body = web::Json(json!({
+            "name": "process_event_queue",
+            "format": "*/1 * * * *",
+            "statement": "UPDATE contacts SET status = 'Active'"
+        }));
+        let resp = cron_schedule_job(req, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn cron_valid_job_attempts_execution() {
+        let req = make_root_request();
+        let body = web::Json(json!({
+            "name": "process_event_queue",
+            "format": "*/1 * * * *",
+            "statement": "SELECT 1 LIMIT 1;"
+        }));
+        let resp = cron_schedule_job(req, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let status = resp.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status, 400);
     }
 }

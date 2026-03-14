@@ -3901,6 +3901,112 @@ pub async fn create_trigger(
     }
 }
 
+pub async fn cron_schedule_job(
+    auth: HttpRequest,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    let job_name = request_body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .or_else(|| request_body.get("job_name").and_then(|v| v.as_str()))
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    if job_name.is_empty() || !validate_identifier(&job_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid job name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let schedule = match request_body.get("format").and_then(|v| v.as_str()) {
+        Some(s) => s.trim().to_string(),
+        None => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "format is required".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    if schedule.is_empty()
+        || !schedule
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == ' ' || c == '*' || c == '/' || c == ',' || c == '-' || c == '?')
+    {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid schedule format".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query_raw = match request_body.get("statement").and_then(|v| v.as_str()) {
+        Some(s) => s.trim(),
+        None => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "statement is required".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    if contains_dangerous_removal_statements(unsafe_query_raw) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_update_has_where(unsafe_query_raw) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_query_raw) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(unsafe_query_raw);
+    let name_lit = format!("'{}'", job_name);
+    let schedule_lit = format!("'{}'", schedule);
+    let ext_sql = "CREATE EXTENSION IF NOT EXISTS pg_cron;";
+    let schedule_sql = format!(
+        "SELECT cron.schedule({}, {}, $$ {} $$);",
+        name_lit, schedule_lit, unsafe_query
+    );
+    let mut conn = db::get_async_connection().await;
+    let _ = sql_query(ext_sql).execute(&mut conn).await;
+    let warn = "pg_cron requires shared_preload_libraries = 'pg_cron' in postgresql.conf and a PostgreSQL restart";
+    match sql_query(&schedule_sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: warn.to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to schedule cron job: {}. {}", e, warn),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
 async fn exec_pg_matviews_filter(parameters: GetByFilter) -> HttpResponse {
     log::debug!("exec_pg_matviews_filter: {:?}", parameters);
     let mut conn = db::get_async_connection().await;
