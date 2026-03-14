@@ -3,13 +3,13 @@ use crate::controllers::store_controller::ApiError;
 use crate::database::schema::verify::field_type_in_table;
 use crate::generated::table_enum::Table as TableEnum;
 use crate::structs::core::CommandArgs;
+use crate::structs::core::{ApiResponse, Auth};
 use actix_web::http;
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use diesel::result::Error as DieselError;
 use pluralizer::pluralize;
-use std::env;
-use actix_web::{HttpRequest, HttpResponse, HttpMessage};
-use crate::structs::core::{Auth, ApiResponse};
 use serde_json::Value;
+use std::env;
 
 pub fn _token_data_extractor(_token: &str) -> String {
     todo!()

@@ -21,12 +21,12 @@ use crate::structs::core::{
 };
 use crate::structs::core::{FilterCriteria, FilterOperator};
 use crate::utils::helpers::{
-    normalize_date_format, table_exists, ensure_root_access, validate_identifier,
-    require_unsafe_query_raw, format_diesel_error,
+    ensure_root_access, format_diesel_error, normalize_date_format, require_unsafe_query_raw,
+    table_exists, validate_identifier,
 };
 use crate::utils::sql_sanitizer::{
-    contains_dangerous_removal_statements, sanitize_values, validate_execute_payloads,
-    validate_select_limits, validate_update_has_where, normalize_whitespace_outside_strings,
+    contains_dangerous_removal_statements, normalize_whitespace_outside_strings, sanitize_values,
+    validate_execute_payloads, validate_select_limits, validate_update_has_where,
 };
 use crate::{db, providers};
 use actix_multipart::Multipart;
@@ -121,7 +121,6 @@ impl From<serde_json::Error> for ApiError {
     }
 }
 
- 
 pub async fn update_record(
     auth: HttpRequest,
     path_params: web::Path<(String, String)>,
@@ -227,8 +226,6 @@ pub async fn update_record(
         }
     }
 }
-
- 
 
 pub async fn create_record(
     auth: HttpRequest,
@@ -3058,7 +3055,10 @@ pub async fn create_materialized_view(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to create materialized view: {}", format_diesel_error(&e)),
+            message: format!(
+                "Failed to create materialized view: {}",
+                format_diesel_error(&e)
+            ),
             count: 0,
             data: vec![],
         }),
@@ -4056,7 +4056,10 @@ pub async fn delete_materialized_view(
         }),
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
-            message: format!("Failed to delete materialized view: {}", format_diesel_error(&e)),
+            message: format!(
+                "Failed to delete materialized view: {}",
+                format_diesel_error(&e)
+            ),
             count: 0,
             data: vec![],
         }),
