@@ -21,6 +21,10 @@ use crate::structs::core::{
 };
 use crate::structs::core::{FilterCriteria, FilterOperator};
 use crate::utils::helpers::{normalize_date_format, table_exists};
+use crate::utils::sql_sanitizer::{
+    contains_dangerous_removal_statements, validate_execute_payloads, validate_select_limits,
+    validate_update_has_where,
+};
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
@@ -363,9 +367,8 @@ fn validate_identifier(name: &str, allow_dot: bool) -> bool {
     if name.is_empty() {
         return false;
     }
-    name.chars().all(|c| {
-        c.is_ascii_alphanumeric() || c == '_' || (allow_dot && c == '.')
-    })
+    name.chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || (allow_dot && c == '.'))
 }
 
 fn require_unsafe_query_raw(body: &serde_json::Value) -> Result<String, HttpResponse> {
@@ -3220,398 +3223,6 @@ pub async fn create_procedure(
     name: web::Path<String>,
     request_body: web::Json<serde_json::Value>,
 ) -> impl Responder {
-    fn strip_strings_and_comments(s: &str) -> String {
-        let mut out = String::with_capacity(s.len());
-        let mut chars = s.chars().peekable();
-        enum State {
-            Normal,
-            SingleQuote,
-            LineComment,
-            BlockComment,
-            DollarQuote(String),
-        }
-        let mut state = State::Normal;
-        while let Some(c) = chars.next() {
-            match state {
-                State::Normal => {
-                    if c == '\'' {
-                        state = State::SingleQuote;
-                    } else if c == '$' {
-                        let mut tag = String::new();
-                        let mut consumed = 0;
-                        let mut matched = false;
-                        let mut tmp = chars.clone();
-                        while let Some(nc) = tmp.next() {
-                            consumed += 1;
-                            if nc == '$' {
-                                matched = true;
-                                break;
-                            } else if nc.is_ascii_alphanumeric() || nc == '_' {
-                                tag.push(nc);
-                            } else {
-                                matched = false;
-                                break;
-                            }
-                        }
-                        if matched {
-                            for _ in 0..consumed {
-                                chars.next();
-                            }
-                            state = State::DollarQuote(tag);
-                        } else {
-                            out.push(c);
-                        }
-                    } else if c == '-' {
-                        if let Some('-') = chars.peek() {
-                            chars.next();
-                            state = State::LineComment;
-                        } else {
-                            out.push(c);
-                        }
-                    } else if c == '/' {
-                        if let Some('*') = chars.peek() {
-                            chars.next();
-                            state = State::BlockComment;
-                        } else {
-                            out.push(c);
-                        }
-                    } else {
-                        out.push(c);
-                    }
-                }
-                State::SingleQuote => {
-                    if c == '\'' {
-                        if let Some('\'') = chars.peek() {
-                            chars.next();
-                        } else {
-                            state = State::Normal;
-                        }
-                    }
-                }
-                State::LineComment => {
-                    if c == '\n' {
-                        state = State::Normal;
-                        out.push(c);
-                    }
-                }
-                State::BlockComment => {
-                    if c == '*' {
-                        if let Some('/') = chars.peek() {
-                            chars.next();
-                            state = State::Normal;
-                        }
-                    }
-                }
-                State::DollarQuote(ref tag) => {
-                    if c == '$' {
-                        let mut tmp = chars.clone();
-                        let mut matched_all = true;
-                        for ch in tag.chars() {
-                            if let Some(nc) = tmp.next() {
-                                if nc != ch {
-                                    matched_all = false;
-                                    break;
-                                }
-                            } else {
-                                matched_all = false;
-                                break;
-                            }
-                        }
-                        if matched_all {
-                            if let Some(nc) = tmp.next() {
-                                if nc == '$' {
-                                    for _ in 0..(tag.len() + 1) {
-                                        chars.next();
-                                    }
-                                    state = State::Normal;
-                                    continue;
-                                }
-                            }
-                        }
-                    }
-                    if c == '\n' {
-                        out.push(c);
-                    }
-                }
-            }
-        }
-        out
-    }
-    fn contains_dangerous_removal_statements(sql: &str) -> bool {
-        let cleaned = strip_strings_and_comments(sql);
-        let upper = cleaned.to_uppercase();
-        let tokens: Vec<&str> = upper
-            .split(|c: char| !c.is_ascii_alphabetic())
-            .filter(|t| !t.is_empty())
-            .collect();
-        tokens.iter().any(|t| *t == "DELETE" || *t == "DROP" || *t == "TRUNCATE")
-    }
-    fn validate_select_limits(sql: &str) -> Result<(), String> {
-        let cleaned = strip_strings_and_comments(sql);
-        for stmt in cleaned.split(';') {
-            let s = stmt.trim();
-            if s.is_empty() {
-                continue;
-            }
-            let s_upper = s.to_uppercase();
-            if s_upper.contains("SELECT") {
-                if let Some(idx) = s_upper.find("LIMIT") {
-                    let mut digits = String::new();
-                    for c in s_upper[idx + "LIMIT".len()..].chars() {
-                        if c.is_ascii_whitespace() {
-                            if digits.is_empty() {
-                                continue;
-                            } else {
-                                break;
-                            }
-                        } else if c.is_ascii_digit() {
-                            digits.push(c);
-                        } else {
-                            break;
-                        }
-                    }
-                    if digits.is_empty() {
-                        return Err("SELECT statement LIMIT must be numeric".to_string());
-                    }
-                    let n: usize = digits.parse().map_err(|_| {
-                        "SELECT statement LIMIT must be numeric".to_string()
-                    })?;
-                    if n > 10_000 {
-                        return Err("SELECT statement LIMIT exceeds maximum of 10000".to_string());
-                    }
-                } else {
-                    return Err("SELECT statement missing LIMIT".to_string());
-                }
-            }
-        }
-        Ok(())
-    }
-    fn validate_update_has_where(sql: &str) -> Result<(), String> {
-        let cleaned = strip_strings_and_comments(sql);
-        for stmt in cleaned.split(';') {
-            let s = stmt.trim();
-            if s.is_empty() {
-                continue;
-            }
-            let s_upper = s.to_uppercase();
-            if s_upper.contains("UPDATE") && !s_upper.contains("WHERE") {
-                return Err("UPDATE statement missing WHERE clause".to_string());
-            }
-        }
-        Ok(())
-    }
-    fn extract_execute_payloads(sql: &str) -> Vec<String> {
-        let mut payloads = Vec::new();
-        let mut chars = sql.chars().peekable();
-        enum State {
-            Normal,
-            SingleQuote,
-            DollarQuote(String),
-            LineComment,
-            BlockComment,
-        }
-        let mut state = State::Normal;
-        while let Some(c) = chars.next() {
-            match state {
-                State::Normal => {
-                    if c == '\'' {
-                        state = State::SingleQuote;
-                    } else if c == '$' {
-                        let mut tag = String::new();
-                        let mut consumed = 0;
-                        let mut matched = false;
-                        let mut tmp = chars.clone();
-                        while let Some(nc) = tmp.next() {
-                            consumed += 1;
-                            if nc == '$' {
-                                matched = true;
-                                break;
-                            } else if nc.is_ascii_alphanumeric() || nc == '_' {
-                                tag.push(nc);
-                            } else {
-                                matched = false;
-                                break;
-                            }
-                        }
-                        if matched {
-                            for _ in 0..consumed {
-                                chars.next();
-                            }
-                            state = State::DollarQuote(tag);
-                        }
-                    } else if c == '-' {
-                        if let Some('-') = chars.peek() {
-                            chars.next();
-                            state = State::LineComment;
-                        }
-                    } else if c == '/' {
-                        if let Some('*') = chars.peek() {
-                            chars.next();
-                            state = State::BlockComment;
-                        }
-                    } else if c.to_ascii_uppercase() == 'E' {
-                        let mut tmp = chars.clone();
-                        let mut word = String::new();
-                        word.push(c);
-                        for _ in 0..6 {
-                            if let Some(nc) = tmp.next() {
-                                word.push(nc);
-                            } else {
-                                break;
-                            }
-                        }
-                        if word.to_ascii_uppercase() == "EXECUTE" {
-                            for _ in 0..6 {
-                                chars.next();
-                            }
-                            while let Some(ws) = chars.peek() {
-                                if ws.is_ascii_whitespace() {
-                                    chars.next();
-                                } else {
-                                    break;
-                                }
-                            }
-                            if let Some(nextc) = chars.peek().cloned() {
-                                if nextc == '\'' {
-                                    let mut content = String::new();
-                                    chars.next();
-                                    while let Some(sc) = chars.next() {
-                                        if sc == '\'' {
-                                            if let Some('\'') = chars.peek() {
-                                                chars.next();
-                                                content.push('\'');
-                                            } else {
-                                                break;
-                                            }
-                                        } else {
-                                            content.push(sc);
-                                        }
-                                    }
-                                    payloads.push(content);
-                                } else if nextc == '$' {
-                                    chars.next();
-                                    let mut tag = String::new();
-                                    while let Some(tc) = chars.peek() {
-                                        if *tc == '$' {
-                                            chars.next();
-                                            break;
-                                        } else if tc.is_ascii_alphanumeric() || *tc == '_' {
-                                            tag.push(*tc);
-                                            chars.next();
-                                        } else {
-                                            break;
-                                        }
-                                    }
-                                    let mut content = String::new();
-                                    loop {
-                                        if let Some(dc) = chars.next() {
-                                            if dc == '$' {
-                                                let mut tmp2 = chars.clone();
-                                                let mut matched_all = true;
-                                                for ch in tag.chars() {
-                                                    if let Some(nc) = tmp2.next() {
-                                                        if nc != ch {
-                                                            matched_all = false;
-                                                            break;
-                                                        }
-                                                    } else {
-                                                        matched_all = false;
-                                                        break;
-                                                    }
-                                                }
-                                                if matched_all {
-                                                    if let Some(nc) = tmp2.next() {
-                                                        if nc == '$' {
-                                                            for _ in 0..(tag.len() + 1) {
-                                                                chars.next();
-                                                            }
-                                                            break;
-                                                        }
-                                                    }
-                                                }
-                                                content.push(dc);
-                                            } else {
-                                                content.push(dc);
-                                            }
-                                        } else {
-                                            break;
-                                        }
-                                    }
-                                    payloads.push(content);
-                                }
-                            }
-                        }
-                    }
-                }
-                State::SingleQuote => {
-                    if c == '\'' {
-                        if let Some('\'') = chars.peek() {
-                            chars.next();
-                        } else {
-                            state = State::Normal;
-                        }
-                    }
-                }
-                State::DollarQuote(ref tag) => {
-                    if c == '$' {
-                        let mut tmp = chars.clone();
-                        let mut matched_all = true;
-                        for ch in tag.chars() {
-                            if let Some(nc) = tmp.next() {
-                                if nc != ch {
-                                    matched_all = false;
-                                    break;
-                                }
-                            } else {
-                                matched_all = false;
-                                break;
-                            }
-                        }
-                        if matched_all {
-                            if let Some(nc) = tmp.next() {
-                                if nc == '$' {
-                                    for _ in 0..(tag.len() + 1) {
-                                        chars.next();
-                                    }
-                                    state = State::Normal;
-                                    continue;
-                                }
-                            }
-                        }
-                    }
-                }
-                State::LineComment => {
-                    if c == '\n' {
-                        state = State::Normal;
-                    }
-                }
-                State::BlockComment => {
-                    if c == '*' {
-                        if let Some('/') = chars.peek() {
-                            chars.next();
-                            state = State::Normal;
-                        }
-                    }
-                }
-            }
-        }
-        payloads
-    }
-    fn validate_execute_payloads(sql: &str) -> Result<(), String> {
-        let payloads = extract_execute_payloads(sql);
-        for p in payloads {
-            if contains_dangerous_removal_statements(&p) {
-                return Err("EXECUTE payload contains potentially destructive statements".to_string());
-            }
-            if let Err(e) = validate_select_limits(&p) {
-                return Err(format!("EXECUTE payload invalid: {}", e));
-            }
-            if let Err(e) = validate_update_has_where(&p) {
-                return Err(format!("EXECUTE payload invalid: {}", e));
-            }
-        }
-        Ok(())
-    }
     let procedure_name_raw = name.into_inner();
     if let Err(resp) = ensure_root_access(&auth) {
         return resp;
@@ -3776,6 +3387,201 @@ pub async fn create_procedure(
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
             message: format!("Failed to create procedure: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn create_function(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let function_name = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&function_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid function name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if contains_dangerous_removal_statements(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_select_limits(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_update_has_where(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(unsafe_query_for_validation);
+    let args_signature = if let Some(args_val) = request_body.get("arguments") {
+        match args_val {
+            Value::Array(arr) => {
+                if arr.is_empty() {
+                    "()".to_string()
+                } else {
+                    let mut parts: Vec<String> = Vec::new();
+                    for item in arr {
+                        match item {
+                            Value::String(spec) => {
+                                let s = spec.trim();
+                                if s.is_empty()
+                                    || !s.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument specification".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(s.to_string());
+                            }
+                            Value::Object(obj) => {
+                                let name = obj
+                                    .get("name")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                let ty = obj
+                                    .get("type")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                if name.is_empty()
+                                    || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+                                    || ty.is_empty()
+                                    || !ty.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument object".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(format!("{} {}", name, ty));
+                            }
+                            _ => {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: "Arguments must be strings or {name,type} objects"
+                                        .to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                    }
+                    format!("({})", parts.join(", "))
+                }
+            }
+            _ => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "arguments must be an array".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    } else {
+        "()".to_string()
+    };
+    let returns_type = request_body
+        .get("returns")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| "void".to_string());
+    if returns_type.is_empty()
+        || !returns_type.chars().all(|c| {
+            c.is_ascii_alphanumeric()
+                || c == '_'
+                || c == ' '
+                || c == '('
+                || c == ')'
+                || c == '['
+                || c == ']'
+                || c == ','
+                || c == '.'
+        })
+    {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid returns type".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let sql = format!(
+        "CREATE OR REPLACE FUNCTION {}{} RETURNS {} LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
+        function_name, args_signature, returns_type, unsafe_query
+    );
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Function created".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to create function: {}", e),
             count: 0,
             data: vec![],
         }),

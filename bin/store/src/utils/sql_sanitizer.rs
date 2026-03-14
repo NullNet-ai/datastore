@@ -318,3 +318,403 @@ mod tests {
         assert_eq!(results, vec!["'test1'", "'test2'' OR ''1''=''1'", "123"]);
     }
 }
+
+pub fn strip_strings_and_comments(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    let mut chars = s.chars().peekable();
+    enum State {
+        Normal,
+        SingleQuote,
+        LineComment,
+        BlockComment,
+        DollarQuote(String),
+    }
+    let mut state = State::Normal;
+    while let Some(c) = chars.next() {
+        match state {
+            State::Normal => {
+                if c == '\'' {
+                    state = State::SingleQuote;
+                } else if c == '$' {
+                    let mut tag = String::new();
+                    let mut consumed = 0;
+                    let mut matched = false;
+                    let mut tmp = chars.clone();
+                    while let Some(nc) = tmp.next() {
+                        consumed += 1;
+                        if nc == '$' {
+                            matched = true;
+                            break;
+                        } else if nc.is_ascii_alphanumeric() || nc == '_' {
+                            tag.push(nc);
+                        } else {
+                            matched = false;
+                            break;
+                        }
+                    }
+                    if matched {
+                        for _ in 0..consumed {
+                            chars.next();
+                        }
+                        state = State::DollarQuote(tag);
+                    } else {
+                        out.push(c);
+                    }
+                } else if c == '-' {
+                    if let Some('-') = chars.peek() {
+                        chars.next();
+                        state = State::LineComment;
+                    } else {
+                        out.push(c);
+                    }
+                } else if c == '/' {
+                    if let Some('*') = chars.peek() {
+                        chars.next();
+                        state = State::BlockComment;
+                    } else {
+                        out.push(c);
+                    }
+                } else {
+                    out.push(c);
+                }
+            }
+            State::SingleQuote => {
+                if c == '\'' {
+                    if let Some('\'') = chars.peek() {
+                        chars.next();
+                    } else {
+                        state = State::Normal;
+                    }
+                }
+            }
+            State::LineComment => {
+                if c == '\n' {
+                    state = State::Normal;
+                    out.push(c);
+                }
+            }
+            State::BlockComment => {
+                if c == '*' {
+                    if let Some('/') = chars.peek() {
+                        chars.next();
+                        state = State::Normal;
+                    }
+                }
+            }
+            State::DollarQuote(ref tag) => {
+                if c == '$' {
+                    let mut tmp = chars.clone();
+                    let mut matched_all = true;
+                    for ch in tag.chars() {
+                        if let Some(nc) = tmp.next() {
+                            if nc != ch {
+                                matched_all = false;
+                                break;
+                            }
+                        } else {
+                            matched_all = false;
+                            break;
+                        }
+                    }
+                    if matched_all {
+                        if let Some(nc) = tmp.next() {
+                            if nc == '$' {
+                                for _ in 0..(tag.len() + 1) {
+                                    chars.next();
+                                }
+                                state = State::Normal;
+                                continue;
+                            }
+                        }
+                    }
+                }
+                if c == '\n' {
+                    out.push(c);
+                }
+            }
+        }
+    }
+    out
+}
+
+pub fn contains_dangerous_removal_statements(sql: &str) -> bool {
+    let cleaned = strip_strings_and_comments(sql);
+    let upper = cleaned.to_uppercase();
+    let tokens: Vec<&str> = upper
+        .split(|c: char| !c.is_ascii_alphabetic())
+        .filter(|t| !t.is_empty())
+        .collect();
+    tokens
+        .iter()
+        .any(|t| *t == "DELETE" || *t == "DROP" || *t == "TRUNCATE")
+}
+
+pub fn validate_select_limits(sql: &str) -> Result<(), String> {
+    let cleaned = strip_strings_and_comments(sql);
+    for stmt in cleaned.split(';') {
+        let s = stmt.trim();
+        if s.is_empty() {
+            continue;
+        }
+        let s_upper = s.to_uppercase();
+        if s_upper.contains("SELECT") {
+            if let Some(idx) = s_upper.find("LIMIT") {
+                let mut digits = String::new();
+                for c in s_upper[idx + "LIMIT".len()..].chars() {
+                    if c.is_ascii_whitespace() {
+                        if digits.is_empty() {
+                            continue;
+                        } else {
+                            break;
+                        }
+                    } else if c.is_ascii_digit() {
+                        digits.push(c);
+                    } else {
+                        break;
+                    }
+                }
+                if digits.is_empty() {
+                    return Err("SELECT statement LIMIT must be numeric".to_string());
+                }
+                let n: usize = digits
+                    .parse()
+                    .map_err(|_| "SELECT statement LIMIT must be numeric".to_string())?;
+                if n > 10_000 {
+                    return Err("SELECT statement LIMIT exceeds maximum of 10000".to_string());
+                }
+            } else {
+                return Err("SELECT statement missing LIMIT".to_string());
+            }
+        }
+    }
+    Ok(())
+}
+
+pub fn validate_update_has_where(sql: &str) -> Result<(), String> {
+    let cleaned = strip_strings_and_comments(sql);
+    for stmt in cleaned.split(';') {
+        let s = stmt.trim();
+        if s.is_empty() {
+            continue;
+        }
+        let s_upper = s.to_uppercase();
+        if s_upper.contains("UPDATE") && !s_upper.contains("WHERE") {
+            return Err("UPDATE statement missing WHERE clause".to_string());
+        }
+    }
+    Ok(())
+}
+
+pub fn extract_execute_payloads(sql: &str) -> Vec<String> {
+    let mut payloads = Vec::new();
+    let mut chars = sql.chars().peekable();
+    enum State {
+        Normal,
+        SingleQuote,
+        DollarQuote(String),
+        LineComment,
+        BlockComment,
+    }
+    let mut state = State::Normal;
+    while let Some(c) = chars.next() {
+        match state {
+            State::Normal => {
+                if c == '\'' {
+                    state = State::SingleQuote;
+                } else if c == '$' {
+                    let mut tag = String::new();
+                    let mut consumed = 0;
+                    let mut matched = false;
+                    let mut tmp = chars.clone();
+                    while let Some(nc) = tmp.next() {
+                        consumed += 1;
+                        if nc == '$' {
+                            matched = true;
+                            break;
+                        } else if nc.is_ascii_alphanumeric() || nc == '_' {
+                            tag.push(nc);
+                        } else {
+                            matched = false;
+                            break;
+                        }
+                    }
+                    if matched {
+                        for _ in 0..consumed {
+                            chars.next();
+                        }
+                        state = State::DollarQuote(tag);
+                    }
+                } else if c == '-' {
+                    if let Some('-') = chars.peek() {
+                        chars.next();
+                        state = State::LineComment;
+                    }
+                } else if c == '/' {
+                    if let Some('*') = chars.peek() {
+                        chars.next();
+                        state = State::BlockComment;
+                    }
+                } else if c.to_ascii_uppercase() == 'E' {
+                    let mut tmp = chars.clone();
+                    let mut word = String::new();
+                    word.push(c);
+                    for _ in 0..6 {
+                        if let Some(nc) = tmp.next() {
+                            word.push(nc);
+                        } else {
+                            break;
+                        }
+                    }
+                    if word.to_ascii_uppercase() == "EXECUTE" {
+                        for _ in 0..6 {
+                            chars.next();
+                        }
+                        while let Some(ws) = chars.peek() {
+                            if ws.is_ascii_whitespace() {
+                                chars.next();
+                            } else {
+                                break;
+                            }
+                        }
+                        if let Some(nextc) = chars.peek().cloned() {
+                            if nextc == '\'' {
+                                let mut content = String::new();
+                                chars.next();
+                                while let Some(sc) = chars.next() {
+                                    if sc == '\'' {
+                                        if let Some('\'') = chars.peek() {
+                                            chars.next();
+                                            content.push('\'');
+                                        } else {
+                                            break;
+                                        }
+                                    } else {
+                                        content.push(sc);
+                                    }
+                                }
+                                payloads.push(content);
+                            } else if nextc == '$' {
+                                chars.next();
+                                let mut tag = String::new();
+                                while let Some(tc) = chars.peek() {
+                                    if *tc == '$' {
+                                        chars.next();
+                                        break;
+                                    } else if tc.is_ascii_alphanumeric() || *tc == '_' {
+                                        tag.push(*tc);
+                                        chars.next();
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                let mut content = String::new();
+                                loop {
+                                    if let Some(dc) = chars.next() {
+                                        if dc == '$' {
+                                            let mut tmp2 = chars.clone();
+                                            let mut matched_all = true;
+                                            for ch in tag.chars() {
+                                                if let Some(nc) = tmp2.next() {
+                                                    if nc != ch {
+                                                        matched_all = false;
+                                                        break;
+                                                    }
+                                                } else {
+                                                    matched_all = false;
+                                                    break;
+                                                }
+                                            }
+                                            if matched_all {
+                                                if let Some(nc) = tmp2.next() {
+                                                    if nc == '$' {
+                                                        for _ in 0..(tag.len() + 1) {
+                                                            chars.next();
+                                                        }
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            content.push(dc);
+                                        } else {
+                                            content.push(dc);
+                                        }
+                                    } else {
+                                        break;
+                                    }
+                                }
+                                payloads.push(content);
+                            }
+                        }
+                    }
+                }
+            }
+            State::SingleQuote => {
+                if c == '\'' {
+                    if let Some('\'') = chars.peek() {
+                        chars.next();
+                    } else {
+                        state = State::Normal;
+                    }
+                }
+            }
+            State::DollarQuote(ref tag) => {
+                if c == '$' {
+                    let mut tmp = chars.clone();
+                    let mut matched_all = true;
+                    for ch in tag.chars() {
+                        if let Some(nc) = tmp.next() {
+                            if nc != ch {
+                                matched_all = false;
+                                break;
+                            }
+                        } else {
+                            matched_all = false;
+                            break;
+                        }
+                    }
+                    if matched_all {
+                        if let Some(nc) = tmp.next() {
+                            if nc == '$' {
+                                for _ in 0..(tag.len() + 1) {
+                                    chars.next();
+                                }
+                                state = State::Normal;
+                                continue;
+                            }
+                        }
+                    }
+                }
+            }
+            State::LineComment => {
+                if c == '\n' {
+                    state = State::Normal;
+                }
+            }
+            State::BlockComment => {
+                if c == '*' {
+                    if let Some('/') = chars.peek() {
+                        chars.next();
+                        state = State::Normal;
+                    }
+                }
+            }
+        }
+    }
+    payloads
+}
+
+pub fn validate_execute_payloads(sql: &str) -> Result<(), String> {
+    let payloads = extract_execute_payloads(sql);
+    for p in payloads {
+        if contains_dangerous_removal_statements(&p) {
+            return Err("EXECUTE payload contains potentially destructive statements".to_string());
+        }
+        if let Err(e) = validate_select_limits(&p) {
+            return Err(format!("EXECUTE payload invalid: {}", e));
+        }
+        if let Err(e) = validate_update_has_where(&p) {
+            return Err(format!("EXECUTE payload invalid: {}", e));
+        }
+    }
+    Ok(())
+}

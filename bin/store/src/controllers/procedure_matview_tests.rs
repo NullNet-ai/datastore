@@ -1,9 +1,10 @@
 #[cfg(test)]
 mod tests {
-    use actix_web::{test::TestRequest, web, HttpRequest, Responder, HttpMessage};
-    use serde_json::json;
     use crate::controllers::store_controller::{create_materialized_view, create_procedure};
+    use crate::controllers::store_controller::create_function;
     use crate::structs::core::Auth;
+    use actix_web::{test::TestRequest, web, HttpMessage, HttpRequest, Responder};
+    use serde_json::json;
 
     fn make_root_request() -> HttpRequest {
         let req = TestRequest::default().to_http_request();
@@ -138,5 +139,135 @@ mod tests {
         let resp = create_procedure(req, name, body).await;
         let assert_req = actix_web::test::TestRequest::default().to_http_request();
         assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_missing_unsafe_query_returns_bad_request() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({ "returns": "integer" }));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_invalid_name_returns_bad_request() {
+        let req = make_root_request();
+        let name = web::Path::from("invalid-name".to_string());
+        let body = web::Json(json!({"unsafe_query": "SELECT 1 LIMIT 1", "returns": "integer"}));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_rejects_destructive_statements() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({"unsafe_query": "DELETE FROM x WHERE id = 1;", "returns": "void"}));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_requires_select_limit() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({"unsafe_query": "SELECT * FROM x;", "returns": "void"}));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_update_requires_where() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({"unsafe_query": "UPDATE x SET a = 1;", "returns": "void"}));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_rejects_destructive_execute_payload() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({"unsafe_query": "EXECUTE $$ TRUNCATE x $$;", "returns": "void"}));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_arguments_invalid_string_spec() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({
+            "arguments": ["arg1 integer;"],
+            "unsafe_query": "SELECT 1 LIMIT 1;",
+            "returns": "integer"
+        }));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_arguments_invalid_object_spec() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({
+            "arguments": [{"name": "arg1", "type": "integer;"}],
+            "unsafe_query": "SELECT 1 LIMIT 1;",
+            "returns": "integer"
+        }));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_arguments_must_be_array() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({
+            "arguments": "not-an-array",
+            "unsafe_query": "SELECT 1 LIMIT 1;",
+            "returns": "integer"
+        }));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_invalid_returns_type() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({
+            "unsafe_query": "SELECT 1 LIMIT 1;",
+            "returns": "integer;"
+        }));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        assert_eq!(resp.respond_to(&assert_req).status().as_u16(), 400);
+    }
+
+    #[tokio::test]
+    async fn function_valid_input_attempts_execution() {
+        let req = make_root_request();
+        let name = web::Path::from("calc_sum".to_string());
+        let body = web::Json(json!({
+            "arguments": ["a integer", "b integer"],
+            "unsafe_query": "SELECT 1 LIMIT 1;",
+            "returns": "integer"
+        }));
+        let resp = create_function(req, name, body).await;
+        let assert_req = actix_web::test::TestRequest::default().to_http_request();
+        let status = resp.respond_to(&assert_req).status().as_u16();
+        assert_ne!(status, 400);
     }
 }

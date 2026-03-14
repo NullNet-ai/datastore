@@ -170,3 +170,9 @@ create_root_wrapper!(root_create_procedure => create_procedure,
     name: actix_web::web::Path<String>,
     request_body: actix_web::web::Json<serde_json::Value>
 );
+
+create_root_wrapper!(root_create_function => create_function,
+    auth: HttpRequest,
+    name: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<serde_json::Value>
+);
