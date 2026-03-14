@@ -6,7 +6,7 @@ mod tests {
     use crate::structs::core::Auth;
 
     fn make_root_request() -> HttpRequest {
-        let mut req = TestRequest::default().to_http_request();
+        let req = TestRequest::default().to_http_request();
         req.extensions_mut().insert(Some("root".to_string()));
         req.extensions_mut().insert(Auth {
             organization_id: "".to_string(),
