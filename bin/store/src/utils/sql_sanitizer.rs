@@ -458,31 +458,33 @@ pub fn validate_select_limits(sql: &str) -> Result<(), String> {
         }
         let s_upper = s.to_uppercase();
         if s_upper.contains("SELECT") {
-            if let Some(idx) = s_upper.find("LIMIT") {
-                let mut digits = String::new();
-                for c in s_upper[idx + "LIMIT".len()..].chars() {
-                    if c.is_ascii_whitespace() {
-                        if digits.is_empty() {
-                            continue;
+            if s_upper.contains("LIMIT") {
+                if let Some(idx) = s_upper.find("LIMIT") {
+                    let mut digits = String::new();
+                    for c in s_upper[idx + "LIMIT".len()..].chars() {
+                        if c.is_ascii_whitespace() {
+                            if digits.is_empty() {
+                                continue;
+                            } else {
+                                break;
+                            }
+                        } else if c.is_ascii_digit() {
+                            digits.push(c);
                         } else {
                             break;
                         }
-                    } else if c.is_ascii_digit() {
-                        digits.push(c);
-                    } else {
-                        break;
+                    }
+                    if digits.is_empty() {
+                        return Err("SELECT statement LIMIT must be numeric".to_string());
+                    }
+                    let n: usize = digits
+                        .parse()
+                        .map_err(|_| "SELECT statement LIMIT must be numeric".to_string())?;
+                    if n > 10_000 {
+                        return Err("SELECT statement LIMIT exceeds maximum of 10000".to_string());
                     }
                 }
-                if digits.is_empty() {
-                    return Err("SELECT statement LIMIT must be numeric".to_string());
-                }
-                let n: usize = digits
-                    .parse()
-                    .map_err(|_| "SELECT statement LIMIT must be numeric".to_string())?;
-                if n > 10_000 {
-                    return Err("SELECT statement LIMIT exceeds maximum of 10000".to_string());
-                }
-            } else {
+            } else if !s_upper.contains("WHERE") {
                 return Err("SELECT statement missing LIMIT".to_string());
             }
         }

@@ -23,7 +23,7 @@ use crate::structs::core::{FilterCriteria, FilterOperator};
 use crate::utils::helpers::{normalize_date_format, table_exists};
 use crate::utils::sql_sanitizer::{
     contains_dangerous_removal_statements, validate_execute_payloads, validate_select_limits,
-    validate_update_has_where,
+    validate_update_has_where, sanitize_values,
 };
 use crate::{db, providers};
 use actix_multipart::Multipart;
@@ -3372,10 +3372,18 @@ pub async fn create_procedure(
     } else {
         "()".to_string()
     };
-    let sql = format!(
-        "CREATE OR REPLACE PROCEDURE {}{} LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
-        procedure_name, args_signature, unsafe_query
-    );
+    let starts = unsafe_query.trim_start().to_uppercase();
+    let sql = if starts.starts_with("DECLARE") || starts.starts_with("BEGIN") {
+        format!(
+            "CREATE OR REPLACE PROCEDURE {}{} LANGUAGE plpgsql AS $$ {} $$;",
+            procedure_name, args_signature, unsafe_query
+        )
+    } else {
+        format!(
+            "CREATE OR REPLACE PROCEDURE {}{} LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
+            procedure_name, args_signature, unsafe_query
+        )
+    };
     let mut conn = db::get_async_connection().await;
     match sql_query(&sql).execute(&mut conn).await {
         Ok(_) => HttpResponse::Ok().json(ApiResponse {
@@ -3567,10 +3575,18 @@ pub async fn create_function(
             data: vec![],
         });
     }
-    let sql = format!(
-        "CREATE OR REPLACE FUNCTION {}{} RETURNS {} LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
-        function_name, args_signature, returns_type, unsafe_query
-    );
+    let starts = unsafe_query.trim_start().to_uppercase();
+    let sql = if starts.starts_with("DECLARE") || starts.starts_with("BEGIN") {
+        format!(
+            "CREATE OR REPLACE FUNCTION {}{} RETURNS {} LANGUAGE plpgsql AS $$ {} $$;",
+            function_name, args_signature, returns_type, unsafe_query
+        )
+    } else {
+        format!(
+            "CREATE OR REPLACE FUNCTION {}{} RETURNS {} LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
+            function_name, args_signature, returns_type, unsafe_query
+        )
+    };
     let mut conn = db::get_async_connection().await;
     match sql_query(&sql).execute(&mut conn).await {
         Ok(_) => HttpResponse::Ok().json(ApiResponse {
@@ -3582,6 +3598,156 @@ pub async fn create_function(
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
             message: format!("Failed to create function: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn call_procedure(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let raw_name = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&raw_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid procedure name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let proc_name = if raw_name.contains('.') {
+        let mut parts: Vec<&str> = raw_name.split('.').collect();
+        let last = parts.pop().unwrap();
+        let last_prefixed = if last.starts_with("udp_") {
+            last.to_string()
+        } else {
+            format!("udp_{}", last)
+        };
+        format!("{}.{}", parts.join("."), last_prefixed)
+    } else if raw_name.starts_with("udp_") {
+        raw_name
+    } else {
+        format!("udp_{}", raw_name)
+    };
+    let args_vals: Vec<Value> = match request_body.get("arguments") {
+        Some(Value::Array(arr)) => arr.clone(),
+        Some(_) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "arguments must be an array".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+        None => Vec::new(),
+    };
+    let args_sql_parts = match sanitize_values(&args_vals, false) {
+        Ok(v) => v,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Invalid args: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let args_signature = if args_sql_parts.is_empty() {
+        "()".to_string()
+    } else {
+        format!("({})", args_sql_parts.join(", "))
+    };
+    let sql = format!("CALL {}{};", proc_name, args_signature);
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Procedure executed".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to execute procedure: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn call_function(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let func_name = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&func_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid function name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let args_vals: Vec<Value> = match request_body.get("arguments") {
+        Some(Value::Array(arr)) => arr.clone(),
+        Some(_) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "arguments must be an array".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+        None => Vec::new(),
+    };
+    let args_sql_parts = match sanitize_values(&args_vals, false) {
+        Ok(v) => v,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Invalid args: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let args_signature = if args_sql_parts.is_empty() {
+        "()".to_string()
+    } else {
+        format!("({})", args_sql_parts.join(", "))
+    };
+    let mut conn = db::get_async_connection().await;
+    let inner = format!("SELECT * FROM {}{}", func_name, args_signature);
+    let final_query = format!("SELECT to_json(t) AS row_to_json FROM ({}) t", inner);
+    match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => {
+            let data: Vec<serde_json::Value> = results
+                .into_iter()
+                .filter_map(|r| r.row_to_json)
+                .collect();
+            HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: "Function executed".to_string(),
+                count: data.len() as i32,
+                data,
+            })
+        }
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to execute function: {}", e),
             count: 0,
             data: vec![],
         }),
@@ -3901,6 +4067,343 @@ pub async fn create_trigger(
     }
 }
 
+pub async fn delete_materialized_view(
+    auth: HttpRequest,
+    table: web::Path<String>,
+) -> impl Responder {
+    let table_name = table.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&table_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid materialized view name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let sql = format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE;", table_name);
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Materialized view deleted".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to delete materialized view: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn delete_procedure(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let procedure_name_raw = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&procedure_name_raw, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid procedure name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let procedure_name = if procedure_name_raw.contains('.') {
+        let mut parts: Vec<&str> = procedure_name_raw.split('.').collect();
+        let last = parts.pop().unwrap();
+        let last_prefixed = if last.starts_with("udp_") {
+            last.to_string()
+        } else {
+            format!("udp_{}", last)
+        };
+        format!("{}.{}", parts.join("."), last_prefixed)
+    } else if procedure_name_raw.starts_with("udp_") {
+        procedure_name_raw
+    } else {
+        format!("udp_{}", procedure_name_raw)
+    };
+    let args_signature = if let Some(args_val) = request_body.get("arguments") {
+        match args_val {
+            Value::Array(arr) => {
+                if arr.is_empty() {
+                    "()".to_string()
+                } else {
+                    let mut parts: Vec<String> = Vec::new();
+                    for item in arr {
+                        match item {
+                            Value::String(spec) => {
+                                let s = spec.trim();
+                                if s.is_empty()
+                                    || !s.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument type".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(s.to_string());
+                            }
+                            Value::Object(obj) => {
+                                let ty = obj
+                                    .get("type")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                if ty.is_empty()
+                                    || !ty.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument type".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(ty);
+                            }
+                            _ => {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: "Arguments must be strings or {type} objects"
+                                        .to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                    }
+                    format!("({})", parts.join(", "))
+                }
+            }
+            _ => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "arguments must be an array".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    } else {
+        "()".to_string()
+    };
+    let sql = format!("DROP PROCEDURE IF EXISTS {}{} CASCADE;", procedure_name, args_signature);
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Procedure deleted".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to delete procedure: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn delete_function(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let func_name = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&func_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid function name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let args_signature = if let Some(args_val) = request_body.get("arguments") {
+        match args_val {
+            Value::Array(arr) => {
+                if arr.is_empty() {
+                    "()".to_string()
+                } else {
+                    let mut parts: Vec<String> = Vec::new();
+                    for item in arr {
+                        match item {
+                            Value::String(spec) => {
+                                let s = spec.trim();
+                                if s.is_empty()
+                                    || !s.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument type".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(s.to_string());
+                            }
+                            Value::Object(obj) => {
+                                let ty = obj
+                                    .get("type")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                if ty.is_empty()
+                                    || !ty.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument type".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(ty);
+                            }
+                            _ => {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: "Arguments must be strings or {type} objects"
+                                        .to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                    }
+                    format!("({})", parts.join(", "))
+                }
+            }
+            _ => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "arguments must be an array".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    } else {
+        "()".to_string()
+    };
+    let sql = format!("DROP FUNCTION IF EXISTS {}{} CASCADE;", func_name, args_signature);
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Function deleted".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to delete function: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn delete_trigger(
+    auth: HttpRequest,
+    path: web::Path<(String, String)>,
+) -> impl Responder {
+    let (table_name, trigger_name) = path.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&table_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid table name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if !validate_identifier(&trigger_name, false) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid trigger name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let sql = format!(
+        "DROP TRIGGER IF EXISTS {} ON {} CASCADE;",
+        trigger_name, table_name
+    );
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Trigger deleted".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to delete trigger: {}", e),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
 pub async fn cron_schedule_job(
     auth: HttpRequest,
     request_body: web::Json<serde_json::Value>,
@@ -3934,9 +4437,15 @@ pub async fn cron_schedule_job(
         }
     };
     if schedule.is_empty()
-        || !schedule
-            .chars()
-            .all(|c| c.is_ascii_alphanumeric() || c == ' ' || c == '*' || c == '/' || c == ',' || c == '-' || c == '?')
+        || !schedule.chars().all(|c| {
+            c.is_ascii_alphanumeric()
+                || c == ' '
+                || c == '*'
+                || c == '/'
+                || c == ','
+                || c == '-'
+                || c == '?'
+        })
     {
         return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
@@ -4144,8 +4653,26 @@ async fn exec_procedures_filter(parameters: GetByFilter) -> HttpResponse {
     let mut conn = db::get_async_connection().await;
     let effective_params = parameters.clone();
 
+    // Build SELECT list based on pluck (supports: name, definition)
+    let mut select_parts: Vec<String> = Vec::new();
+    if effective_params.pluck.is_empty() {
+        select_parts.push("routine_name AS name".to_string());
+        select_parts.push("routine_definition AS definition".to_string());
+    } else {
+        for field in &effective_params.pluck {
+            match field.as_str() {
+                "name" => select_parts.push("routine_name AS name".to_string()),
+                "definition" => select_parts.push("routine_definition AS definition".to_string()),
+                _ => {}
+            }
+        }
+        if select_parts.is_empty() {
+            select_parts.push("routine_name AS name".to_string());
+        }
+    }
     let mut query = format!(
-        "SELECT routine_name AS name FROM information_schema.routines WHERE routine_type = 'PROCEDURE' AND routine_schema NOT IN ('pg_catalog', 'information_schema', '_timescaledb_functions', '_timescaledb_internal') AND routine_name LIKE 'udp_%'",
+        "SELECT {} FROM information_schema.routines WHERE routine_type = 'PROCEDURE' AND routine_schema NOT IN ('pg_catalog', 'information_schema', '_timescaledb_functions', '_timescaledb_internal') AND routine_name LIKE 'udp_%'",
+        select_parts.join(", ")
     );
 
     // query.push_str(" ORDER BY specific_schema, routine_name");
@@ -4180,6 +4707,18 @@ async fn exec_procedures_filter(parameters: GetByFilter) -> HttpResponse {
                             is_search: is_search.clone(),
                             has_group_count: has_group_count.clone(),
                         });
+                    } else if field == "definition" {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: "routine_definition".to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
                     }
                     i += 1;
                 }
@@ -4196,7 +4735,7 @@ async fn exec_procedures_filter(parameters: GetByFilter) -> HttpResponse {
                                 field, ..
                             } = &filters[j]
                             {
-                                if field == "name" {
+                                if field == "name" || field == "definition" {
                                     found_next = true;
                                     break;
                                 }
@@ -4232,8 +4771,6 @@ async fn exec_procedures_filter(parameters: GetByFilter) -> HttpResponse {
                     let expr_simple = expr
                         .replace("\"information_schema\".\"routines\".", "")
                         .replace("\"information_schema.routines\".", "")
-                        .replace("\"information_schema\".\"routines\"", "routine_name")
-                        .replace("\"information_schema.routines\"", "routine_name")
                         .replace("\"routines\".", "");
                     query.push_str(" AND ");
                     query.push_str(&expr_simple);

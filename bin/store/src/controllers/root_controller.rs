@@ -177,6 +177,18 @@ create_root_wrapper!(root_create_function => create_function,
     request_body: actix_web::web::Json<serde_json::Value>
 );
 
+create_root_wrapper!(root_call_procedure => call_procedure,
+    auth: HttpRequest,
+    name: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<serde_json::Value>
+);
+
+create_root_wrapper!(root_call_function => call_function,
+    auth: HttpRequest,
+    name: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<serde_json::Value>
+);
+
 create_root_wrapper!(root_create_trigger => create_trigger,
     auth: HttpRequest,
     table: actix_web::web::Path<String>,
@@ -186,4 +198,26 @@ create_root_wrapper!(root_create_trigger => create_trigger,
 create_root_wrapper!(root_cron_schedule_job => cron_schedule_job,
     auth: HttpRequest,
     request_body: actix_web::web::Json<serde_json::Value>
+);
+
+create_root_wrapper!(root_delete_materialized_view => delete_materialized_view,
+    auth: HttpRequest,
+    table: actix_web::web::Path<String>
+);
+
+create_root_wrapper!(root_delete_procedure => delete_procedure,
+    auth: HttpRequest,
+    name: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<serde_json::Value>
+);
+
+create_root_wrapper!(root_delete_function => delete_function,
+    auth: HttpRequest,
+    name: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<serde_json::Value>
+);
+
+create_root_wrapper!(root_delete_trigger => delete_trigger,
+    auth: HttpRequest,
+    path: actix_web::web::Path<(String, String)>
 );
