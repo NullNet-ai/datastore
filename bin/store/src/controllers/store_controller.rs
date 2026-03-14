@@ -3732,8 +3732,14 @@ pub async fn create_trigger(
             });
         }
     }
-    let constraint = trig.get("constraint").and_then(|v| v.as_bool()).unwrap_or(false);
-    let deferrable = trig.get("deferrable").and_then(|v| v.as_bool()).unwrap_or(false);
+    let constraint = trig
+        .get("constraint")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let deferrable = trig
+        .get("deferrable")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
     let initially_deferred = trig
         .get("initially_deferred")
         .and_then(|v| v.as_bool())
