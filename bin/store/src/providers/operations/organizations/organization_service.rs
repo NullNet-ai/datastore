@@ -159,7 +159,6 @@ pub async fn register(
 
     // Query for organizations counter
 
-
     if let Some(existing_account) = existing_account {
         let account_id_value = existing_account.id.ok_or_else(|| {
             ApiError::new(

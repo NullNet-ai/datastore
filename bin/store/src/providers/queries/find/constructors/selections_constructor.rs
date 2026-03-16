@@ -281,7 +281,6 @@ impl SelectionsConstructor {
         }
 
         for field in fields {
-
             let with_alias = field.ends_with("_date")
                 || field.ends_with("_time")
                 || field.eq_ignore_ascii_case("timestamp");
@@ -521,10 +520,8 @@ impl SelectionsConstructor {
                 Err(_) => format!("({}.tombstone = 0)", sub_alias),
             };
             where_conditions.push(standard_where);
-            let adjusted_join_condition = join_condition.replace(
-                &format!("\"{}\"", to_alias),
-                &format!("\"{}\"", sub_alias),
-            );
+            let adjusted_join_condition =
+                join_condition.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
 
             where_conditions.push(adjusted_join_condition);
             if !join.field_relation.to.filters.is_empty() {
@@ -540,14 +537,9 @@ impl SelectionsConstructor {
             let adjusted_field_pairs: Vec<String> = field_pairs
                 .iter()
                 .map(|p| {
-                    let replaced = p.replace(
-                        &format!("\"{}\"", to_alias),
-                        &format!("\"{}\"", sub_alias),
-                    );
-                    replaced.replace(
-                        &format!("{}.", to_alias),
-                        &format!("{}.", sub_alias),
-                    )
+                    let replaced =
+                        p.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
+                    replaced.replace(&format!("{}.", to_alias), &format!("{}.", sub_alias))
                 })
                 .collect();
             return format!(
@@ -635,14 +627,9 @@ impl SelectionsConstructor {
             let adjusted_field_pairs: Vec<String> = field_pairs
                 .iter()
                 .map(|p| {
-                    let replaced = p.replace(
-                        &format!("\"{}\"", to_alias),
-                        &format!("\"{}\"", sub_alias),
-                    );
-                    replaced.replace(
-                        &format!("{}.", to_alias),
-                        &format!("{}.", sub_alias),
-                    )
+                    let replaced =
+                        p.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
+                    replaced.replace(&format!("{}.", to_alias), &format!("{}.", sub_alias))
                 })
                 .collect();
 
@@ -658,7 +645,6 @@ impl SelectionsConstructor {
                 combined_where,
                 to_alias
             );
-               
         }
 
         let mut where_conditions = Vec::new();
@@ -673,23 +659,16 @@ impl SelectionsConstructor {
             Err(_) => format!("(\"{}\".\"tombstone\" = 0)", sub_alias),
         };
         where_conditions.push(standard_where);
-        let adjusted_join_condition = join_condition.replace(
-            &format!("\"{}\"", to_alias),
-            &format!("\"{}\"", sub_alias),
-        );
+        let adjusted_join_condition =
+            join_condition.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
         where_conditions.push(adjusted_join_condition.to_string());
         let combined_where = where_conditions.join(" AND ");
         let adjusted_field_pairs: Vec<String> = field_pairs
             .iter()
             .map(|p| {
-                let replaced = p.replace(
-                    &format!("\"{}\"", to_alias),
-                    &format!("\"{}\"", sub_alias),
-                );
-                replaced.replace(
-                    &format!("{}.", to_alias),
-                    &format!("{}.", sub_alias),
-                )
+                let replaced =
+                    p.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
+                replaced.replace(&format!("{}.", to_alias), &format!("{}.", sub_alias))
             })
             .collect();
         format!(
@@ -746,7 +725,7 @@ impl SelectionsConstructor {
         if join.r#type == "self" && !is_nested {
             return format!(
                 "\"{}\".\"{}\" = \"{}\".\"{}\"",
-                 alias, to_field, table, from_field
+                alias, to_field, table, from_field
             );
         }
 
