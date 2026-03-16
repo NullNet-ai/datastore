@@ -164,7 +164,7 @@ impl BackgroundSyncService {
         let query = "
             SELECT table_name 
             FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_name LIKE '%temp%'
+            WHERE table_schema = 'public' AND table_name LIKE 'temp!_%' ESCAPE '!'
         ";
 
         let rows = match client.query(query, &[]).await {
@@ -183,11 +183,11 @@ impl BackgroundSyncService {
     async fn weighted_table_list(&self) -> Result<Vec<String>, String> {
         let client = self.db_client.lock().await;
 
-        // Step 1: Fetch all table names with 'temp' in the name
+        // Step 1: Fetch all table names with 'temp_' prefix
         let query = "
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_name LIKE '%temp%'
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'public' AND table_name LIKE 'temp!_%' ESCAPE '!'
         ";
 
         let rows = match client.query(query, &[]).await {
