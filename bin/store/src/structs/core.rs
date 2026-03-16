@@ -464,6 +464,9 @@ pub struct GetByFilter {
 
     #[serde(default = "default_time_format")]
     pub time_format: String,
+
+    #[serde(default)]
+    pub is_partitioned_table: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

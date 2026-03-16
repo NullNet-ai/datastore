@@ -74,6 +74,10 @@ pub trait QueryFilter {
     fn get_timezone(&self) -> Option<&str> {
         Some("Asia/Manila")
     }
+
+    fn get_is_partitioned_table(&self) -> bool {
+        false
+    }
 }
 
 // Implement QueryFilter for GetByFilter
@@ -195,6 +199,10 @@ impl QueryFilter for GetByFilter {
 
     fn get_time_format(&self) -> &str {
         &self.time_format
+    }
+
+    fn get_is_partitioned_table(&self) -> bool {
+        self.is_partitioned_table.unwrap_or(false)
     }
 }
 
@@ -331,6 +339,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             self.request_body.get_pluck_group_object(),
             self.request_body.get_concatenate_fields(),
             self.request_body.get_joins(),
+            self.request_body.get_is_partitioned_table(),
         ));
 
         let order_by_constructor = OrderByConstructor::new(

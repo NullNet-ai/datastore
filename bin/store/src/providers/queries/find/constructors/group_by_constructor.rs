@@ -60,6 +60,7 @@ impl<'a> GroupByConstructor<'a> {
         _pluck_group_object: &HashMap<String, Vec<String>>,
         concatenate_fields: &[ConcatenateField],
         _joins: &[Join],
+        is_partitioned_table: bool,
     ) -> String {
         if let Some(group_by) = group_by {
             if !group_by.fields.is_empty() {
@@ -116,7 +117,7 @@ impl<'a> GroupByConstructor<'a> {
                     })
                     .collect();
 
-                if is_hypertable(self.table) {
+                if is_hypertable(self.table) || is_partitioned_table {
                     group_fields.push("timestamp".to_string());
                 }
                 return format!(" GROUP BY {}", group_fields.join(", "));
@@ -124,7 +125,7 @@ impl<'a> GroupByConstructor<'a> {
                 // When has_count is true but no specific fields are provided,
                 // default to grouping by main table id only (e.g. GROUP BY "samples"."id").
                 let mut group_fields: Vec<String> = vec![format!("\"{}\".\"id\"", self.table)];
-                if is_hypertable(self.table) {
+                if is_hypertable(self.table) || is_partitioned_table {
                     group_fields.push("timestamp".to_string());
                 }
                 return format!(" GROUP BY {}", group_fields.join(", "));
@@ -132,9 +133,10 @@ impl<'a> GroupByConstructor<'a> {
         }
 
         let mut group_fields: Vec<String> = vec![format!("\"{}\".\"id\"", self.table)];
-        if is_hypertable(self.table) {
+        if is_hypertable(self.table) || is_partitioned_table {
             group_fields.push("timestamp".to_string());
         }
+       
         format!(" GROUP BY {}", group_fields.join(", "))
     }
 
