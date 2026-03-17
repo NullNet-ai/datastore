@@ -60,7 +60,7 @@ impl<'a> GroupByConstructor<'a> {
         _pluck_group_object: &HashMap<String, Vec<String>>,
         concatenate_fields: &[ConcatenateField],
         _joins: &[Join],
-        is_partitioned_table: bool,
+        _is_partitioned_table: bool,
     ) -> String {
         if let Some(group_by) = group_by {
             if !group_by.fields.is_empty() {
