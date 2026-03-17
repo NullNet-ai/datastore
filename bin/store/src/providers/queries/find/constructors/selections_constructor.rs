@@ -509,12 +509,21 @@ impl SelectionsConstructor {
 
         if !join.nested {
             let mut where_conditions = Vec::new();
-            let standard_where = match build_system_where_clause(to_alias) {
+            // Resolve subquery table alias: for self-joins use a 'self_joined_' prefixed alias
+            let sub_alias = if join.r#type == "self" {
+                format!("self_joined_{}", target_table)
+            } else {
+                to_alias.to_string()
+            };
+            let standard_where = match build_system_where_clause(&sub_alias) {
                 Ok(clause) => clause,
-                Err(_) => format!("({}.tombstone = 0)", to_alias),
+                Err(_) => format!("({}.tombstone = 0)", sub_alias),
             };
             where_conditions.push(standard_where);
-            where_conditions.push(join_condition.to_string());
+            let adjusted_join_condition =
+                join_condition.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
+
+            where_conditions.push(adjusted_join_condition);
             if !join.field_relation.to.filters.is_empty() {
                 if let Ok(filter_expression) =
                     build_infix_expression(&join.field_relation.to.filters)
@@ -525,12 +534,20 @@ impl SelectionsConstructor {
                 }
             }
             let combined_where = where_conditions.join(" AND ");
+            let adjusted_field_pairs: Vec<String> = field_pairs
+                .iter()
+                .map(|p| {
+                    let replaced =
+                        p.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
+                    replaced.replace(&format!("{}.", to_alias), &format!("{}.", sub_alias))
+                })
+                .collect();
             return format!(
                 "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM {} {} WHERE {}) sub ), '[]' ) AS {}",
                 order_by_clause,
-                field_pairs.join(", "),
+                adjusted_field_pairs.join(", "),
                 target_table,
-                to_alias,
+                sub_alias,
                 combined_where,
                 to_alias
             );
@@ -569,9 +586,15 @@ impl SelectionsConstructor {
                 Ok(clause) => clause,
                 Err(_) => format!("(\"{}\".\"tombstone\" = 0)", prev_alias),
             };
-            let child_where = match build_system_where_clause(to_alias) {
+            // Resolve local alias for the child table when self-joining
+            let sub_alias = if join.r#type == "self" {
+                format!("self_joined_{}", target_table)
+            } else {
+                to_alias.to_string()
+            };
+            let child_where = match build_system_where_clause(&sub_alias) {
                 Ok(clause) => clause,
-                Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+                Err(_) => format!("(\"{}\".\"tombstone\" = 0)", sub_alias),
             };
 
             // Correlate the parent row to the main table row, using the main table alias
@@ -586,7 +609,7 @@ impl SelectionsConstructor {
 
             let on_condition = format!(
                 "\"{}\".\"{}\" = \"{}\".\"{}\"",
-                to_alias, join.field_relation.to.field, prev_alias, join.field_relation.from.field
+                sub_alias, join.field_relation.to.field, prev_alias, join.field_relation.from.field
             );
 
             let mut where_conditions = vec![child_where, parent_where, main_to_parent_correlation];
@@ -600,15 +623,24 @@ impl SelectionsConstructor {
                 }
             }
             let combined_where = where_conditions.join(" AND ");
+            // Adjust field pairs to reference the local sub_alias instead of to_alias
+            let adjusted_field_pairs: Vec<String> = field_pairs
+                .iter()
+                .map(|p| {
+                    let replaced =
+                        p.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
+                    replaced.replace(&format!("{}.", to_alias), &format!("{}.", sub_alias))
+                })
+                .collect();
 
             return format!(
                 "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM \"{}\" \"{}\" LEFT JOIN \"{}\" \"{}\" ON {} WHERE {}) sub ), '[]' ) AS \"{}\"",
                 order_by_clause,
-                field_pairs.join(", "),
+                adjusted_field_pairs.join(", "),
                 prev_table,
                 prev_alias,
                 target_table,
-                to_alias,
+                sub_alias,
                 on_condition,
                 combined_where,
                 to_alias
@@ -616,19 +648,35 @@ impl SelectionsConstructor {
         }
 
         let mut where_conditions = Vec::new();
-        let standard_where = match build_system_where_clause(to_alias) {
+        // Resolve subquery table alias: for self-joins use a 'self_joined_' prefixed alias
+        let sub_alias = if join.r#type == "self" {
+            format!("self_joined_{}", target_table)
+        } else {
+            to_alias.to_string()
+        };
+        let standard_where = match build_system_where_clause(&sub_alias) {
             Ok(clause) => clause,
-            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", to_alias),
+            Err(_) => format!("(\"{}\".\"tombstone\" = 0)", sub_alias),
         };
         where_conditions.push(standard_where);
-        where_conditions.push(join_condition.to_string());
+        let adjusted_join_condition =
+            join_condition.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
+        where_conditions.push(adjusted_join_condition.to_string());
         let combined_where = where_conditions.join(" AND ");
+        let adjusted_field_pairs: Vec<String> = field_pairs
+            .iter()
+            .map(|p| {
+                let replaced =
+                    p.replace(&format!("\"{}\"", to_alias), &format!("\"{}\"", sub_alias));
+                replaced.replace(&format!("{}.", to_alias), &format!("{}.", sub_alias))
+            })
+            .collect();
         format!(
             "COALESCE( ( SELECT JSONB_AGG(elem {}) FROM (SELECT JSONB_BUILD_OBJECT({}) AS elem FROM \"{}\" \"{}\" WHERE {}) sub ), '[]' ) AS \"{}\"",
             order_by_clause,
-            field_pairs.join(", "),
+            adjusted_field_pairs.join(", "),
             target_table,
-            to_alias,
+            sub_alias,
             combined_where,
             to_alias
         )
@@ -677,7 +725,7 @@ impl SelectionsConstructor {
         if join.r#type == "self" && !is_nested {
             return format!(
                 "\"{}\".\"{}\" = \"{}\".\"{}\"",
-                alias, from_field, table, to_field
+                alias, to_field, table, from_field
             );
         }
 

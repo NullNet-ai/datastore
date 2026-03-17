@@ -5,6 +5,40 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.53
+
+### Author
+Kashan
+
+### Fixed
+  - ***Batch sync picking up unrelated tables***:
+    - `providers/operations/batch_sync/background_sync.rs`
+      - **Problem:** The `table_list()` and `weighted_table_list()` queries used `LIKE '%temp%'` to find temporary batch sync tables. This matched any table containing "temp" anywhere in its name (e.g., `communication_templates`), causing the background sync to incorrectly process non-batch tables.
+      - **Solution:** Changed both queries to use `LIKE 'temp!_%' ESCAPE '!'` so they only match tables with the `temp_` prefix, ensuring only actual batch sync staging tables are picked up.
+
+## 0.2.52
+
+### Author
+Jean
+
+### Fixed
+  - ***Nested selections — self-join alias handling***:
+    - `providers/queries/find/constructors/selections_constructor.rs`
+      - Use a distinct subquery alias for self joins to avoid alias collisions.
+      - Adjust join conditions and selected field pairs to reference the local alias.
+      - Fix self-join field mapping in the join condition for non-nested joins.
+
+## 0.2.51
+
+### Author
+Jean
+
+### Changed
+  - ***Registration code generation***:
+    - `providers/operations/organizations/organization_service.rs`
+      - Always generate organization and contact codes via `helpers::generate_code(...)`.
+      - Removed counter-based gating and the ULID-based contact code fallback.
+
 ## 0.2.50
 
 ### Author
