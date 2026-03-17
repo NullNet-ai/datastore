@@ -5,8 +5,8 @@ use crate::controllers::root_controller::{
     root_create_trigger, root_cron_schedule_job, root_delete_function,
     root_delete_materialized_view, root_delete_procedure, root_delete_record, root_delete_trigger,
     root_get_by_filter, root_get_by_id, root_search_suggestions, root_switch_account,
-    root_update_account_password, root_update_record, root_upsert, root_verify_schema,
-    root_unsafe_select_query, root_unsafe_transaction_query,
+    root_unsafe_select_query, root_unsafe_transaction_query, root_update_account_password,
+    root_update_record, root_upsert, root_verify_schema,
 };
 use crate::middlewares::auth_middleware::Authentication;
 use crate::middlewares::session_middleware::SessionMiddleware;
@@ -27,8 +27,14 @@ pub fn configure_root_store_routes(cfg: &mut ServiceConfig) {
             .route("/aggregate", web::post().to(root_aggregation_filter))
             .route("/switch_account", web::post().to(root_switch_account))
             .route("/verify_schema", web::post().to(root_verify_schema))
-            .route("/unsafe_select_query", web::post().to(root_unsafe_select_query))
-            .route("/unsafe_transaction_query", web::post().to(root_unsafe_transaction_query))
+            .route(
+                "/unsafe_select_query",
+                web::post().to(root_unsafe_select_query),
+            )
+            .route(
+                "/unsafe_transaction_query",
+                web::post().to(root_unsafe_transaction_query),
+            )
             .route(
                 "/materialized_view/{table}",
                 web::post().to(root_create_materialized_view),
