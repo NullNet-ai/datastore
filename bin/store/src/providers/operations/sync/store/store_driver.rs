@@ -85,8 +85,7 @@ pub async fn apply(
                 Box::<dyn std::error::Error>::from(e)
             })?;
         return Ok(());
-    } 
-    else {
+    } else {
         // Insert or update without hypertable timestamp
         let json_values = serde_json::Value::Object(json_obj);
 
