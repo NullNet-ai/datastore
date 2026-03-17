@@ -26,7 +26,8 @@ use crate::utils::helpers::{
 };
 use crate::utils::sql_sanitizer::{
     contains_dangerous_removal_statements, normalize_whitespace_outside_strings, sanitize_values,
-    validate_execute_payloads, validate_select_limits, validate_update_has_where,
+    strip_strings_and_comments, validate_execute_payloads, validate_select_limits,
+    validate_update_has_where,
 };
 use crate::{db, providers};
 use actix_multipart::Multipart;
@@ -1297,6 +1298,222 @@ pub async fn get_by_filter(
         message: format!("Filter operation completed for table: {}", &table),
         count: data.len() as i32,
         data,
+    })
+}
+
+pub async fn unsafe_select_query(
+    _auth: HttpRequest,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    // if let Err(resp) = ensure_root_access(&auth) {
+    //     return resp;
+    // }
+    let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if contains_dangerous_removal_statements(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let cleaned = strip_strings_and_comments(unsafe_query_for_validation);
+    let statements: Vec<&str> = cleaned
+        .split(';')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if statements.len() != 1 {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Only one SELECT statement is allowed".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let s_upper = statements[0].to_uppercase();
+    let mut first_token = String::new();
+    for c in s_upper.chars() {
+        if c.is_ascii_alphabetic() {
+            first_token.push(c);
+        } else {
+            if !first_token.is_empty() {
+                break;
+            }
+        }
+    }
+    if !(first_token == "SELECT" || first_token == "WITH") {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Only SELECT statements are allowed".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let tokens: Vec<&str> = s_upper
+        .split(|c: char| !c.is_ascii_alphabetic())
+        .filter(|t| !t.is_empty())
+        .collect();
+    if tokens.iter().any(|t| {
+        *t == "INSERT"
+            || *t == "UPDATE"
+            || *t == "DELETE"
+            || *t == "TRUNCATE"
+            || *t == "DROP"
+            || *t == "ALTER"
+            || *t == "CREATE"
+            || *t == "GRANT"
+            || *t == "REVOKE"
+            || *t == "CALL"
+            || *t == "DO"
+            || *t == "BEGIN"
+            || *t == "COMMIT"
+    }) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Query contains non-SELECT operations".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_select_limits(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(unsafe_query_for_validation)
+        .trim()
+        .trim_end_matches(';')
+        .to_string();
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", unsafe_query);
+    let mut conn = db::get_async_connection().await;
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .collect();
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Unsafe select query executed".to_string(),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+pub async fn unsafe_transaction_query(
+    auth: HttpRequest,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    let unsafe_sql = unsafe_query_raw.as_str();
+    if contains_dangerous_removal_statements(unsafe_sql) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_update_has_where(unsafe_sql) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_sql) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let normalized = normalize_whitespace_outside_strings(unsafe_sql)
+        .trim()
+        .trim_end_matches(';')
+        .to_string();
+    let client = match create_connection().await {
+        Ok(c) => c,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to connect to database: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    if let Err(e) = client.batch_execute("BEGIN").await {
+        return HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to start transaction: {}", e),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let exec_result = client.batch_execute(&normalized).await;
+    if exec_result.is_err() {
+        let _ = client.batch_execute("ROLLBACK").await;
+        return HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!(
+                "Query execution error: {}",
+                exec_result.err().map(|e| e.to_string()).unwrap_or_default()
+            ),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = client.batch_execute("COMMIT").await {
+        let _ = client.batch_execute("ROLLBACK").await;
+        return HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to commit transaction: {}", e),
+            count: 0,
+            data: vec![],
+        });
+    }
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Transaction executed".to_string(),
+        count: 0,
+        data: vec![],
     })
 }
 

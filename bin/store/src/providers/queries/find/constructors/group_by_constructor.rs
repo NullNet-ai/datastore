@@ -136,7 +136,7 @@ impl<'a> GroupByConstructor<'a> {
         if is_hypertable(self.table) || is_partitioned_table {
             group_fields.push("timestamp".to_string());
         }
-       
+
         format!(" GROUP BY {}", group_fields.join(", "))
     }
 

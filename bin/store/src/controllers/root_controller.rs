@@ -200,6 +200,16 @@ create_root_wrapper!(root_cron_schedule_job => cron_schedule_job,
     request_body: actix_web::web::Json<serde_json::Value>
 );
 
+create_root_wrapper!(root_unsafe_select_query => unsafe_select_query,
+    auth: HttpRequest,
+    request_body: actix_web::web::Json<serde_json::Value>
+);
+
+create_root_wrapper!(root_unsafe_transaction_query => unsafe_transaction_query,
+    auth: HttpRequest,
+    request_body: actix_web::web::Json<serde_json::Value>
+);
+
 create_root_wrapper!(root_delete_materialized_view => delete_materialized_view,
     auth: HttpRequest,
     table: actix_web::web::Path<String>

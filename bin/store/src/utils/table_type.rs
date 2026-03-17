@@ -4,8 +4,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tokio_postgres::Row;
 
-static CACHE: Lazy<Mutex<HashMap<String, bool>>> =
-    Lazy::new(|| Mutex::new(HashMap::new()));
+static CACHE: Lazy<Mutex<HashMap<String, bool>>> = Lazy::new(|| Mutex::new(HashMap::new()));
 
 const SCHEMA_CONTENT: &str = include_str!("../generated/schema.rs");
 
