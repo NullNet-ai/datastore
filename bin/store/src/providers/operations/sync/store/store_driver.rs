@@ -73,7 +73,10 @@ pub async fn apply(
             log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
             Box::new(e) as Box<dyn std::error::Error>
         })?;
-        json_obj.insert("timestamp".to_string(), json!(timestamp.with_timezone(&Utc)));
+        json_obj.insert(
+            "timestamp".to_string(),
+            json!(timestamp.with_timezone(&Utc)),
+        );
 
         let json_values = serde_json::Value::Object(json_obj);
 
