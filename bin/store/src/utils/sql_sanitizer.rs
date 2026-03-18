@@ -172,15 +172,9 @@ pub fn sanitize_value(value: &Value, is_like_pattern: bool) -> Result<String, Sa
                 Ok(escape_string_value(s))
             }
         }
-        Value::Number(n) => {
-            Ok(n.to_string())
-        }
-        Value::Bool(b) => {
-            Ok(b.to_string())
-        }
-        Value::Null => {
-            Ok("NULL".to_string())
-        }
+        Value::Number(n) => Ok(n.to_string()),
+        Value::Bool(b) => Ok(b.to_string()),
+        Value::Null => Ok("NULL".to_string()),
         _ => {
             log::warn!("Attempt to sanitize unsupported JSON type: {:?}", value);
             Err(SanitizationError::UnsupportedType)
@@ -369,11 +363,40 @@ impl SqlInjectionScanner {
 
     fn build_dangerous_keywords() -> HashSet<&'static str> {
         [
-            "select", "insert", "update", "delete", "drop", "alter", "create", "truncate", "replace",
-            "merge", "union", "except", "intersect", "grant", "revoke", "exec", "execute", "xp_cmdshell",
-            "sp_executesql", "shutdown", "backup", "restore", "dbcc", "bulk", "openrowset",
-            "opendatasource", "openquery", "into outfile", "into dumpfile", "load_file", "load data",
-            "rename", "handler", "call",
+            "select",
+            "insert",
+            "update",
+            "delete",
+            "drop",
+            "alter",
+            "create",
+            "truncate",
+            "replace",
+            "merge",
+            "union",
+            "except",
+            "intersect",
+            "grant",
+            "revoke",
+            "exec",
+            "execute",
+            "xp_cmdshell",
+            "sp_executesql",
+            "shutdown",
+            "backup",
+            "restore",
+            "dbcc",
+            "bulk",
+            "openrowset",
+            "opendatasource",
+            "openquery",
+            "into outfile",
+            "into dumpfile",
+            "load_file",
+            "load data",
+            "rename",
+            "handler",
+            "call",
         ]
         .into_iter()
         .collect()
@@ -381,21 +404,87 @@ impl SqlInjectionScanner {
 
     fn build_dangerous_functions() -> HashSet<&'static str> {
         [
-            "sleep", "benchmark", "waitfor", "delay", "pg_sleep", "extractvalue", "updatexml", "xmltype",
-            "dbms_pipe", "utl_http", "utl_inaddr", "utl_smtp", "utl_file", "char", "chr", "concat",
-            "concat_ws", "group_concat", "substring", "substr", "mid", "ascii", "ord", "hex", "unhex",
-            "conv", "convert", "cast", "coalesce", "nullif", "ifnull", "if", "elt", "field", "make_set",
-            "export_set", "load_file", "compress", "uncompress", "aes_encrypt", "aes_decrypt", "des_encrypt",
-            "des_decrypt", "encode", "decode", "encrypt", "md5", "sha1", "sha2", "password", "old_password",
-            "version", "database", "schema", "user", "current_user", "session_user", "system_user",
-            "connection_id", "last_insert_id", "row_count", "found_rows", "json_extract", "json_set",
-            "json_replace", "json_remove", "regexp", "rlike", "sounds like", "match", "against",
-            "geometrycollection", "multipoint", "polygon", "multipolygon", "linestring", "multilinestring",
+            "sleep",
+            "benchmark",
+            "waitfor",
+            "delay",
+            "pg_sleep",
+            "extractvalue",
+            "updatexml",
+            "xmltype",
+            "dbms_pipe",
+            "utl_http",
+            "utl_inaddr",
+            "utl_smtp",
+            "utl_file",
+            "char",
+            "chr",
+            "concat",
+            "concat_ws",
+            "group_concat",
+            "substring",
+            "substr",
+            "mid",
+            "ascii",
+            "ord",
+            "hex",
+            "unhex",
+            "conv",
+            "convert",
+            "cast",
+            "coalesce",
+            "nullif",
+            "ifnull",
+            "if",
+            "elt",
+            "field",
+            "make_set",
+            "export_set",
+            "load_file",
+            "compress",
+            "uncompress",
+            "aes_encrypt",
+            "aes_decrypt",
+            "des_encrypt",
+            "des_decrypt",
+            "encode",
+            "decode",
+            "encrypt",
+            "md5",
+            "sha1",
+            "sha2",
+            "password",
+            "old_password",
+            "version",
+            "database",
+            "schema",
+            "user",
+            "current_user",
+            "session_user",
+            "system_user",
+            "connection_id",
+            "last_insert_id",
+            "row_count",
+            "found_rows",
+            "json_extract",
+            "json_set",
+            "json_replace",
+            "json_remove",
+            "regexp",
+            "rlike",
+            "sounds like",
+            "match",
+            "against",
+            "geometrycollection",
+            "multipoint",
+            "polygon",
+            "multipolygon",
+            "linestring",
+            "multilinestring",
         ]
         .into_iter()
         .collect()
     }
-
 
     pub fn scan(&self, input: &str) -> ScanResult {
         let mut threats: Vec<Threat> = Vec::new();
@@ -454,7 +543,11 @@ impl SqlInjectionScanner {
             threats.push(Threat {
                 category: ThreatCategory::BufferOverflow,
                 severity: Severity::High,
-                description: format!("Input length {} exceeds max {}", input.len(), self.max_input_length),
+                description: format!(
+                    "Input length {} exceeds max {}",
+                    input.len(),
+                    self.max_input_length
+                ),
                 matched_pattern: format!("len={}", input.len()),
                 position: 0,
             });
@@ -477,7 +570,10 @@ impl SqlInjectionScanner {
     }
 
     fn check_encoding_evasion(&self, input: &str, threats: &mut Vec<Threat>) {
-        let url_patterns = ["%27", "%22", "%3b", "%2d%2d", "%23", "%2f%2a", "%2a%2f", "%3d", "%3c", "%3e", "%28", "%29", "%7c", "%60"];
+        let url_patterns = [
+            "%27", "%22", "%3b", "%2d%2d", "%23", "%2f%2a", "%2a%2f", "%3d", "%3c", "%3e", "%28",
+            "%29", "%7c", "%60",
+        ];
         for p in &url_patterns {
             if input.to_lowercase().contains(p) {
                 threats.push(Threat {
@@ -586,7 +682,14 @@ impl SqlInjectionScanner {
     }
 
     fn check_classic_injection(&self, input: &str, threats: &mut Vec<Threat>) {
-        let patterns = [" or 1=1", "' or '1'='1", "\" or \"1\"=\"1", " or true", " and 1=1", " and 'a'='a"];
+        let patterns = [
+            " or 1=1",
+            "' or '1'='1",
+            "\" or \"1\"=\"1",
+            " or true",
+            " and 1=1",
+            " and 'a'='a",
+        ];
         for p in &patterns {
             if let Some(pos) = input.find(p) {
                 threats.push(Threat {
@@ -717,7 +820,12 @@ impl SqlInjectionScanner {
     }
 
     fn check_information_disclosure(&self, input: &str, threats: &mut Vec<Threat>) {
-        let patterns = ["information_schema", "pg_catalog", "mysql.user", "sys.tables"];
+        let patterns = [
+            "information_schema",
+            "pg_catalog",
+            "mysql.user",
+            "sys.tables",
+        ];
         for p in &patterns {
             if let Some(pos) = input.find(p) {
                 threats.push(Threat {
@@ -931,7 +1039,10 @@ impl SqlInjectionScanner {
 
     fn check_char_encoded_payloads(&self, input: &str, threats: &mut Vec<Threat>) {
         if input.contains("char(") || input.contains("chr(") {
-            let pos = input.find("char(").or_else(|| input.find("chr(")).unwrap_or(0);
+            let pos = input
+                .find("char(")
+                .or_else(|| input.find("chr("))
+                .unwrap_or(0);
             threats.push(Threat {
                 category: ThreatCategory::CharEncodedPayload,
                 severity: Severity::Medium,
@@ -1031,7 +1142,16 @@ impl SqlInjectionScanner {
     }
 
     fn check_dos_patterns(&self, input: &str, threats: &mut Vec<Threat>) {
-        let patterns = ["benchmark(", "sleep(", "pg_sleep(", "waitfor", "generate_series(", "repeat(", "cross join", "natural join"];
+        let patterns = [
+            "benchmark(",
+            "sleep(",
+            "pg_sleep(",
+            "waitfor",
+            "generate_series(",
+            "repeat(",
+            "cross join",
+            "natural join",
+        ];
         for p in &patterns {
             if let Some(pos) = input.find(p) {
                 threats.push(Threat {
@@ -1059,7 +1179,6 @@ impl SqlInjectionScanner {
             }
         }
     }
-
 
     fn full_decode(&self, input: &str) -> String {
         let mut s = input.to_string();
@@ -1150,7 +1269,10 @@ pub fn validate_query_safety(sql: &str) -> Result<(), String> {
     if relevant.count() == 0 {
         Ok(())
     } else {
-        Err(format!("Unsafe SQL features detected (risk={}): {}", result.risk_score, result))
+        Err(format!(
+            "Unsafe SQL features detected (risk={}): {}",
+            result.risk_score, result
+        ))
     }
 }
 

@@ -1308,13 +1308,13 @@ pub async fn unsafe_select_query(
     // if let Err(resp) = ensure_root_access(&auth) {
     //     return resp;
     // }
-    
+
     let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
         Ok(s) => s,
         Err(resp) => return resp,
     };
     log::debug!("@@@unsafe_query_raw: {:?}", unsafe_query_raw);
-    
+
     let unsafe_query_for_validation = unsafe_query_raw.as_str();
     if let Err(e) = validate_query_safety(unsafe_query_for_validation) {
         return HttpResponse::BadRequest().json(ApiResponse {
