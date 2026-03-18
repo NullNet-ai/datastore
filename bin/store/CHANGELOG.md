@@ -5,6 +5,18 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.54
+
+### Author
+Jean
+
+### Changed
+  - ***Organization code generation***:
+    - `providers/operations/organizations/organization_service.rs`
+      - Rename `create_new_organization` to `create_new_organization_if_not_exists` and use it from `register`.
+      - Generate organization code inside `create_new_organization_if_not_exists` only if the organization does not exist, with ULID fallback.
+      - Remove the `code` parameter and stop passing it from `register`.
+
 ## 0.2.53
 
 ### Author
