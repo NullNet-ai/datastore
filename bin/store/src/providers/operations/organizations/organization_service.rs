@@ -243,11 +243,10 @@ pub async fn register(
         .await?;
         //create a personal organization (use static ID only when set by initializers, e.g. super admin / system device)
         let personal_categories = vec!["Personal".to_string()];
-        let personal_organization_id = create_new_organization(
+        let personal_organization_id = create_new_organization_if_not_exists(
             "Personal Organization".to_string(),
             personal_categories,
             params.initial_personal_organization_id.clone(),
-            helpers::generate_code("organizations").await?,
             created_by_override.clone(),
         )
         .await?;
@@ -284,14 +283,13 @@ pub async fn register(
         .clone()
         .unwrap_or_else(|| vec!["Team".to_string()]);
     team_organization_id = Some(
-        create_new_organization(
+        create_new_organization_if_not_exists(
             team_organization_name
                 .clone()
                 .unwrap_or(&String::new())
                 .to_string(),
             team_categories,
             params.organization_id.clone(),
-            helpers::generate_code("organizations").await?,
             created_by_override.clone(),
         )
         .await?,
@@ -673,11 +671,10 @@ pub async fn register(
     }
 }
 
-pub async fn create_new_organization(
+pub async fn create_new_organization_if_not_exists(
     organization_name: String,
     categories: Vec<String>,
     organization_id: Option<String>,
-    code: Option<String>,
     responsible_account_organization_id: Option<String>,
 ) -> Result<String, DieselError> {
     let now = chrono::Utc::now();
@@ -706,16 +703,12 @@ pub async fn create_new_organization(
     }
 
     // Ensure code is not NULL by generating one if not provided (prefer counters)
-    let final_code = if let Some(c) = code {
-        c
-    } else {
-        match helpers::generate_code("organizations").await {
-            Ok(Some(c)) => c,
-            _ => format!(
-                "O{}",
-                Ulid::new().to_string().chars().take(8).collect::<String>()
-            ),
-        }
+    let final_code = match helpers::generate_code("organizations").await {
+        Ok(Some(c)) => c,
+        _ => format!(
+            "O{}",
+            Ulid::new().to_string().chars().take(8).collect::<String>()
+        ),
     };
 
     // For now, we'll set created_by to None and update it later after creating the account organization
