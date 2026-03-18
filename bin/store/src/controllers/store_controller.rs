@@ -26,8 +26,8 @@ use crate::utils::helpers::{
 };
 use crate::utils::sql_sanitizer::{
     contains_dangerous_removal_statements, normalize_whitespace_outside_strings, sanitize_values,
-    strip_strings_and_comments, validate_execute_payloads, validate_select_limits,
-    validate_update_has_where,
+    strip_strings_and_comments, validate_execute_payloads, validate_query_safety,
+    validate_select_limits, validate_update_has_where,
 };
 use crate::{db, providers};
 use actix_multipart::Multipart;
@@ -1308,11 +1308,22 @@ pub async fn unsafe_select_query(
     // if let Err(resp) = ensure_root_access(&auth) {
     //     return resp;
     // }
+    
     let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
         Ok(s) => s,
         Err(resp) => return resp,
     };
+    log::debug!("@@@unsafe_query_raw: {:?}", unsafe_query_raw);
+    
     let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
     if contains_dangerous_removal_statements(unsafe_query_for_validation) {
         return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
@@ -1440,6 +1451,14 @@ pub async fn unsafe_transaction_query(
         Err(resp) => return resp,
     };
     let unsafe_sql = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_sql) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
     if contains_dangerous_removal_statements(unsafe_sql) {
         return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
@@ -3258,6 +3277,14 @@ pub async fn create_materialized_view(
         Ok(s) => s,
         Err(resp) => return resp,
     };
+    if let Err(e) = validate_query_safety(unsafe_query_raw.as_str()) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
     let unsafe_query = normalize_whitespace_outside_strings(&unsafe_query_raw);
     let sql = format!(
         "CREATE MATERIALIZED VIEW IF NOT EXISTS {} AS {}",
@@ -3310,6 +3337,14 @@ pub async fn create_procedure(
         Err(resp) => return resp,
     };
     let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
     if contains_dangerous_removal_statements(unsafe_query_for_validation) {
         return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
@@ -3488,6 +3523,14 @@ pub async fn create_function(
         Err(resp) => return resp,
     };
     let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
     if contains_dangerous_removal_statements(unsafe_query_for_validation) {
         return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
@@ -4175,6 +4218,14 @@ pub async fn create_trigger(
         }
     };
     let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
     if contains_dangerous_removal_statements(unsafe_query_for_validation) {
         return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
@@ -4654,6 +4705,14 @@ pub async fn cron_schedule_job(
             })
         }
     };
+    if let Err(e) = validate_query_safety(unsafe_query_raw) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
     if contains_dangerous_removal_statements(unsafe_query_raw) {
         return HttpResponse::BadRequest().json(ApiResponse {
             success: false,
