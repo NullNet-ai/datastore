@@ -381,7 +381,7 @@ impl JoinsConstructor {
                 selected_fields,
                 to_entity, lateral_alias,
                 combined_where,
-                lateral_alias, to_field, to_field, actual_from_entity, from_field, nested_join_alias, from_field,
+                lateral_alias, to_field, from_field, actual_from_entity, from_field, nested_join_alias, from_field,
                 to_alias
             );
         }

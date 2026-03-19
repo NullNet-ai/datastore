@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.57
+
+### Author
+Jean
+
+### Fixed
+  - ***Nested joins — lateral subquery join key***:
+    - `providers/queries/find/constructors/joins_constructor.rs`
+      - **Problem:** The lateral subquery used the target field on both sides of the join, which could select the wrong key for nested joins.
+      - **Solution:** Use `from_field` for the selected column and join condition so nested joins use the correct from-side key.
+
 ## 0.2.56
 
 ### Author
