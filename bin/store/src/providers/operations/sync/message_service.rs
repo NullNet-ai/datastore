@@ -85,7 +85,10 @@ pub async fn create_messages(
             row: row.clone(),
             column: key.clone(),
             client_id: "client_id_placeholder".to_string(),
-            value: value.to_string(),
+            value: match value {
+                Value::String(s) => s.clone(),
+                other => other.to_string(),
+            },
             operation: operation.clone(),
             hypertable_timestamp: hypertable_timestamp.clone(),
         });
@@ -297,4 +300,76 @@ pub async fn get_messages_since(
         .collect();
 
     Ok(message_values)
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::Value;
+
+    /// Helper that mirrors the message value extraction logic used in create_messages.
+    fn extract_message_value(value: &Value) -> String {
+        match value {
+            Value::String(s) => s.clone(),
+            other => other.to_string(),
+        }
+    }
+
+    #[test]
+    fn html_content_preserves_newlines_and_quotes() {
+        let html = "<!DOCTYPE html>\n<html lang=\"en\">\n  <body>\n    <h1>Hello</h1>\n  </body>\n</html>";
+        let json_value = Value::String(html.to_string());
+
+        let result = extract_message_value(&json_value);
+
+        // The raw string should be preserved — no escaped \n or \"
+        assert_eq!(result, html);
+        assert!(result.contains('\n'), "Should contain actual newlines, not literal \\n");
+        assert!(result.contains('"'), "Should contain actual quotes, not escaped \\\"");
+        assert!(!result.starts_with('"'), "Should not be wrapped in extra quotes");
+    }
+
+    #[test]
+    fn html_content_old_to_string_would_escape() {
+        let html = "<!DOCTYPE html>\n<html lang=\"en\">\n</html>";
+        let json_value = Value::String(html.to_string());
+
+        // This is what the old code did — JSON-serializes the string
+        let old_behavior = json_value.to_string();
+
+        // The old behavior wraps in quotes and escapes
+        assert!(old_behavior.starts_with('"'), "to_string() wraps in quotes");
+        assert!(old_behavior.contains("\\n"), "to_string() escapes newlines");
+        assert!(old_behavior.contains("\\\""), "to_string() escapes inner quotes");
+
+        // The new behavior does not
+        let new_behavior = extract_message_value(&json_value);
+        assert!(!new_behavior.starts_with('"'));
+        assert!(!new_behavior.contains("\\n"));
+        assert!(!new_behavior.contains("\\\""));
+    }
+
+    #[test]
+    fn non_string_values_use_to_string() {
+        // Numbers
+        let num = serde_json::json!(42);
+        assert_eq!(extract_message_value(&num), "42");
+
+        // Booleans
+        let b = serde_json::json!(true);
+        assert_eq!(extract_message_value(&b), "true");
+
+        // Arrays
+        let arr = serde_json::json!(["a", "b"]);
+        assert_eq!(extract_message_value(&arr), "[\"a\",\"b\"]");
+
+        // Objects
+        let obj = serde_json::json!({"key": "val"});
+        assert_eq!(extract_message_value(&obj), "{\"key\":\"val\"}");
+    }
+
+    #[test]
+    fn simple_string_no_special_chars() {
+        let val = Value::String("Active".to_string());
+        assert_eq!(extract_message_value(&val), "Active");
+    }
 }

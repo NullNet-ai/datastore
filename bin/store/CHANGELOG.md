@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.56
+
+### Author
+Kashan
+
+### Fixed
+  - ***CRDT message value double-serialization for string fields***:
+    - `providers/operations/sync/message_service.rs`
+      - **Problem:** `value.to_string()` on a `serde_json::Value::String` JSON-serializes the string, wrapping it in quotes and escaping newlines (`\n` → `\\n`) and inner quotes (`"` → `\\\"`). This caused multi-line text content (e.g., HTML templates) to be stored in the database with literal escape sequences instead of actual newlines and quotes.
+      - **Solution:** For `String` values, extract the inner string directly via pattern matching (`Value::String(s) => s.clone()`). Non-string values (numbers, booleans, arrays, objects) continue to use `.to_string()` for correct JSON serialization.
+
 ## 0.2.55
 
 ### Author
