@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.55
+
+### Author
+Jean
+
+### Fixed
+  - ***Advance filters and WHERE expression grouping (left-to-right)***:
+    - `providers/queries/find/constructors/where_constructor.rs`
+      - Replace operator-precedence-based grouping with explicit left-to-right grouping so expressions like `A OR B AND C` render as `((A OR B) AND C)` and `A AND B OR C` as `((A AND B) OR C)`.
+    - `providers/queries/find/sql_constructor.rs`
+      - Align `build_infix_expression` for `advance_filters` with the same left-to-right grouping behavior as the WHERE constructor.
+    - `providers/queries/find/sql_constructor_test.rs`
+      - Add tests that validate the left-to-right grouping for both WHERE tokens and `advance_filters` expressions.
+
 ## 0.2.54
 
 ### Author
