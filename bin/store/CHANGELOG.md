@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.58
+
+### Author
+Jean
+
+### Changed
+  - ***ORDER BY date field casting***:
+    - `providers/queries/find/constructors/order_by_constructor.rs`
+      - Ensure fields ending with `_date` are cast to `DATE` after optional case-normalization so ORDER BY uses chronological rather than lexicographic ordering for date columns.
+
 ## 0.2.57
 
 ### Author
