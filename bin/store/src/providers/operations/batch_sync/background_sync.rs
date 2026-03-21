@@ -50,17 +50,19 @@ impl BackgroundSyncService {
     pub async fn init(&self) -> Result<(), String> {
         log::info!("Initializing BackgroundSyncService...");
 
-        // Run in an infinite loop to keep the service running
+        if !self.batch_sync_enabled {
+            log::info!("Batch sync is disabled; skipping background loop");
+            return Ok(());
+        }
+
         loop {
             match self.batch_sync().await {
                 Ok(_) => {
                     log::debug!("Batch sync cycle completed, continuing...");
-                    // Add a small delay before starting next cycle
                     sleep(Duration::from_secs(1)).await;
                 }
                 Err(e) => {
                     log::error!("Error in background batch sync: {}", e);
-                    // Add a delay before retry on error
                     sleep(Duration::from_secs(5)).await;
                 }
             }
