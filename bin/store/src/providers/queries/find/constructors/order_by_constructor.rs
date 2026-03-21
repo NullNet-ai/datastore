@@ -80,7 +80,7 @@ where
                     } else {
                         format!("LOWER({})", field_expression)
                     };
-                    
+
                     // Handle casting of date fields so it would not alphabetically/lexicographically sort
                     let final_field = if field_name.ends_with("_date") {
                         format!("{}::DATE", temp_field)

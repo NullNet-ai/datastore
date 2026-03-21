@@ -316,16 +316,26 @@ mod tests {
 
     #[test]
     fn html_content_preserves_newlines_and_quotes() {
-        let html = "<!DOCTYPE html>\n<html lang=\"en\">\n  <body>\n    <h1>Hello</h1>\n  </body>\n</html>";
+        let html =
+            "<!DOCTYPE html>\n<html lang=\"en\">\n  <body>\n    <h1>Hello</h1>\n  </body>\n</html>";
         let json_value = Value::String(html.to_string());
 
         let result = extract_message_value(&json_value);
 
         // The raw string should be preserved — no escaped \n or \"
         assert_eq!(result, html);
-        assert!(result.contains('\n'), "Should contain actual newlines, not literal \\n");
-        assert!(result.contains('"'), "Should contain actual quotes, not escaped \\\"");
-        assert!(!result.starts_with('"'), "Should not be wrapped in extra quotes");
+        assert!(
+            result.contains('\n'),
+            "Should contain actual newlines, not literal \\n"
+        );
+        assert!(
+            result.contains('"'),
+            "Should contain actual quotes, not escaped \\\""
+        );
+        assert!(
+            !result.starts_with('"'),
+            "Should not be wrapped in extra quotes"
+        );
     }
 
     #[test]
@@ -339,7 +349,10 @@ mod tests {
         // The old behavior wraps in quotes and escapes
         assert!(old_behavior.starts_with('"'), "to_string() wraps in quotes");
         assert!(old_behavior.contains("\\n"), "to_string() escapes newlines");
-        assert!(old_behavior.contains("\\\""), "to_string() escapes inner quotes");
+        assert!(
+            old_behavior.contains("\\\""),
+            "to_string() escapes inner quotes"
+        );
 
         // The new behavior does not
         let new_behavior = extract_message_value(&json_value);

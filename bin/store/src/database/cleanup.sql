@@ -16,8 +16,3 @@ BEGIN
     -- Re-enable triggers
     EXECUTE 'SET session_replication_role = DEFAULT';
 END $$;
-
--- Reset TimescaleDB so chunk catalog is cleared (avoids "cache lookup failed for relation _hyper_*_chunk"
--- after cleanup when migrations recreate hypertables).
-DROP EXTENSION IF EXISTS timescaledb CASCADE;
-CREATE EXTENSION IF NOT EXISTS timescaledb;
