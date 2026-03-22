@@ -1684,8 +1684,11 @@ pub async fn download_file_by_id(
         .get("tags")
         .and_then(|v| v.as_array())
         .map(|arr| {
-            arr.iter()
-                .any(|t| t.as_str().map(|s| s.eq_ignore_ascii_case("thumbnail")).unwrap_or(false))
+            arr.iter().any(|t| {
+                t.as_str()
+                    .map(|s| s.eq_ignore_ascii_case("thumbnail"))
+                    .unwrap_or(false)
+            })
         })
         .unwrap_or(false);
     let is_thumbnail_requested = query
@@ -1762,8 +1765,12 @@ pub async fn download_file_by_id(
             timezone: None,
             time_format: "HH24:MI".to_string(),
         };
-        let mut sql_constructor =
-            SQLConstructor::new(parameters.clone(), "files".to_string(), is_root_controller, None);
+        let mut sql_constructor = SQLConstructor::new(
+            parameters.clone(),
+            "files".to_string(),
+            is_root_controller,
+            None,
+        );
         sql_constructor = sql_constructor.with_organization_id(auth_data.organization_id.clone());
         if let Ok(query_sql) = sql_constructor.construct() {
             let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query_sql);
@@ -1799,7 +1806,11 @@ pub async fn download_file_by_id(
         }
     }
 
-    let variant_label = if is_thumbnail_requested { "thumbnail" } else { "original" };
+    let variant_label = if is_thumbnail_requested {
+        "thumbnail"
+    } else {
+        "original"
+    };
     let cache_dir = std::env::temp_dir()
         .join("store_cache")
         .join(auth_data.organization_id.clone());
@@ -1816,7 +1827,8 @@ pub async fn download_file_by_id(
                 if let Ok(bytes_vec) = tokio::fs::read(&cache_file_path).await {
                     use futures_util::stream;
                     let cached_bytes = bytes::Bytes::from(bytes_vec);
-                    let byte_stream = stream::once(async move { Ok::<_, std::io::Error>(cached_bytes) });
+                    let byte_stream =
+                        stream::once(async move { Ok::<_, std::io::Error>(cached_bytes) });
                     let actual_content_type = mimetype.to_string();
                     let is_image = actual_content_type.starts_with("image/");
                     let filename = effective_download_path.split('/').last().unwrap_or("file");
@@ -2140,18 +2152,21 @@ pub async fn download_file_by_id(
                                 let bytes = data.into_bytes();
                                 use futures_util::stream;
                                 let bytes_for_stream = bytes.clone();
-                                let byte_stream =
-                                    stream::once(async move { Ok::<_, std::io::Error>(bytes_for_stream) });
+                                let byte_stream = stream::once(async move {
+                                    Ok::<_, std::io::Error>(bytes_for_stream)
+                                });
                                 let cache_dir_clone = cache_dir.clone();
                                 let cache_file_path_clone = cache_file_path.clone();
                                 let to_write_vec = bytes.to_vec();
                                 tokio::spawn(async move {
                                     let _ = tokio::fs::create_dir_all(&cache_dir_clone).await;
-                                    let _ =
-                                        tokio::fs::write(&cache_file_path_clone, &to_write_vec).await;
+                                    let _ = tokio::fs::write(&cache_file_path_clone, &to_write_vec)
+                                        .await;
                                     tokio::spawn(async move {
-                                        tokio::time::sleep(std::time::Duration::from_secs(300)).await;
-                                        let _ = tokio::fs::remove_file(&cache_file_path_clone).await;
+                                        tokio::time::sleep(std::time::Duration::from_secs(300))
+                                            .await;
+                                        let _ =
+                                            tokio::fs::remove_file(&cache_file_path_clone).await;
                                     });
                                 });
                                 let is_image = actual_content_type.starts_with("image/");
