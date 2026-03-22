@@ -1054,5 +1054,4 @@ mod tests {
         // Clean up for other tests
         env::remove_var("MIGRATION_MODE");
     }
-
 }

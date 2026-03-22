@@ -1577,7 +1577,7 @@ pub async fn get_file_by_id(
 pub async fn download_file_by_id(
     auth: HttpRequest,
     path_params: web::Path<String>,
-    _query: web::Query<std::collections::HashMap<String, String>>,
+    query: web::Query<std::collections::HashMap<String, String>>,
     app_state: web::Data<providers::storage::AppState>,
 ) -> HttpResponse {
     let file_id = path_params.into_inner();
@@ -1623,6 +1623,8 @@ pub async fn download_file_by_id(
         "download_path".to_string(),
         "size".to_string(),
         "etag".to_string(),
+        "tags".to_string(),
+        "originalname".to_string(),
     ];
 
     // Extract organization_id from auth_data
@@ -1661,10 +1663,11 @@ pub async fn download_file_by_id(
 
     // Extract file information from metadata
     log::debug!("file_metadata: {:?}", file_metadata);
-    let mimetype = file_metadata
+    let mut mimetype = file_metadata
         .get("mimetype")
         .and_then(|v| v.as_str())
-        .unwrap_or("application/octet-stream");
+        .unwrap_or("application/octet-stream")
+        .to_string();
     let download_path = file_metadata
         .get("download_path")
         .and_then(|v| v.as_str())
@@ -1673,19 +1676,170 @@ pub async fn download_file_by_id(
         .get("etag")
         .and_then(|v| v.as_str())
         .unwrap_or("");
+    let originalname = file_metadata
+        .get("originalname")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let tags_contains_thumbnail = file_metadata
+        .get("tags")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter()
+                .any(|t| t.as_str().map(|s| s.eq_ignore_ascii_case("thumbnail")).unwrap_or(false))
+        })
+        .unwrap_or(false);
+    let is_thumbnail_requested = query
+        .get("q")
+        .map(|v| v.eq_ignore_ascii_case("thumbnail"))
+        .unwrap_or(false);
 
     // Get bucket name with organization context
     let base_bucket_name =
         std::env::var("STORAGE_BUCKET_NAME").unwrap_or_else(|_| app_state.bucket_name.clone());
     let bucket_name = base_bucket_name.clone();
 
-    // Use the download_path as-is since it should already contain the organization name
-    // The new path structure is: organization_name/file_id.extension
-    let s3_key = download_path;
+    let mut effective_download_path = download_path.to_string();
+    if is_thumbnail_requested && !tags_contains_thumbnail && !originalname.is_empty() {
+        let db_pluck = vec![
+            "download_path".to_string(),
+            "mimetype".to_string(),
+            "size".to_string(),
+            "id".to_string(),
+            "tags".to_string(),
+            "originalname".to_string(),
+        ];
+        let parameters = GetByFilter {
+            pluck: db_pluck.clone(),
+            pluck_object: Default::default(),
+            pluck_group_object: Default::default(),
+            advance_filters: vec![
+                FilterCriteria::Criteria {
+                    field: "originalname".to_string(),
+                    entity: None,
+                    operator: FilterOperator::Equal,
+                    values: vec![serde_json::Value::String(originalname.to_string())],
+                    case_sensitive: Some(false),
+                    parse_as: "text".to_string(),
+                    match_pattern: None,
+                    is_search: None,
+                    has_group_count: None,
+                },
+                FilterCriteria::Criteria {
+                    field: "tags".to_string(),
+                    entity: None,
+                    operator: FilterOperator::Contains,
+                    values: vec![serde_json::Value::String("thumbnail".to_string())],
+                    case_sensitive: Some(false),
+                    parse_as: "text".to_string(),
+                    match_pattern: None,
+                    is_search: None,
+                    has_group_count: None,
+                },
+                FilterCriteria::Criteria {
+                    field: "organization_id".to_string(),
+                    entity: None,
+                    operator: FilterOperator::Equal,
+                    values: vec![serde_json::Value::String(auth_data.organization_id.clone())],
+                    case_sensitive: Some(false),
+                    parse_as: "text".to_string(),
+                    match_pattern: None,
+                    is_search: None,
+                    has_group_count: None,
+                },
+            ],
+            group_advance_filters: vec![],
+            joins: vec![],
+            group_by: None,
+            concatenate_fields: vec![],
+            multiple_sort: vec![],
+            date_format: "YYYY-mm-dd".to_string(),
+            order_by: "updated_time".to_string(),
+            order_direction: "DESC".to_string(),
+            is_case_sensitive_sorting: None,
+            offset: 0,
+            limit: 1,
+            distinct_by: None,
+            timezone: None,
+            time_format: "HH24:MI".to_string(),
+        };
+        let mut sql_constructor =
+            SQLConstructor::new(parameters.clone(), "files".to_string(), is_root_controller, None);
+        sql_constructor = sql_constructor.with_organization_id(auth_data.organization_id.clone());
+        if let Ok(query_sql) = sql_constructor.construct() {
+            let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query_sql);
+            let mut conn = db::get_async_connection().await;
+            if let Ok(results) = diesel::dsl::sql_query(&final_query)
+                .load::<DynamicResult>(&mut conn)
+                .await
+            {
+                if let Some(first) = results.into_iter().filter_map(|r| r.row_to_json).next() {
+                    if let Some(obj) = first.as_object() {
+                        if obj
+                            .get("tags")
+                            .and_then(|v| v.as_array())
+                            .map(|arr| {
+                                arr.iter().any(|t| {
+                                    t.as_str()
+                                        .map(|s| s.eq_ignore_ascii_case("thumbnail"))
+                                        .unwrap_or(false)
+                                })
+                            })
+                            .unwrap_or(false)
+                        {
+                            if let Some(dp) = obj.get("download_path").and_then(|v| v.as_str()) {
+                                effective_download_path = dp.to_string();
+                            }
+                            if let Some(mt) = obj.get("mimetype").and_then(|v| v.as_str()) {
+                                mimetype = mt.to_string();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let variant_label = if is_thumbnail_requested { "thumbnail" } else { "original" };
+    let cache_dir = std::env::temp_dir()
+        .join("store_cache")
+        .join(auth_data.organization_id.clone());
+    let cache_file_path = cache_dir.join(format!("{}_{}.cache", file_id, variant_label));
+    log::debug!("Cache file path: {:?}", cache_file_path);
+    if let Ok(meta) = tokio::fs::metadata(&cache_file_path).await {
+        if let Ok(modified) = meta.modified() {
+            let now = std::time::SystemTime::now();
+            if now
+                .duration_since(modified)
+                .unwrap_or(std::time::Duration::from_secs(0))
+                <= std::time::Duration::from_secs(300)
+            {
+                if let Ok(bytes_vec) = tokio::fs::read(&cache_file_path).await {
+                    use futures_util::stream;
+                    let cached_bytes = bytes::Bytes::from(bytes_vec);
+                    let byte_stream = stream::once(async move { Ok::<_, std::io::Error>(cached_bytes) });
+                    let actual_content_type = mimetype.to_string();
+                    let is_image = actual_content_type.starts_with("image/");
+                    let filename = effective_download_path.split('/').last().unwrap_or("file");
+                    let content_disposition = if is_image {
+                        format!("inline; filename=\"{}\"", filename)
+                    } else {
+                        format!("attachment; filename=\"{}\"", filename)
+                    };
+                    return HttpResponse::Ok()
+                        .content_type(actual_content_type)
+                        .insert_header(("Cache-Control", "public, max-age=3600"))
+                        .insert_header(("Accept-Ranges", "bytes"))
+                        .insert_header(("Content-Disposition", content_disposition))
+                        .streaming(byte_stream);
+                }
+            }
+        }
+    }
 
     // Stream file from S3
     let s3_client = &app_state.s3_client;
 
+    let s3_key = effective_download_path.as_str();
     match s3_client
         .get_object()
         .bucket(&bucket_name)
@@ -1708,7 +1862,20 @@ pub async fn download_file_by_id(
 
                     // Create a stream from the bytes for efficient streaming
                     use futures_util::stream;
-                    let byte_stream = stream::once(async move { Ok::<_, std::io::Error>(bytes) });
+                    let bytes_for_stream = bytes.clone();
+                    let byte_stream =
+                        stream::once(async move { Ok::<_, std::io::Error>(bytes_for_stream) });
+                    let cache_dir_clone = cache_dir.clone();
+                    let cache_file_path_clone = cache_file_path.clone();
+                    let to_write_vec = bytes.to_vec();
+                    tokio::spawn(async move {
+                        let _ = tokio::fs::create_dir_all(&cache_dir_clone).await;
+                        let _ = tokio::fs::write(&cache_file_path_clone, &to_write_vec).await;
+                        tokio::spawn(async move {
+                            tokio::time::sleep(std::time::Duration::from_secs(300)).await;
+                            let _ = tokio::fs::remove_file(&cache_file_path_clone).await;
+                        });
+                    });
 
                     // Determine if this is an image for inline display
                     let is_image = actual_content_type.starts_with("image/");
@@ -1972,8 +2139,21 @@ pub async fn download_file_by_id(
                             Ok(data) => {
                                 let bytes = data.into_bytes();
                                 use futures_util::stream;
+                                let bytes_for_stream = bytes.clone();
                                 let byte_stream =
-                                    stream::once(async move { Ok::<_, std::io::Error>(bytes) });
+                                    stream::once(async move { Ok::<_, std::io::Error>(bytes_for_stream) });
+                                let cache_dir_clone = cache_dir.clone();
+                                let cache_file_path_clone = cache_file_path.clone();
+                                let to_write_vec = bytes.to_vec();
+                                tokio::spawn(async move {
+                                    let _ = tokio::fs::create_dir_all(&cache_dir_clone).await;
+                                    let _ =
+                                        tokio::fs::write(&cache_file_path_clone, &to_write_vec).await;
+                                    tokio::spawn(async move {
+                                        tokio::time::sleep(std::time::Duration::from_secs(300)).await;
+                                        let _ = tokio::fs::remove_file(&cache_file_path_clone).await;
+                                    });
+                                });
                                 let is_image = actual_content_type.starts_with("image/");
                                 let filename = fallback_key.split('/').last().unwrap_or("file");
                                 let content_disposition = if is_image {
