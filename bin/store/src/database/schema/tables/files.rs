@@ -33,8 +33,6 @@ define_table_schema! {
         download_path: nullable(text()),
         presigned_url: nullable(text()),
         presigned_url_expire: nullable(integer()),
-
-
     },
     indexes: {
         // System field indexes ( REQUIRED )
@@ -65,7 +63,5 @@ define_table_schema! {
     foreign_keys: {
         // System field foreign keys ( REQUIRED )
         system_foreign_keys!("files"),
-
-
     }
 }

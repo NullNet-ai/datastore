@@ -1054,4 +1054,34 @@ mod tests {
         // Clean up for other tests
         env::remove_var("MIGRATION_MODE");
     }
+
+    #[test]
+    fn process_record_sets_created_by_to_responsible_account() {
+        env::remove_var("MIGRATION_MODE");
+
+        let mut body = RequestBody {
+            record: json!({ "name": "Test" }),
+        };
+        let auth = test_auth();
+        body.process_record("create", &auth, false, "files");
+        assert_eq!(
+            body.record.get("created_by").and_then(|v| v.as_str()),
+            Some(&auth.responsible_account)
+        );
+    }
+
+    #[test]
+    fn process_record_sets_updated_by_to_responsible_account_on_update() {
+        env::remove_var("MIGRATION_MODE");
+
+        let mut body = RequestBody {
+            record: json!({ "id": "01ARZ3NDEKTSV4RRFFQ69G5FAV", "name": "Test" }),
+        };
+        let auth = test_auth();
+        body.process_record("update", &auth, false, "files");
+        assert_eq!(
+            body.record.get("updated_by").and_then(|v| v.as_str()),
+            Some(&auth.responsible_account)
+        );
+    }
 }

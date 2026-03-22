@@ -2038,48 +2038,11 @@ pub async fn upload_file(
     // Check if storage is disabled
     if is_storage_disabled() {
         log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock upload response");
-
-        // Generate mock file metadata for disabled storage
-        let mock_id = Ulid::new().to_string();
-        let organization_name =
-            std::env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| "default".to_string());
-        let mock_metadata = serde_json::json!({
-            "id": mock_id,
-            "status": "mock_uploaded",
-            "previous_status": "",
-            "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
-            "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
-            "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
-            "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
-            "organization_id": "",
-            "created_by": "",
-            "updated_by": "",
-            "deleted_by": "",
-            "requested_by": "",
-            "tags": [],
-            "image_url": format!("mock-bucket/{}/{}.png", organization_name, mock_id),
-            "fieldname": "files",
-            "originalname": "mock-file.png",
-            "encoding": "7bit",
-            "mimetype": "image/png",
-            "destination": "mock-bucket",
-            "filename": format!("{}.png", mock_id),
-            "path": format!("mock-bucket/{}/{}.png", organization_name, mock_id),
-            "size": 1024,
-            "uploaded_by": "",
-            "downloaded_by": "",
-            "etag": "mock-etag",
-            "version_id": "",
-            "download_path": format!("{}.png", mock_id),
-            "presigned_url": "",
-            "presigned_url_expire": 0
-        });
-
         return HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: "Mock upload successful (storage disabled)".to_string(),
-            count: 1,
-            data: vec![mock_metadata],
+            success: false,
+            message: "Upload failed (storage disabled)".to_string(),
+            count: 0,
+            data: vec![],
         });
     }
 
@@ -2260,7 +2223,19 @@ pub async fn upload_file(
                 Ok(get_output) => {
                     // File already exists in MinIO, use the extracted ID from filename
                     let actual_id = final_id.clone();
-                    let actual_filename = final_filename.clone();
+                    let mut actual_filename = final_filename.clone();
+                    let normalized_filename =
+                        format!("{}/{}.{}", valid_bucket_name, actual_id, extension);
+                    if actual_filename != normalized_filename {
+                        let _ = client
+                            .copy_object()
+                            .bucket(&bucket_name)
+                            .key(&normalized_filename)
+                            .copy_source(format!("{}/{}", bucket_name, actual_filename))
+                            .send()
+                            .await;
+                        actual_filename = normalized_filename;
+                    }
 
                     dbg!(format!(
                         "Found existing file with ID '{}' and filename '{}'",
@@ -2297,8 +2272,8 @@ pub async fn upload_file(
                             })
                             .unwrap_or_else(|| "Unknown".to_string()),
                         "organization_id": auth_data.organization_id.clone(),
-                        "created_by": auth_data.account_organization_id.clone(),
-                        "updated_by": auth_data.responsible_account.clone(),
+                        // "created_by": auth_data.account_organization_id.clone(),
+                        // "updated_by": auth_data.responsible_account.clone(),
                         "deleted_by": "",
                         "requested_by": auth_data.responsible_account.clone(),
                         // "timestamp": chrono::Utc::now().timestamp(),
