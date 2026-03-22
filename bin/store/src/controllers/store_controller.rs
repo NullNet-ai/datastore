@@ -19,7 +19,7 @@ use crate::structs::core::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
     QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
-use crate::structs::core::{FilterCriteria, FilterOperator};
+use crate::structs::core::{FilterCriteria, FilterOperator, LogicalOperator};
 use crate::utils::helpers::{normalize_date_format, table_exists};
 use crate::{db, providers};
 use actix_multipart::Multipart;
@@ -1604,19 +1604,6 @@ pub async fn download_file_by_id(
         .map(|s| s == "root")
         .unwrap_or(false);
 
-    // Log the operation
-    if is_root_controller {
-        log::info!(
-            "Processing download_file_by_id via root controller for file_id: {}",
-            file_id
-        );
-    } else {
-        log::info!(
-            "Processing download_file_by_id via simple controller for file_id: {}",
-            file_id
-        );
-    }
-
     // First, get file metadata from database
     let pluck_fields = vec![
         "mimetype".to_string(),
@@ -1624,7 +1611,8 @@ pub async fn download_file_by_id(
         "size".to_string(),
         "etag".to_string(),
         "tags".to_string(),
-        "originalname".to_string(),
+        "filename".to_string(),
+        "path".to_string(),
     ];
 
     // Extract organization_id from auth_data
@@ -1661,8 +1649,6 @@ pub async fn download_file_by_id(
         }
     };
 
-    // Extract file information from metadata
-    log::debug!("file_metadata: {:?}", file_metadata);
     let mut mimetype = file_metadata
         .get("mimetype")
         .and_then(|v| v.as_str())
@@ -1672,12 +1658,8 @@ pub async fn download_file_by_id(
         .get("download_path")
         .and_then(|v| v.as_str())
         .unwrap_or(&file_id);
-    let file_etag = file_metadata
-        .get("etag")
-        .and_then(|v| v.as_str())
-        .unwrap_or("");
-    let originalname = file_metadata
-        .get("originalname")
+    let filename = file_metadata
+        .get("filename")
         .and_then(|v| v.as_str())
         .unwrap_or("");
     let tags_contains_thumbnail = file_metadata
@@ -1696,60 +1678,75 @@ pub async fn download_file_by_id(
         .map(|v| v.eq_ignore_ascii_case("thumbnail"))
         .unwrap_or(false);
 
-    // Get bucket name with organization context
     let base_bucket_name =
         std::env::var("STORAGE_BUCKET_NAME").unwrap_or_else(|_| app_state.bucket_name.clone());
     let bucket_name = base_bucket_name.clone();
 
     let mut effective_download_path = download_path.to_string();
-    if is_thumbnail_requested && !tags_contains_thumbnail && !originalname.is_empty() {
+
+    // If thumbnail is NOT requested but the current record is a thumbnail, try to resolve original
+    if !is_thumbnail_requested && tags_contains_thumbnail {
         let db_pluck = vec![
             "download_path".to_string(),
             "mimetype".to_string(),
             "size".to_string(),
             "id".to_string(),
             "tags".to_string(),
-            "originalname".to_string(),
+            "filename".to_string(),
+            "path".to_string(),
         ];
+        let mut adv_filters: Vec<FilterCriteria> = Vec::new();
+        if let Some(fname) = file_metadata.get("filename").and_then(|v| v.as_str()) {
+            if !fname.is_empty() {
+                adv_filters.push(FilterCriteria::Criteria {
+                    field: "filename".to_string(),
+                    entity: None,
+                    operator: FilterOperator::Equal,
+                    values: vec![serde_json::Value::String(fname.to_string())],
+                    case_sensitive: Some(false),
+                    parse_as: "text".to_string(),
+                    match_pattern: None,
+                    is_search: None,
+                    has_group_count: None,
+                });
+                adv_filters.push(FilterCriteria::LogicalOperator {
+                    operator: LogicalOperator::And,
+                });
+            }
+        }
+        // Ensure path does NOT include thumbnail
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "path".to_string(),
+            entity: None,
+            operator: FilterOperator::NotContains,
+            values: vec![serde_json::Value::String("thumbnail".to_string())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+        adv_filters.push(FilterCriteria::LogicalOperator {
+            operator: LogicalOperator::And,
+        });
+        // Ensure same organization
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "organization_id".to_string(),
+            entity: None,
+            operator: FilterOperator::Equal,
+            values: vec![serde_json::Value::String(auth_data.organization_id.clone())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+
         let parameters = GetByFilter {
             pluck: db_pluck.clone(),
             pluck_object: Default::default(),
             pluck_group_object: Default::default(),
-            advance_filters: vec![
-                FilterCriteria::Criteria {
-                    field: "originalname".to_string(),
-                    entity: None,
-                    operator: FilterOperator::Equal,
-                    values: vec![serde_json::Value::String(originalname.to_string())],
-                    case_sensitive: Some(false),
-                    parse_as: "text".to_string(),
-                    match_pattern: None,
-                    is_search: None,
-                    has_group_count: None,
-                },
-                FilterCriteria::Criteria {
-                    field: "tags".to_string(),
-                    entity: None,
-                    operator: FilterOperator::Contains,
-                    values: vec![serde_json::Value::String("thumbnail".to_string())],
-                    case_sensitive: Some(false),
-                    parse_as: "text".to_string(),
-                    match_pattern: None,
-                    is_search: None,
-                    has_group_count: None,
-                },
-                FilterCriteria::Criteria {
-                    field: "organization_id".to_string(),
-                    entity: None,
-                    operator: FilterOperator::Equal,
-                    values: vec![serde_json::Value::String(auth_data.organization_id.clone())],
-                    case_sensitive: Some(false),
-                    parse_as: "text".to_string(),
-                    match_pattern: None,
-                    is_search: None,
-                    has_group_count: None,
-                },
-            ],
+            advance_filters: adv_filters,
             group_advance_filters: vec![],
             joins: vec![],
             group_by: None,
@@ -1781,24 +1778,141 @@ pub async fn download_file_by_id(
             {
                 if let Some(first) = results.into_iter().filter_map(|r| r.row_to_json).next() {
                     if let Some(obj) = first.as_object() {
-                        if obj
-                            .get("tags")
-                            .and_then(|v| v.as_array())
-                            .map(|arr| {
-                                arr.iter().any(|t| {
-                                    t.as_str()
-                                        .map(|s| s.eq_ignore_ascii_case("thumbnail"))
-                                        .unwrap_or(false)
-                                })
-                            })
-                            .unwrap_or(false)
-                        {
-                            if let Some(dp) = obj.get("download_path").and_then(|v| v.as_str()) {
-                                effective_download_path = dp.to_string();
-                            }
-                            if let Some(mt) = obj.get("mimetype").and_then(|v| v.as_str()) {
-                                mimetype = mt.to_string();
-                            }
+                        if let Some(dp) = obj.get("download_path").and_then(|v| v.as_str()) {
+                            effective_download_path = dp.to_string();
+                        } else if let Some(pv) = obj.get("path").and_then(|v| v.as_str()) {
+                            let prefix = format!("{}/", bucket_name);
+                            let key = if pv.starts_with(&prefix) {
+                                pv.strip_prefix(&prefix).unwrap_or(pv)
+                            } else {
+                                pv
+                            };
+                            effective_download_path = key.to_string();
+                        }
+                        if let Some(mt) = obj.get("mimetype").and_then(|v| v.as_str()) {
+                            mimetype = mt.to_string();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if is_thumbnail_requested && !tags_contains_thumbnail {
+        let db_pluck = vec![
+            "download_path".to_string(),
+            "mimetype".to_string(),
+            "size".to_string(),
+            "id".to_string(),
+            "tags".to_string(),
+            "filename".to_string(),
+            "path".to_string(),
+        ];
+        let mut adv_filters: Vec<FilterCriteria> = Vec::new();
+        if !filename.is_empty() {
+            adv_filters.push(FilterCriteria::Criteria {
+                field: "filename".to_string(),
+                entity: None,
+                operator: FilterOperator::Equal,
+                values: vec![serde_json::Value::String(filename.to_string())],
+                case_sensitive: Some(false),
+                parse_as: "text".to_string(),
+                match_pattern: None,
+                is_search: None,
+                has_group_count: None,
+            });
+            adv_filters.push(FilterCriteria::LogicalOperator {
+                operator: LogicalOperator::And,
+            });
+        }
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "tags".to_string(),
+            entity: None,
+            operator: FilterOperator::Contains,
+            values: vec![serde_json::Value::String("thumbnail".to_string())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+        adv_filters.push(FilterCriteria::LogicalOperator {
+            operator: LogicalOperator::And,
+        });
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "path".to_string(),
+            entity: None,
+            operator: FilterOperator::Contains,
+            values: vec![serde_json::Value::String("thumbnail".to_string())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+        adv_filters.push(FilterCriteria::LogicalOperator {
+            operator: LogicalOperator::And,
+        });
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "organization_id".to_string(),
+            entity: None,
+            operator: FilterOperator::Equal,
+            values: vec![serde_json::Value::String(auth_data.organization_id.clone())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+        let parameters = GetByFilter {
+            pluck: db_pluck.clone(),
+            pluck_object: Default::default(),
+            pluck_group_object: Default::default(),
+            advance_filters: adv_filters,
+            group_advance_filters: vec![],
+            joins: vec![],
+            group_by: None,
+            concatenate_fields: vec![],
+            multiple_sort: vec![],
+            date_format: "YYYY-mm-dd".to_string(),
+            order_by: "updated_time".to_string(),
+            order_direction: "DESC".to_string(),
+            is_case_sensitive_sorting: None,
+            offset: 0,
+            limit: 1,
+            distinct_by: None,
+            timezone: None,
+            time_format: "HH24:MI".to_string(),
+        };
+        let mut sql_constructor = SQLConstructor::new(
+            parameters.clone(),
+            "files".to_string(),
+            is_root_controller,
+            None,
+        );
+        sql_constructor = sql_constructor.with_organization_id(auth_data.organization_id.clone());
+        if let Ok(query_sql) = sql_constructor.construct() {
+            let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query_sql);
+            let mut conn = db::get_async_connection().await;
+            if let Ok(results) = diesel::dsl::sql_query(&final_query)
+                .load::<DynamicResult>(&mut conn)
+                .await
+            {
+                if let Some(first) = results.into_iter().filter_map(|r| r.row_to_json).next() {
+                    if let Some(obj) = first.as_object() {
+                        if let Some(dp) = obj.get("download_path").and_then(|v| v.as_str()) {
+                            effective_download_path = dp.to_string();
+                        } else if let Some(pv) = obj.get("path").and_then(|v| v.as_str()) {
+                            let prefix = format!("{}/", bucket_name);
+                            let key = if pv.starts_with(&prefix) {
+                                pv.strip_prefix(&prefix).unwrap_or(pv)
+                            } else {
+                                pv
+                            };
+                            effective_download_path = key.to_string();
+                        }
+                        if let Some(mt) = obj.get("mimetype").and_then(|v| v.as_str()) {
+                            mimetype = mt.to_string();
                         }
                     }
                 }
@@ -1860,19 +1974,14 @@ pub async fn download_file_by_id(
         .await
     {
         Ok(output) => {
-            // Use the mimetype from database for proper content type handling
-            // This ensures correct MIME type detection for preview functionality
             let actual_content_type = mimetype.to_string();
 
-            // Capture content length before consuming the body
             let content_length = output.content_length().unwrap_or(0);
 
-            // Convert the S3 body stream to bytes and create a streaming response
             match output.body.collect().await {
                 Ok(data) => {
                     let bytes = data.into_bytes();
 
-                    // Create a stream from the bytes for efficient streaming
                     use futures_util::stream;
                     let bytes_for_stream = bytes.clone();
                     let byte_stream =
@@ -1889,16 +1998,12 @@ pub async fn download_file_by_id(
                         });
                     });
 
-                    // Determine if this is an image for inline display
                     let is_image = actual_content_type.starts_with("image/");
                     let filename = s3_key.split('/').last().unwrap_or("file");
 
-                    // Set Content-Disposition for proper preview behavior
                     let content_disposition = if is_image {
-                        // For images, use inline disposition to enable preview in browsers/Postman
                         format!("inline; filename=\"{}\"", filename)
                     } else {
-                        // For non-images, use attachment to trigger download
                         format!("attachment; filename=\"{}\"", filename)
                     };
 
@@ -1923,304 +2028,12 @@ pub async fn download_file_by_id(
         }
         Err(e) => {
             log::error!("Error downloading file {} from S3: {:?}", file_id, e);
-            let normalize_etag = |s: &str| {
-                s.trim()
-                    .trim_start_matches("\\\"") // strip \"
-                    .trim_end_matches("\\\"") // strip \"
-                    .trim_end_matches('\\') // trailing back-slash
-                    .trim_matches('"') // strip any remaining "
-                    .to_string()
-            };
-
-            let target_etag = normalize_etag(file_etag);
-            log::debug!("file_etag: {:?}", &target_etag);
-            let mut found_key: Option<String> = None;
-
-            if !target_etag.is_empty() {
-                let db_pluck = vec![
-                    "download_path".to_string(),
-                    "mimetype".to_string(),
-                    "size".to_string(),
-                    "etag".to_string(),
-                    "id".to_string(),
-                ];
-                let parameters = GetByFilter {
-                    pluck: db_pluck.clone(),
-                    pluck_object: Default::default(),
-                    pluck_group_object: Default::default(),
-                    advance_filters: vec![
-                        FilterCriteria::Criteria {
-                            field: "etag".to_string(),
-                            entity: None,
-                            operator: FilterOperator::Equal,
-                            values: vec![serde_json::Value::String(target_etag.clone())],
-                            case_sensitive: Some(false),
-                            parse_as: "text".to_string(),
-                            match_pattern: None,
-                            is_search: None,
-                            has_group_count: None,
-                        },
-                        FilterCriteria::Criteria {
-                            field: "organization_id".to_string(),
-                            entity: None,
-                            operator: FilterOperator::Equal,
-                            values: vec![serde_json::Value::String(
-                                auth_data.organization_id.clone(),
-                            )],
-                            case_sensitive: Some(false),
-                            parse_as: "text".to_string(),
-                            match_pattern: None,
-                            is_search: None,
-                            has_group_count: None,
-                        },
-                    ],
-                    group_advance_filters: vec![],
-                    joins: vec![],
-                    group_by: None,
-                    concatenate_fields: vec![],
-                    multiple_sort: vec![],
-                    date_format: "YYYY-mm-dd".to_string(),
-                    order_by: "id".to_string(),
-                    order_direction: "ASC".to_string(),
-                    is_case_sensitive_sorting: None,
-                    offset: 0,
-                    limit: 1,
-                    distinct_by: None,
-                    timezone: None,
-                    time_format: "HH24:MI".to_string(),
-                };
-                let mut sql_constructor = SQLConstructor::new(
-                    parameters.clone(),
-                    "files".to_string(),
-                    is_root_controller,
-                    None,
-                );
-                sql_constructor =
-                    sql_constructor.with_organization_id(auth_data.organization_id.clone());
-                if let Ok(query) = sql_constructor.construct() {
-                    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
-                    let mut conn = db::get_async_connection().await;
-                    match diesel::dsl::sql_query(&final_query)
-                        .load::<DynamicResult>(&mut conn)
-                        .await
-                    {
-                        Ok(results) => {
-                            if let Some(first) =
-                                results.into_iter().filter_map(|r| r.row_to_json).next()
-                            {
-                                if let Some(obj) = first.as_object() {
-                                    if let Some(dp) =
-                                        obj.get("download_path").and_then(|v| v.as_str())
-                                    {
-                                        found_key = Some(dp.to_string());
-                                    }
-                                }
-                            }
-                        }
-                        Err(err) => {
-                            log::error!(
-                                "DB fallback query by ETag failed for file {}: {:?}",
-                                file_id,
-                                err
-                            );
-                        }
-                    }
-                }
-            }
-
-            if !target_etag.is_empty() {
-                let org_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
-                    .unwrap_or_else(|_| "default".to_string());
-                let valid_prefix =
-                    get_valid_bucket_name(&org_name, Some(auth_data.organization_id.as_str()));
-                let prefix = Some(valid_prefix.as_str());
-                let mut continuation: Option<String> = None;
-                loop {
-                    let mut req = s3_client.list_objects_v2().bucket(&bucket_name);
-                    if let Some(p) = prefix {
-                        req = req.prefix(p);
-                    }
-                    if let Some(token) = continuation.as_deref() {
-                        req = req.continuation_token(token);
-                    }
-                    match req.send().await {
-                        Ok(list_output) => {
-                            for object in list_output.contents() {
-                                let obj_etag = object.e_tag().unwrap_or("");
-                                if !obj_etag.is_empty() && normalize_etag(obj_etag) == target_etag {
-                                    if let Some(key) = object.key() {
-                                        found_key = Some(key.to_string());
-                                        break;
-                                    }
-                                }
-                            }
-                            if found_key.is_some() {
-                                break;
-                            }
-                            if let Some(next) = list_output.next_continuation_token() {
-                                continuation = Some(next.to_string());
-                            } else {
-                                break;
-                            }
-                        }
-                        Err(err) => {
-                            log::error!(
-                                "ListObjectsV2 error while searching by ETag for file {}: {:?}",
-                                file_id,
-                                err
-                            );
-                            break;
-                        }
-                    }
-                }
-
-                if found_key.is_none() {
-                    let mut continuation_all: Option<String> = None;
-                    loop {
-                        let mut req = s3_client.list_objects_v2().bucket(&bucket_name);
-                        if let Some(token) = continuation_all.as_deref() {
-                            req = req.continuation_token(token);
-                        }
-                        match req.send().await {
-                            Ok(list_output) => {
-                                for object in list_output.contents() {
-                                    let obj_etag = object.e_tag().unwrap_or("");
-                                    if !obj_etag.is_empty()
-                                        && normalize_etag(obj_etag) == target_etag
-                                    {
-                                        if let Some(key) = object.key() {
-                                            found_key = Some(key.to_string());
-                                            break;
-                                        }
-                                    }
-                                }
-                                if found_key.is_some() {
-                                    break;
-                                }
-                                if let Some(next) = list_output.next_continuation_token() {
-                                    continuation_all = Some(next.to_string());
-                                } else {
-                                    break;
-                                }
-                            }
-                            Err(err) => {
-                                log::error!(
-                                    "Bucket-wide ListObjectsV2 error while searching by ETag for file {}: {:?}",
-                                    file_id,
-                                    err
-                                );
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-            if let Some(fallback_key) = found_key {
-                match s3_client
-                    .get_object()
-                    .bucket(&bucket_name)
-                    .key(&fallback_key)
-                    .send()
-                    .await
-                {
-                    Ok(output) => {
-                        // Persist the key we found so future requests skip the expensive search
-                        let update_body =
-                            serde_json::json!({"id": file_id, "download_path": &fallback_key});
-                        if let Err(e) = process_and_update_record(
-                            "files",
-                            update_body,
-                            file_id.as_str(),
-                            None,     // pluck_fields
-                            "update", // operation
-                            &auth_data,
-                            false, // is_root_account
-                        )
-                        .await
-                        {
-                            log::warn!(
-                                "Failed to update download_path for file {}: {:?}",
-                                file_id,
-                                e
-                            );
-                        }
-
-                        let actual_content_type = mimetype.to_string();
-                        let content_length = output.content_length().unwrap_or(0);
-                        match output.body.collect().await {
-                            Ok(data) => {
-                                let bytes = data.into_bytes();
-                                use futures_util::stream;
-                                let bytes_for_stream = bytes.clone();
-                                let byte_stream = stream::once(async move {
-                                    Ok::<_, std::io::Error>(bytes_for_stream)
-                                });
-                                let cache_dir_clone = cache_dir.clone();
-                                let cache_file_path_clone = cache_file_path.clone();
-                                let to_write_vec = bytes.to_vec();
-                                tokio::spawn(async move {
-                                    let _ = tokio::fs::create_dir_all(&cache_dir_clone).await;
-                                    let _ = tokio::fs::write(&cache_file_path_clone, &to_write_vec)
-                                        .await;
-                                    tokio::spawn(async move {
-                                        tokio::time::sleep(std::time::Duration::from_secs(300))
-                                            .await;
-                                        let _ =
-                                            tokio::fs::remove_file(&cache_file_path_clone).await;
-                                    });
-                                });
-                                let is_image = actual_content_type.starts_with("image/");
-                                let filename = fallback_key.split('/').last().unwrap_or("file");
-                                let content_disposition = if is_image {
-                                    format!("inline; filename=\"{}\"", filename)
-                                } else {
-                                    format!("attachment; filename=\"{}\"", filename)
-                                };
-                                HttpResponse::Ok()
-                                    .content_type(actual_content_type)
-                                    .insert_header(("Content-Length", content_length.to_string()))
-                                    .insert_header(("Cache-Control", "public, max-age=3600"))
-                                    .insert_header(("Accept-Ranges", "bytes"))
-                                    .insert_header(("Content-Disposition", content_disposition))
-                                    .streaming(byte_stream)
-                            }
-                            Err(e) => {
-                                log::error!(
-                                    "Error reading S3 object body (fallback by ETag) for file {}: {:?}",
-                                    file_id,
-                                    e
-                                );
-                                HttpResponse::InternalServerError().json(ApiResponse {
-                                    success: false,
-                                    message: "Failed to read file content".to_string(),
-                                    count: 0,
-                                    data: vec![],
-                                })
-                            }
-                        }
-                    }
-                    Err(err) => {
-                        log::error!(
-                            "Fallback get_object by ETag failed for file {}: {:?}",
-                            file_id,
-                            err
-                        );
-                        HttpResponse::NotFound().json(ApiResponse {
-                            success: false,
-                            message: "File not found in storage".to_string(),
-                            count: 0,
-                            data: vec![],
-                        })
-                    }
-                }
-            } else {
-                HttpResponse::NotFound().json(ApiResponse {
-                    success: false,
-                    message: "File not found in storage".to_string(),
-                    count: 0,
-                    data: vec![],
-                })
-            }
+            HttpResponse::NotFound().json(ApiResponse {
+                success: false,
+                message: "File not found in storage".to_string(),
+                count: 0,
+                data: vec![],
+            })
         }
     }
 }

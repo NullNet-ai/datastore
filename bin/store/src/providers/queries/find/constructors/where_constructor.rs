@@ -670,79 +670,121 @@ impl<'a> WhereConstructor<'a> {
             FilterOperator::IsNull => format!("{} IS NULL", field_with_table),
             FilterOperator::IsNotNull => format!("{} IS NOT NULL", field_with_table),
             FilterOperator::Contains => {
-                let like_op = if case_sensitive.unwrap_or(true) {
-                    "LIKE"
-                } else {
-                    "ILIKE"
-                };
-
-                if values_str.len() > 1 {
-                    let conditions: Vec<String> = values_str
-                        .iter()
-                        .map(|v| {
-                            let clean = v.trim_matches('\'');
-                            if is_plural {
-                                let expr = if field_with_table.contains("::text") {
-                                    field_with_table.clone()
-                                } else {
-                                    format!("{}::text", field_with_table)
-                                };
-                                format!("{} {} '%{}%'", expr, like_op, clean)
-                            } else {
-                                format!("{} {} '%{}%'", field_with_table, like_op, clean)
-                            }
-                        })
-                        .collect();
-                    return format!("({})", conditions.join(" OR "));
-                } else {
-                    let clean = values_str[0].trim_matches('\'');
-                    if is_plural {
-                        let expr = if field_with_table.contains("::text") {
-                            field_with_table.clone()
-                        } else {
-                            format!("{}::text", field_with_table)
-                        };
-                        return format!("{} {} '%{}%'", expr, like_op, clean);
+                if is_json_field {
+                    if values_str.len() > 1 {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| format!("{} @> [{}]::jsonb", base_field, v))
+                            .collect();
+                        return format!("({})", conditions.join(" OR "));
+                    } else {
+                        return format!("{} @> [{}]::jsonb", base_field, values_str[0]);
                     }
-                    format!("{} {} '%{}%'", field_with_table, like_op, clean)
+                } else if is_array_field {
+                    if values_str.len() > 1 {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| format!("{} = ANY({})", v, base_field))
+                            .collect();
+                        return format!("({})", conditions.join(" OR "));
+                    } else {
+                        return format!("{} = ANY({})", values_str[0], base_field);
+                    }
+                } else {
+                    let like_op = if case_sensitive.unwrap_or(true) {
+                        "LIKE"
+                    } else {
+                        "ILIKE"
+                    };
+                    if values_str.len() > 1 {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| {
+                                let clean = v.trim_matches('\'');
+                                if is_plural {
+                                    let expr = if field_with_table.contains("::text") {
+                                        field_with_table.clone()
+                                    } else {
+                                        format!("{}::text", field_with_table)
+                                    };
+                                    format!("{} {} '%{}%'", expr, like_op, clean)
+                                } else {
+                                    format!("{} {} '%{}%'", field_with_table, like_op, clean)
+                                }
+                            })
+                            .collect();
+                        return format!("({})", conditions.join(" OR "));
+                    } else {
+                        let clean = values_str[0].trim_matches('\'');
+                        if is_plural {
+                            let expr = if field_with_table.contains("::text") {
+                                field_with_table.clone()
+                            } else {
+                                format!("{}::text", field_with_table)
+                            };
+                            return format!("{} {} '%{}%'", expr, like_op, clean);
+                        }
+                        return format!("{} {} '%{}%'", field_with_table, like_op, clean);
+                    }
                 }
             }
             FilterOperator::NotContains => {
-                let like_op = if case_sensitive.unwrap_or(true) {
-                    "NOT LIKE"
-                } else {
-                    "NOT ILIKE"
-                };
-
-                if values_str.len() > 1 {
-                    let conditions: Vec<String> = values_str
-                        .iter()
-                        .map(|v| {
-                            let clean = v.trim_matches('\'');
-                            if is_plural {
-                                let expr = if field_with_table.contains("::text") {
-                                    field_with_table.clone()
-                                } else {
-                                    format!("{}::text", field_with_table)
-                                };
-                                format!("{} {} '%{}%'", expr, like_op, clean)
-                            } else {
-                                format!("{} {} '%{}%'", field_with_table, like_op, clean)
-                            }
-                        })
-                        .collect();
-                    return format!("({})", conditions.join(" AND "));
-                } else {
-                    let clean = values_str[0].trim_matches('\'');
-                    if is_plural {
-                        let expr = if field_with_table.contains("::text") {
-                            field_with_table.clone()
-                        } else {
-                            format!("{}::text", field_with_table)
-                        };
-                        return format!("{} {} '%{}%'", expr, like_op, clean);
+                if is_json_field {
+                    if values_str.len() > 1 {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| format!("NOT ({} @> [{}]::jsonb)", base_field, v))
+                            .collect();
+                        return format!("({})", conditions.join(" AND "));
+                    } else {
+                        return format!("NOT ({} @> [{}]::jsonb)", base_field, values_str[0]);
                     }
-                    format!("{} {} '%{}%'", field_with_table, like_op, clean)
+                } else if is_array_field {
+                    if values_str.len() > 1 {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| format!("NOT ({} = ANY({}))", v, base_field))
+                            .collect();
+                        return format!("({})", conditions.join(" AND "));
+                    } else {
+                        return format!("NOT ({} = ANY({}))", values_str[0], base_field);
+                    }
+                } else {
+                    let like_op = if case_sensitive.unwrap_or(true) {
+                        "NOT LIKE"
+                    } else {
+                        "NOT ILIKE"
+                    };
+                    if values_str.len() > 1 {
+                        let conditions: Vec<String> = values_str
+                            .iter()
+                            .map(|v| {
+                                let clean = v.trim_matches('\'');
+                                if is_plural {
+                                    let expr = if field_with_table.contains("::text") {
+                                        field_with_table.clone()
+                                    } else {
+                                        format!("{}::text", field_with_table)
+                                    };
+                                    format!("{} {} '%{}%'", expr, like_op, clean)
+                                } else {
+                                    format!("{} {} '%{}%'", field_with_table, like_op, clean)
+                                }
+                            })
+                            .collect();
+                        return format!("({})", conditions.join(" AND "));
+                    } else {
+                        let clean = values_str[0].trim_matches('\'');
+                        if is_plural {
+                            let expr = if field_with_table.contains("::text") {
+                                field_with_table.clone()
+                            } else {
+                                format!("{}::text", field_with_table)
+                            };
+                            return format!("{} {} '%{}%'", expr, like_op, clean);
+                        }
+                        return format!("{} {} '%{}%'", field_with_table, like_op, clean);
+                    }
                 }
             }
             FilterOperator::IsBetween => {
