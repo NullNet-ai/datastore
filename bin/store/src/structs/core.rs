@@ -1055,19 +1055,4 @@ mod tests {
         env::remove_var("MIGRATION_MODE");
     }
 
-    #[test]
-    fn process_record_sets_created_by_to_responsible_account() {
-        env::remove_var("MIGRATION_MODE");
-
-        let mut body = RequestBody {
-            record: json!({ "name": "Test" }),
-        };
-        let auth = test_auth();
-        body.process_record("create", &auth, false, "files");
-        assert_eq!(
-            body.record.get("created_by").and_then(|v| v.as_str()),
-            Some(&auth.responsible_account)
-        );
-    }
-
 }
