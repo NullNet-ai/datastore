@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.59
+
+### Author
+Jean
+
+### Fixed
+  - ***Nested self-joins — lateral join key correlation***:
+    - `providers/queries/find/constructors/joins_constructor.rs`
+      - Ensure lateral JOINs distinguish self-joins from regular joins so self-join correlations use the main table alias on the from side while non-self joins continue to correlate the lateral alias to the from-table reference.
+
 ## 0.2.58
 
 ### Author
