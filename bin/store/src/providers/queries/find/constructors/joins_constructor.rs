@@ -448,14 +448,29 @@ impl JoinsConstructor {
             found_alias.unwrap_or(from_entity)
         };
 
-        format!(
-            "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
-            join_kind,
-            selected_fields,
-            to_entity, lateral_alias,
-            combined_where,
-            lateral_alias, to_field, from_table_ref, from_field,
-            to_alias
-        )
+        // Build final JOIN clause with correct correlation.
+        // For self-joins: alias.from_field = main_table.to_field
+        // Otherwise: lateral_alias.to_field = from_table_ref.from_field
+        if is_self_join {
+            format!(
+                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+                join_kind,
+                selected_fields,
+                to_entity, lateral_alias,
+                combined_where,
+                lateral_alias, to_field, table, from_field,
+                to_alias
+            )
+        } else {
+            format!(
+                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = \"{}\".\"{}\" ) AS \"{}\" ON TRUE",
+                join_kind,
+                selected_fields,
+                to_entity, lateral_alias,
+                combined_where,
+                lateral_alias, to_field, from_table_ref, from_field,
+                to_alias
+            )
+        }
     }
 }
