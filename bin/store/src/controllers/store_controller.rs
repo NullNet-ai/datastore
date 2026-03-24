@@ -1925,6 +1925,7 @@ pub async fn download_file_by_id(
     } else {
         "original"
     };
+    let temp_file_ttl_secs: u64 = EnvConfig::default().temporary_file_ttl_secs;
     let cache_dir = std::env::temp_dir()
         .join("store_cache")
         .join(auth_data.organization_id.clone());
@@ -1936,7 +1937,7 @@ pub async fn download_file_by_id(
             if now
                 .duration_since(modified)
                 .unwrap_or(std::time::Duration::from_secs(0))
-                <= std::time::Duration::from_secs(300)
+                <= std::time::Duration::from_secs(temp_file_ttl_secs)
             {
                 if let Ok(bytes_vec) = tokio::fs::read(&cache_file_path).await {
                     use futures_util::stream;
@@ -1989,11 +1990,12 @@ pub async fn download_file_by_id(
                     let cache_dir_clone = cache_dir.clone();
                     let cache_file_path_clone = cache_file_path.clone();
                     let to_write_vec = bytes.to_vec();
+                    let ttl_for_task = temp_file_ttl_secs;
                     tokio::spawn(async move {
                         let _ = tokio::fs::create_dir_all(&cache_dir_clone).await;
                         let _ = tokio::fs::write(&cache_file_path_clone, &to_write_vec).await;
                         tokio::spawn(async move {
-                            tokio::time::sleep(std::time::Duration::from_secs(300)).await;
+                            tokio::time::sleep(std::time::Duration::from_secs(ttl_for_task)).await;
                             let _ = tokio::fs::remove_file(&cache_file_path_clone).await;
                         });
                     });

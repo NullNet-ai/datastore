@@ -58,6 +58,7 @@ pub struct EnvConfig {
     pub storage_bucket_name: String,
     pub storage_region: String,
     pub storage_disable_ssl_verification: bool,
+    pub temporary_file_ttl_secs: u64,
 
     // Search suggestion
     pub default_search_pattern: String,
@@ -222,6 +223,10 @@ impl Default for EnvConfig {
                 .unwrap_or_else(|_| "true".to_string())
                 .parse()
                 .unwrap_or(true),
+            temporary_file_ttl_secs: std::env::var("TEMPORARY_FILE_TTL_IN_SECS")
+                .unwrap_or_else(|_| "300".to_string())
+                .parse()
+                .unwrap_or(300),
 
             // Search suggestion
             default_search_pattern: std::env::var("DEFAULT_SEARCH_PATTERN")
