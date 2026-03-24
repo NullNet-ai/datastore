@@ -2080,9 +2080,7 @@ pub async fn download_file_by_id(
                         field: "organization_id".to_string(),
                         entity: None,
                         operator: FilterOperator::Equal,
-                        values: vec![serde_json::Value::String(
-                            auth_data.organization_id.clone(),
-                        )],
+                        values: vec![serde_json::Value::String(auth_data.organization_id.clone())],
                         case_sensitive: Some(false),
                         parse_as: "text".to_string(),
                         match_pattern: None,
@@ -2105,14 +2103,19 @@ pub async fn download_file_by_id(
                 timezone: None,
                 time_format: "HH24:MI".to_string(),
             };
-            let mut sql_constructor =
-                SQLConstructor::new(parameters.clone(), "files".to_string(), is_root_controller, None)
-                    .with_organization_id(auth_data.organization_id.clone());
+            let mut sql_constructor = SQLConstructor::new(
+                parameters.clone(),
+                "files".to_string(),
+                is_root_controller,
+                None,
+            )
+            .with_organization_id(auth_data.organization_id.clone());
             if let Ok(query) = sql_constructor.construct() {
                 let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
                 let mut conn = db::get_async_connection().await;
-                if let Ok(results) =
-                    diesel::dsl::sql_query(&final_query).load::<DynamicResult>(&mut conn).await
+                if let Ok(results) = diesel::dsl::sql_query(&final_query)
+                    .load::<DynamicResult>(&mut conn)
+                    .await
                 {
                     if let Some(first) = results.into_iter().filter_map(|r| r.row_to_json).next() {
                         if let Some(obj) = first.as_object() {
@@ -2135,7 +2138,10 @@ pub async fn download_file_by_id(
                     get_valid_bucket_name(&org_name, Some(auth_data.organization_id.as_str()));
                 let mut continuation: Option<String> = None;
                 loop {
-                    let mut req = s3_client.list_objects_v2().bucket(&bucket_name).prefix(&valid_prefix);
+                    let mut req = s3_client
+                        .list_objects_v2()
+                        .bucket(&bucket_name)
+                        .prefix(&valid_prefix);
                     if let Some(token) = continuation.as_deref() {
                         req = req.continuation_token(token);
                     }
@@ -2250,8 +2256,10 @@ pub async fn download_file_by_id(
                                     let _ = tokio::fs::write(&cache_file_path_clone, &to_write_vec)
                                         .await;
                                     tokio::spawn(async move {
-                                        tokio::time::sleep(std::time::Duration::from_secs(ttl_for_task))
-                                            .await;
+                                        tokio::time::sleep(std::time::Duration::from_secs(
+                                            ttl_for_task,
+                                        ))
+                                        .await;
                                         let _ =
                                             tokio::fs::remove_file(&cache_file_path_clone).await;
                                     });
