@@ -1658,6 +1658,10 @@ pub async fn download_file_by_id(
         .get("download_path")
         .and_then(|v| v.as_str())
         .unwrap_or(&file_id);
+    let file_etag = file_metadata
+        .get("etag")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
     let filename = file_metadata
         .get("filename")
         .and_then(|v| v.as_str())
@@ -2030,12 +2034,280 @@ pub async fn download_file_by_id(
         }
         Err(e) => {
             log::error!("Error downloading file {} from S3: {:?}", file_id, e);
-            HttpResponse::NotFound().json(ApiResponse {
-                success: false,
-                message: "File not found in storage".to_string(),
-                count: 0,
-                data: vec![],
-            })
+            let normalize_etag = |s: &str| {
+                s.trim()
+                    .trim_start_matches("\\\"")
+                    .trim_end_matches("\\\"")
+                    .trim_end_matches('\\')
+                    .trim_matches('"')
+                    .to_string()
+            };
+            let target_etag = normalize_etag(file_etag);
+            if target_etag.is_empty() {
+                return HttpResponse::NotFound().json(ApiResponse {
+                    success: false,
+                    message: "File not found in storage".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+            let mut found_key: Option<String> = None;
+            let db_pluck = vec![
+                "download_path".to_string(),
+                "mimetype".to_string(),
+                "id".to_string(),
+            ];
+            let parameters = GetByFilter {
+                pluck: db_pluck.clone(),
+                pluck_object: Default::default(),
+                pluck_group_object: Default::default(),
+                advance_filters: vec![
+                    FilterCriteria::Criteria {
+                        field: "etag".to_string(),
+                        entity: None,
+                        operator: FilterOperator::Equal,
+                        values: vec![serde_json::Value::String(target_etag.clone())],
+                        case_sensitive: Some(false),
+                        parse_as: "text".to_string(),
+                        match_pattern: None,
+                        is_search: None,
+                        has_group_count: None,
+                    },
+                    FilterCriteria::LogicalOperator {
+                        operator: LogicalOperator::And,
+                    },
+                    FilterCriteria::Criteria {
+                        field: "organization_id".to_string(),
+                        entity: None,
+                        operator: FilterOperator::Equal,
+                        values: vec![serde_json::Value::String(
+                            auth_data.organization_id.clone(),
+                        )],
+                        case_sensitive: Some(false),
+                        parse_as: "text".to_string(),
+                        match_pattern: None,
+                        is_search: None,
+                        has_group_count: None,
+                    },
+                ],
+                group_advance_filters: vec![],
+                joins: vec![],
+                group_by: None,
+                concatenate_fields: vec![],
+                multiple_sort: vec![],
+                date_format: "YYYY-mm-dd".to_string(),
+                order_by: "id".to_string(),
+                order_direction: "ASC".to_string(),
+                is_case_sensitive_sorting: None,
+                offset: 0,
+                limit: 1,
+                distinct_by: None,
+                timezone: None,
+                time_format: "HH24:MI".to_string(),
+            };
+            let mut sql_constructor =
+                SQLConstructor::new(parameters.clone(), "files".to_string(), is_root_controller, None)
+                    .with_organization_id(auth_data.organization_id.clone());
+            if let Ok(query) = sql_constructor.construct() {
+                let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+                let mut conn = db::get_async_connection().await;
+                if let Ok(results) =
+                    diesel::dsl::sql_query(&final_query).load::<DynamicResult>(&mut conn).await
+                {
+                    if let Some(first) = results.into_iter().filter_map(|r| r.row_to_json).next() {
+                        if let Some(obj) = first.as_object() {
+                            if let Some(dp) = obj.get("download_path").and_then(|v| v.as_str()) {
+                                found_key = Some(dp.to_string());
+                            }
+                            if mimetype == "application/octet-stream" {
+                                if let Some(mt) = obj.get("mimetype").and_then(|v| v.as_str()) {
+                                    mimetype = mt.to_string();
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            if found_key.is_none() {
+                let org_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
+                    .unwrap_or_else(|_| "default".to_string());
+                let valid_prefix =
+                    get_valid_bucket_name(&org_name, Some(auth_data.organization_id.as_str()));
+                let mut continuation: Option<String> = None;
+                loop {
+                    let mut req = s3_client.list_objects_v2().bucket(&bucket_name).prefix(&valid_prefix);
+                    if let Some(token) = continuation.as_deref() {
+                        req = req.continuation_token(token);
+                    }
+                    match req.send().await {
+                        Ok(list_output) => {
+                            for object in list_output.contents() {
+                                let obj_etag = object.e_tag().unwrap_or("");
+                                if !obj_etag.is_empty() && normalize_etag(obj_etag) == target_etag {
+                                    if let Some(key) = object.key() {
+                                        found_key = Some(key.to_string());
+                                        break;
+                                    }
+                                }
+                            }
+                            if found_key.is_some() {
+                                break;
+                            }
+                            if let Some(next) = list_output.next_continuation_token() {
+                                continuation = Some(next.to_string());
+                            } else {
+                                break;
+                            }
+                        }
+                        Err(err) => {
+                            log::error!(
+                                "ListObjectsV2 error while searching by ETag for file {}: {:?}",
+                                file_id,
+                                err
+                            );
+                            break;
+                        }
+                    }
+                }
+                if found_key.is_none() {
+                    let mut continuation_all: Option<String> = None;
+                    loop {
+                        let mut req = s3_client.list_objects_v2().bucket(&bucket_name);
+                        if let Some(token) = continuation_all.as_deref() {
+                            req = req.continuation_token(token);
+                        }
+                        match req.send().await {
+                            Ok(list_output) => {
+                                for object in list_output.contents() {
+                                    let obj_etag = object.e_tag().unwrap_or("");
+                                    if !obj_etag.is_empty()
+                                        && normalize_etag(obj_etag) == target_etag
+                                    {
+                                        if let Some(key) = object.key() {
+                                            found_key = Some(key.to_string());
+                                            break;
+                                        }
+                                    }
+                                }
+                                if found_key.is_some() {
+                                    break;
+                                }
+                                if let Some(next) = list_output.next_continuation_token() {
+                                    continuation_all = Some(next.to_string());
+                                } else {
+                                    break;
+                                }
+                            }
+                            Err(err) => {
+                                log::error!(
+                                    "Bucket-wide ListObjectsV2 error while searching by ETag for file {}: {:?}",
+                                    file_id,
+                                    err
+                                );
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if let Some(fallback_key) = found_key {
+                match s3_client
+                    .get_object()
+                    .bucket(&bucket_name)
+                    .key(&fallback_key)
+                    .send()
+                    .await
+                {
+                    Ok(output) => {
+                        let update_body =
+                            serde_json::json!({"id": file_id, "download_path": &fallback_key});
+                        let _ = process_and_update_record(
+                            "files",
+                            update_body,
+                            file_id.as_str(),
+                            None,
+                            "update",
+                            &auth_data,
+                            false,
+                        )
+                        .await;
+                        let actual_content_type = mimetype.to_string();
+                        let content_length = output.content_length().unwrap_or(0);
+                        match output.body.collect().await {
+                            Ok(data) => {
+                                let bytes = data.into_bytes();
+                                use futures_util::stream;
+                                let bytes_for_stream = bytes.clone();
+                                let byte_stream = stream::once(async move {
+                                    Ok::<_, std::io::Error>(bytes_for_stream)
+                                });
+                                let cache_dir_clone = cache_dir.clone();
+                                let cache_file_path_clone = cache_file_path.clone();
+                                let to_write_vec = bytes.to_vec();
+                                let ttl_for_task = temp_file_ttl_secs;
+                                tokio::spawn(async move {
+                                    let _ = tokio::fs::create_dir_all(&cache_dir_clone).await;
+                                    let _ = tokio::fs::write(&cache_file_path_clone, &to_write_vec)
+                                        .await;
+                                    tokio::spawn(async move {
+                                        tokio::time::sleep(std::time::Duration::from_secs(ttl_for_task))
+                                            .await;
+                                        let _ =
+                                            tokio::fs::remove_file(&cache_file_path_clone).await;
+                                    });
+                                });
+                                let is_image = actual_content_type.starts_with("image/");
+                                let filename = fallback_key.split('/').last().unwrap_or("file");
+                                let content_disposition = if is_image {
+                                    format!("inline; filename=\"{}\"", filename)
+                                } else {
+                                    format!("attachment; filename=\"{}\"", filename)
+                                };
+                                return HttpResponse::Ok()
+                                    .content_type(actual_content_type)
+                                    .insert_header(("Content-Length", content_length.to_string()))
+                                    .insert_header(("Cache-Control", "public, max-age=3600"))
+                                    .insert_header(("Accept-Ranges", "bytes"))
+                                    .insert_header(("Content-Disposition", content_disposition))
+                                    .streaming(byte_stream);
+                            }
+                            Err(err) => {
+                                log::error!(
+                                    "Error reading S3 object body (fallback by ETag) for file {}: {:?}",
+                                    file_id,
+                                    err
+                                );
+                                return HttpResponse::InternalServerError().json(ApiResponse {
+                                    success: false,
+                                    message: "Failed to read file content".to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        log::error!(
+                            "Fallback get_object by ETag failed for file {}: {:?}",
+                            file_id,
+                            err
+                        );
+                        HttpResponse::NotFound().json(ApiResponse {
+                            success: false,
+                            message: "File not found in storage".to_string(),
+                            count: 0,
+                            data: vec![],
+                        })
+                    }
+                }
+            } else {
+                HttpResponse::NotFound().json(ApiResponse {
+                    success: false,
+                    message: "File not found in storage".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
         }
     }
 }
