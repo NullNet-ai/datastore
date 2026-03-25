@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.60
+
+### Author
+Jean
+
+### Fixed
+  - ***Search suggestions — filter NULL values***:
+    - `providers/queries/search_suggestion/sql_constructor.rs`
+      - Exclude NULL suggestion values before `JSON_OBJECT_AGG` so the JSON map does not attempt to use NULL keys.
+
 ## 0.2.59
 
 ### Author

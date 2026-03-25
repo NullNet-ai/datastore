@@ -389,6 +389,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                 value ASC
             ) AS value_json
         FROM all_values
+        WHERE value IS NOT NULL
         GROUP BY entity_type, key",
         search_term,
         search_term,
