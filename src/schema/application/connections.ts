@@ -45,6 +45,9 @@ const config = (table) => ({
       [index_name]: index(index_name).on(table[field]),
     };
   }, {}),
+  // Composite indexes for common filter combinations
+  connections_device_id_timestamp_idx: index('connections_device_id_timestamp_idx').on(table.device_id, table.timestamp),
+  connections_device_id_source_ip_timestamp_idx: index('connections_device_id_source_ip_timestamp_idx').on(table.device_id, table.source_ip, table.timestamp),
 });
 
 export const table = pgTable(
