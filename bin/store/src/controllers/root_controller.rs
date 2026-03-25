@@ -1,4 +1,6 @@
-use actix_web::{HttpMessage, HttpRequest, Responder};
+use actix_web::{HttpMessage, HttpRequest, Responder, HttpResponse};
+use reqwest;
+use crate::config::core::EnvConfig;
 use serde_json::Value;
 
 fn extract_and_store_type(req: HttpRequest) -> HttpRequest {
@@ -158,3 +160,67 @@ create_root_wrapper!(root_verify_schema => verify_schema,
     auth: HttpRequest,
     request_body: actix_web::web::Json<crate::controllers::store_controller::SchemaVerificationRequest>
 );
+
+pub async fn root_prometheus_queries() -> impl Responder {
+    let body = serde_json::json!({
+        "api": {
+            "throughput": "sum(rate(http_server_request_duration_count[1m]))",
+            "errors": "(sum(rate(http_server_request_duration_count{http_response_status_code=~\"5..\"}[5m])))/(sum(rate(http_server_request_duration_count[5m])))"
+        },
+        "system": {
+            "cpu_usage": "rate(process_cpu_seconds_total[1m])",
+            "memory_usage": "process_resident_memory_bytes"
+        }
+    });
+    HttpResponse::Ok().json(body)
+}
+
+async fn query_prometheus_sum(base_url: &str, query: &str) -> Option<f64> {
+    let url = format!("{}/api/v1/query", base_url);
+    let client = reqwest::Client::new();
+    let resp = client.get(url).query(&[("query", query)]).send().await.ok()?;
+    let json: serde_json::Value = resp.json().await.ok()?;
+    let result = json.get("data")?.get("result")?;
+    let mut sum = 0.0;
+    if let Some(arr) = result.as_array() {
+        for item in arr {
+            if let Some(value) = item.get("value") {
+                if let Some(v_arr) = value.as_array() {
+                    if let Some(v_str) = v_arr.get(1).and_then(|v| v.as_str()) {
+                        if let Ok(v) = v_str.parse::<f64>() {
+                            sum += v;
+                        }
+                    }
+                }
+            }
+        }
+        Some(sum)
+    } else {
+        None
+    }
+}
+
+pub async fn root_prometheus_results() -> impl Responder {
+    let base_url = EnvConfig::default().prometheus_base_url;
+    let throughput_q = "sum(rate(http_server_request_duration_count[1m]))";
+    let errors_q = "(sum(rate(http_server_request_duration_count{http_response_status_code=~\"5..\"}[5m])))/(sum(rate(http_server_request_duration_count[5m])))";
+    let cpu_q = "rate(process_cpu_seconds_total[1m])";
+    let mem_q = "process_resident_memory_bytes";
+
+    let throughput = query_prometheus_sum(&base_url, throughput_q).await;
+    let errors = query_prometheus_sum(&base_url, errors_q).await;
+    let cpu = query_prometheus_sum(&base_url, cpu_q).await;
+    let memory = query_prometheus_sum(&base_url, mem_q).await;
+
+    let body = serde_json::json!({
+        "api": {
+            "throughput": throughput,
+            "errors": errors
+        },
+        "system": {
+            "cpu_usage": cpu,
+            "memory_usage": memory
+        }
+    });
+    HttpResponse::Ok().json(body)
+}

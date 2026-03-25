@@ -11,4 +11,4 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
 RUN --mount=type=cache,target=/usr/local/cargo/registry \
     --mount=type=cache,target=/usr/local/cargo/git \
     cargo install diesel_cli --no-default-features --features postgres
-CMD ["bash", "-lc", "PORT=6543 make store-clean-setup && make db-migrate-up"]
+CMD ["bash", "-lc", "PORT=6543 make store-clean-setup"]

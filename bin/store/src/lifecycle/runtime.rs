@@ -9,6 +9,8 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
+use metrics_exporter_prometheus::PrometheusBuilder;
+// tokio_metrics integration via metrics-rs is optional; we will sample runtime metrics manually
 
 /// Runtime health status
 #[derive(Debug, Clone, PartialEq)]
@@ -125,6 +127,21 @@ impl RuntimeManager {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("[RUNTIME] ===== ENTERING RuntimeManager::execute =====");
         self.start_time = Some(Instant::now());
+
+        info!("[RUNTIME] Installing Prometheus metrics exporter");
+        let builder = match PrometheusBuilder::new().set_buckets(&[
+            0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0, 10.0,
+        ]) {
+            Ok(b) => b,
+            Err(e) => {
+                error!("[RUNTIME] Failed to configure histogram buckets: {}", e);
+                PrometheusBuilder::new()
+            }
+        };
+        match builder.install() {
+            Ok(()) => info!("[RUNTIME] Prometheus exporter installed"),
+            Err(e) => error!("[RUNTIME] Failed to install Prometheus exporter: {}", e),
+        }
 
         if let Some(logger) = &self.logger {
             logger
@@ -522,6 +539,9 @@ impl RuntimeManager {
         // Get server configuration from config
         let bind_address = format!("{}:{}", self.config.host, self.config.port);
 
+        info!("[RUNTIME] Spawning metrics reporters");
+        self.spawn_metrics_tasks(pool.clone()).await;
+
         // Create HTTP server
         let server = self.create_http_server(pool, s3_client, bucket_name, bind_address.clone())?;
 
@@ -583,6 +603,7 @@ impl RuntimeManager {
         use crate::providers::storage::AppState;
         use crate::routers::*;
         use actix_web::{middleware::Logger, web, App, HttpServer};
+        use actix_web_metrics::ActixWebMetricsBuilder;
 
         info!("[RUNTIME] Configuring HTTP server for {}", bind_address);
 
@@ -600,8 +621,11 @@ impl RuntimeManager {
                 bucket_name: bucket_name.clone(),
             };
 
+            let metrics_layer = ActixWebMetricsBuilder::new().build();
+
             let mut app = App::new()
                 .wrap(Logger::default())
+                .wrap(metrics_layer.clone())
                 .app_data(web::Data::new(pool.clone()))
                 .configure(sync_router::configure_sync_routes)
                 .configure(organizations_router::configure_organizations_routes)
@@ -724,6 +748,45 @@ impl RuntimeManager {
     /// Get shutdown flag for external management
     pub fn get_shutdown_flag(&self) -> Arc<RwLock<bool>> {
         self.shutdown_requested.clone()
+    }
+
+    async fn spawn_metrics_tasks(&self, pool: crate::database::db::AsyncDbPool) {
+        use metrics_process::Collector;
+        use std::time::Duration;
+
+        let process_collector = Collector::default();
+        process_collector.describe();
+        tokio::spawn(async move {
+            loop {
+                process_collector.collect();
+                tokio::time::sleep(Duration::from_secs(10)).await;
+            }
+        });
+
+        tokio::spawn(async move {
+            loop {
+                let status = pool.status();
+                let g_active = metrics::gauge!("db_pool_active_connections");
+                let active = (status.size as isize - status.available) as f64;
+                g_active.set(active);
+                let g_idle = metrics::gauge!("db_pool_idle_connections");
+                g_idle.set(status.available as f64);
+                let g_size = metrics::gauge!("db_pool_size");
+                g_size.set(status.size as f64);
+                tokio::time::sleep(Duration::from_secs(5)).await;
+            }
+        });
+
+        tokio::spawn(async move {
+            let handle = tokio::runtime::Handle::current();
+            loop {
+                let m = handle.metrics();
+                metrics::gauge!("tokio_global_queue_depth").set(m.global_queue_depth() as f64);
+                metrics::gauge!("tokio_num_workers").set(m.num_workers() as f64);
+                metrics::gauge!("tokio_num_alive_tasks").set(m.num_alive_tasks() as f64);
+                tokio::time::sleep(Duration::from_secs(5)).await;
+            }
+        });
     }
 }
 

@@ -97,6 +97,7 @@ pub struct EnvConfig {
 
     // Test
     pub strict_validation: bool,
+    pub prometheus_base_url: String,
 }
 
 impl Default for EnvConfig {
@@ -311,6 +312,8 @@ impl Default for EnvConfig {
                 .unwrap_or_else(|_| "false".to_string())
                 .parse()
                 .unwrap_or(false),
+            prometheus_base_url: std::env::var("PROMETHEUS_BASE_URL")
+                .unwrap_or_else(|_| "http://prometheus:9090".to_string()),
         }
     }
 }

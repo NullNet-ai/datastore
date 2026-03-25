@@ -53,6 +53,10 @@ pub fn get_async_pool() -> &'static AsyncDbPool {
 
 pub async fn get_async_connection() -> AsyncDbPooledConnection {
     get_async_pool().get().await.unwrap_or_else(|e| {
+        {
+            let c = metrics::counter!("db_connection_errors_total");
+            c.increment(1);
+        }
         log::error!("Failed to get async connection: {}", e);
         // Check if it's a connection refused error (database not available)
         let error_msg = e.to_string();
