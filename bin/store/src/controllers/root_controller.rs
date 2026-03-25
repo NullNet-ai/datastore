@@ -170,6 +170,16 @@ pub async fn root_prometheus_queries() -> impl Responder {
             "client_errors": "(sum(rate(http_server_request_duration_count{http_response_status_code=~\\\"4..\\\"}[5m])))/(sum(rate(http_server_request_duration_count[5m])))",
             "client_errors_by_code": "sum by (http_response_status_code)(rate(http_server_request_duration_count{http_response_status_code=~\\\"4..\\\"}[5m]))"
         },
+        "logging": {
+            "writes_debug": "rate(logs_written_total_debug[5m])",
+            "writes_info": "rate(logs_written_total_info[5m])",
+            "writes_warn": "rate(logs_written_total_warn[5m])",
+            "writes_error": "rate(logs_written_total_error[5m])",
+            "writes_trace": "rate(logs_written_total_trace[5m])",
+            "writes_critical": "rate(logs_written_total_critical[5m])",
+            "write_errors": "rate(log_write_failed_total[5m])",
+            "file_size_bytes": "log_file_size_bytes"
+        },
         "system": {
             "cpu_usage": "rate(process_cpu_seconds_total[1m])",
             "memory_usage": "process_resident_memory_bytes"
@@ -244,12 +254,28 @@ pub async fn root_prometheus_results() -> impl Responder {
     let client_errors_q = "(sum(rate(http_server_request_duration_count{http_response_status_code=~\"4..\"}[5m])))/(sum(rate(http_server_request_duration_count[5m])))";
     let cpu_q = "rate(process_cpu_seconds_total[1m])";
     let mem_q = "process_resident_memory_bytes";
+    let writes_debug_q = "rate(logs_written_total_debug[5m])";
+    let writes_info_q = "rate(logs_written_total_info[5m])";
+    let writes_warn_q = "rate(logs_written_total_warn[5m])";
+    let writes_error_q = "rate(logs_written_total_error[5m])";
+    let writes_trace_q = "rate(logs_written_total_trace[5m])";
+    let writes_critical_q = "rate(logs_written_total_critical[5m])";
+    let write_errors_q = "rate(log_write_failed_total[5m])";
+    let file_size_bytes_q = "log_file_size_bytes";
 
     let throughput = query_prometheus_sum(&base_url, throughput_q).await;
     let errors = query_prometheus_sum(&base_url, errors_q).await;
     let client_errors = query_prometheus_sum(&base_url, client_errors_q).await;
     let cpu = query_prometheus_sum(&base_url, cpu_q).await;
     let memory = query_prometheus_sum(&base_url, mem_q).await;
+    let writes_debug = query_prometheus_sum(&base_url, writes_debug_q).await;
+    let writes_info = query_prometheus_sum(&base_url, writes_info_q).await;
+    let writes_warn = query_prometheus_sum(&base_url, writes_warn_q).await;
+    let writes_error = query_prometheus_sum(&base_url, writes_error_q).await;
+    let writes_trace = query_prometheus_sum(&base_url, writes_trace_q).await;
+    let writes_critical = query_prometheus_sum(&base_url, writes_critical_q).await;
+    let write_errors = query_prometheus_sum(&base_url, write_errors_q).await;
+    let file_size_bytes = query_prometheus_sum(&base_url, file_size_bytes_q).await;
 
     let errors_by_code = query_prometheus_group_sum(
         &base_url,
@@ -276,6 +302,16 @@ pub async fn root_prometheus_results() -> impl Responder {
         "system": {
             "cpu_usage": cpu,
             "memory_usage": memory
+        },
+        "logging": {
+            "writes_debug": writes_debug,
+            "writes_info": writes_info,
+            "writes_warn": writes_warn,
+            "writes_error": writes_error,
+            "writes_trace": writes_trace,
+            "writes_critical": writes_critical,
+            "write_errors": write_errors,
+            "file_size_bytes": file_size_bytes
         }
     });
     HttpResponse::Ok().json(body)
