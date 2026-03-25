@@ -1,23 +1,15 @@
 {
-    "rust-analyzer.checkOnSave": true,
+    "rust-analyzer.checkOnSave": false,
     "rust-analyzer.linkedProjects": [
         "./Cargo.toml"
     ],
     "rust-analyzer.cargo.buildScripts.enable": true,
     "rust-analyzer.procMacro.enable": true,
-    "rust-analyzer.cargo.loadOutDirsFromCheck": true,
-    "rust-analyzer.checkOnSave.command": "check",
-    "rust-analyzer.checkOnSave.allTargets": false,
-    "rust-analyzer.cargo.allFeatures": true,
+    "rust-analyzer.cargo.buildScripts.useRustcWrapper": true,
     "rust-analyzer.diagnostics.enable": true,
-    "rust-analyzer.completion.addCallParentheses": true,
-    "rust-analyzer.completion.addCallArgumentSnippets": true,
-    "rust-analyzer.inlayHints.enable": true,
     "rust-analyzer.inlayHints.parameterHints.enable": true,
     "rust-analyzer.inlayHints.typeHints.enable": true,
     "rust-analyzer.lens.enable": true,
-    "rust-analyzer.lens.methodReferences": true,
-    "rust-analyzer.lens.references": true,
     "rust-analyzer.hover.actions.enable": true,
     "rust-analyzer.hover.actions.implementations.enable": true,
     "rust-analyzer.hover.actions.references.enable": true,
@@ -30,9 +22,7 @@
         "PATH": "${env:PATH}:${env:HOME}/.cargo/bin",
         "PROTOC": "/opt/homebrew/bin/protoc"
     },
-    "rust-analyzer.runnables.extraTestBinaryArgs": "--nocapture --exact",
-    "cargoRunner.cargoHome": "${env:HOME}/.cargo",
-    "cargoRunner.logLevel": "debug",
+    "rust-analyzer.runnables.extraTestBinaryArgs": ["--nocapture", "--exact"],
     "terminal.integrated.env.osx": {
         "PROTOC": "/opt/homebrew/bin/protoc",
         "PATH": "${env:PATH}:${env:HOME}/.cargo/bin"
@@ -42,8 +32,45 @@
         "zsh": { "path": "/bin/zsh" },
         "bash": { "path": "/bin/bash" }
     },
-    "terminal.integrated.shell.osx": "/bin/zsh",
-    "terminal.integrated.automationShell.osx": "/bin/zsh",
+    "terminal.explorerKind": "external",
+    "files.watcherExclude": {
+        "**/target/**": true,
+        "**/.git/**": true
+    },
+    "search.exclude": {
+        "**/target/**": true
+    },
+    "workbench.colorTheme": "Default Dark+",
+    "workbench.colorCustomizations": {
+        "editor.background": "#111115",
+        "sideBar.background": "#0a0404",
+        "panel.background": "#1d1d24",
+        "activityBar.background": "#0e0e11",
+        "activityBar.foreground": "#d9d9d9",
+        "activityBarBadge.background": "#8b0000",
+        "activityBarBadge.foreground": "#ffffff",
+        "titleBar.activeBackground": "#0e0e11",
+        "titleBar.activeForeground": "#d9d9d9",
+        "titleBar.inactiveBackground": "#0e0e11",
+        "titleBar.inactiveForeground": "#bdbdbd",
+        "statusBar.background": "#0e0e11",
+        "statusBar.noFolderBackground": "#0e0e11",
+        "statusBar.debuggingBackground": "#1a0c0c",
+        "statusBar.foreground": "#d9d9d9",
+        "button.background": "#8b0000",
+        "button.foreground": "#ffffff",
+        "badge.background": "#8b0000",
+        "badge.foreground": "#ffffff",
+        "focusBorder": "#b71c1c",
+        "list.activeSelectionBackground": "#1a1a1d",
+        "list.activeSelectionForeground": "#e6e6e6",
+        "list.hoverBackground": "#141416",
+        "list.focusOutline": "#b71c1c",
+        "editorCursor.foreground": "#d32f2f",
+        "editor.selectionBackground": "#2a0f12",
+        "editor.selectionHighlightBackground": "#2a0f1260",
+        "editorLineNumber.foreground": "#6b6b6b"
+    },
     "[rust]": {
         "editor.defaultFormatter": "rust-lang.rust-analyzer",
         "editor.formatOnSave": true
