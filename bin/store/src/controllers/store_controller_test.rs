@@ -1,22 +1,25 @@
 #[cfg(test)]
 mod tests {
+    use crate::database::db::create_connection;
     use crate::{
         config::core::EnvConfig,
         controllers::store_controller::get_by_filter,
         providers::queries::find::SQLConstructor,
-        structs::core::{Auth, FilterCriteria, GetByFilter, MatchPattern, MaterializedViewConfig, RefreshStrategy},
+        structs::core::{
+            Auth, FilterCriteria, GetByFilter, MatchPattern, MaterializedViewConfig,
+            RefreshStrategy,
+        },
     };
+    use actix_web::body::to_bytes;
+    use actix_web::test::TestRequest;
+    use actix_web::{web, HttpMessage, Responder};
     use dotenv::dotenv;
     use reqwest;
     use serde_json::json;
+    use serial_test::serial;
     use std::fs;
     use std::path::Path;
     use tokio;
-    use actix_web::{web, HttpMessage, Responder};
-    use actix_web::test::TestRequest;
-    use actix_web::body::to_bytes;
-    use serial_test::serial;
-    use crate::database::db::create_connection;
 
     /// Authentication response structure for reusable login functionality
     #[derive(Debug, Clone)]
@@ -83,7 +86,9 @@ mod tests {
         let json = to_json_response(resp).await;
         let message = json.get("message").and_then(|v| v.as_str()).unwrap_or("");
         assert!(message.starts_with("Materialized view prepared: "));
-        let mv_name = message.trim_start_matches("Materialized view prepared: ").to_string();
+        let mv_name = message
+            .trim_start_matches("Materialized view prepared: ")
+            .to_string();
         let client = create_connection().await.unwrap();
         let row = client
             .query_one("SELECT to_regclass($1) IS NOT NULL AS exists", &[&mv_name])
@@ -92,7 +97,10 @@ mod tests {
         let exists: bool = row.get("exists");
         assert!(exists, "materialized view should exist");
         let _ = client
-            .execute(&format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE", mv_name), &[])
+            .execute(
+                &format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE", mv_name),
+                &[],
+            )
             .await;
     }
 
@@ -128,7 +136,9 @@ mod tests {
         let json = to_json_response(resp).await;
         let message = json.get("message").and_then(|v| v.as_str()).unwrap_or("");
         assert!(message.starts_with("Materialized view prepared: "));
-        let mv_name = message.trim_start_matches("Materialized view prepared: ").to_string();
+        let mv_name = message
+            .trim_start_matches("Materialized view prepared: ")
+            .to_string();
         let client = create_connection().await.unwrap();
         let cron_table_exists: bool = client
             .query_one("SELECT to_regclass('cron.job') IS NOT NULL AS exists", &[])
@@ -138,19 +148,28 @@ mod tests {
         if !cron_table_exists {
             eprintln!("Skipping cron assertions: pg_cron not available");
             let _ = client
-                .execute(&format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE", mv_name), &[])
+                .execute(
+                    &format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE", mv_name),
+                    &[],
+                )
                 .await;
             return;
         }
         let job_name = format!("refresh_{}", mv_name.replace('.', "_"));
         let job_count: i64 = client
-            .query_one("SELECT COUNT(*)::bigint AS cnt FROM cron.job WHERE jobname = $1", &[&job_name])
+            .query_one(
+                "SELECT COUNT(*)::bigint AS cnt FROM cron.job WHERE jobname = $1",
+                &[&job_name],
+            )
             .await
             .map(|row| row.get::<_, i64>("cnt"))
             .unwrap_or(0);
         assert!(job_count > 0, "scheduled cron job should exist");
         let job_ids = client
-            .query("SELECT jobid FROM cron.job WHERE jobname = $1", &[&job_name])
+            .query(
+                "SELECT jobid FROM cron.job WHERE jobname = $1",
+                &[&job_name],
+            )
             .await
             .unwrap_or_default();
         for row in job_ids {
@@ -158,7 +177,10 @@ mod tests {
             let _ = client.query("SELECT cron.unschedule($1)", &[&jobid]).await;
         }
         let _ = client
-            .execute(&format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE", mv_name), &[])
+            .execute(
+                &format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE", mv_name),
+                &[],
+            )
             .await;
     }
 

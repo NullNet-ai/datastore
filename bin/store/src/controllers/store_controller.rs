@@ -1246,9 +1246,8 @@ pub async fn get_by_filter(
     // Precompute materialized view name from parameters and return early if it already exists and is enabled
     let mut precomputed_mv_name: Option<String> = None;
     if let Some(mv_cfg) = parameters_for_debug.materialized_view.clone() {
-        let base_name = ensure_mv_prefix_on_last_ident(
-            &mv_cfg.name.clone().unwrap_or_else(|| table.clone()),
-        );
+        let base_name =
+            ensure_mv_prefix_on_last_ident(&mv_cfg.name.clone().unwrap_or_else(|| table.clone()));
         let mut hash_source = parameters_for_debug.clone();
         hash_source.materialized_view = None;
         let hash_input = serde_json::to_string(&hash_source).unwrap_or_default();
@@ -1287,7 +1286,8 @@ pub async fn get_by_filter(
                     );
                     if EnvConfig::default().debug {
                         log::debug!("FINAL_QUERY (MV): {}", final_query);
-                        if let Err(e) = write_query_to_debug_log(&final_query, &table, false).await {
+                        if let Err(e) = write_query_to_debug_log(&final_query, &table, false).await
+                        {
                             log::warn!("Failed to write debug final query log: {}", e);
                         }
                     }
@@ -1416,11 +1416,19 @@ pub async fn get_by_filter(
                         if let Some(paren_end) = s.rfind(')') {
                             let nm = s[..paren_start].trim();
                             let cols = s[paren_start + 1..paren_end].trim();
-                            (if nm.is_empty() { None } else { Some(nm.to_string()) }, cols.to_string())
+                            (
+                                if nm.is_empty() {
+                                    None
+                                } else {
+                                    Some(nm.to_string())
+                                },
+                                cols.to_string(),
+                            )
                         } else {
                             return HttpResponse::BadRequest().json(ApiResponse {
                                 success: false,
-                                message: "Invalid materialized_view.index_column_name: missing ')'".to_string(),
+                                message: "Invalid materialized_view.index_column_name: missing ')'"
+                                    .to_string(),
                                 count: 0,
                                 data: vec![],
                             });
@@ -1428,9 +1436,15 @@ pub async fn get_by_filter(
                     } else {
                         (None, s.to_string())
                     };
-                    let rel_name_str = if let Some((_, r)) = candidate_name.split_once('.') { r.to_string() } else { candidate_name.clone() };
+                    let rel_name_str = if let Some((_, r)) = candidate_name.split_once('.') {
+                        r.to_string()
+                    } else {
+                        candidate_name.clone()
+                    };
                     let name_part = maybe_name.unwrap_or_else(|| format!("{}_uniq", rel_name_str));
-                    let cols_part = if cols_inside.trim_start().starts_with('(') && cols_inside.trim_end().ends_with(')') {
+                    let cols_part = if cols_inside.trim_start().starts_with('(')
+                        && cols_inside.trim_end().ends_with(')')
+                    {
                         cols_inside.clone()
                     } else {
                         format!("({})", cols_inside)
@@ -1449,7 +1463,9 @@ pub async fn get_by_filter(
                     {
                         return HttpResponse::BadRequest().json(ApiResponse {
                             success: false,
-                            message: "Invalid materialized_view.index_column_name format or identifier".to_string(),
+                            message:
+                                "Invalid materialized_view.index_column_name format or identifier"
+                                    .to_string(),
                             count: 0,
                             data: vec![],
                         });
@@ -1461,13 +1477,12 @@ pub async fn get_by_filter(
                     log::debug!("MV UNIQUE INDEX SQL: {}", idx_sql);
                     match sql_query(&idx_sql).execute(&mut conn_for_ops).await {
                         Ok(_) => {
-                            let (schema_name, rel_name) = if let Some((sch, rel)) =
-                                candidate_name.split_once('.')
-                            {
-                                (sch.to_string(), rel.to_string())
-                            } else {
-                                ("public".to_string(), candidate_name.clone())
-                            };
+                            let (schema_name, rel_name) =
+                                if let Some((sch, rel)) = candidate_name.split_once('.') {
+                                    (sch.to_string(), rel.to_string())
+                                } else {
+                                    ("public".to_string(), candidate_name.clone())
+                                };
                             let uniq_sql = format!(
                                 "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
                                 schema_name, rel_name
@@ -1509,11 +1524,12 @@ pub async fn get_by_filter(
                         }
                     }
                 } else {
-                    let (schema_name, rel_name) = if let Some((sch, rel)) = candidate_name.split_once('.') {
-                        (sch.to_string(), rel.to_string())
-                    } else {
-                        ("public".to_string(), candidate_name.clone())
-                    };
+                    let (schema_name, rel_name) =
+                        if let Some((sch, rel)) = candidate_name.split_once('.') {
+                            (sch.to_string(), rel.to_string())
+                        } else {
+                            ("public".to_string(), candidate_name.clone())
+                        };
                     let uniq_sql = format!(
                         "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
                         schema_name, rel_name
@@ -1550,13 +1566,12 @@ pub async fn get_by_filter(
                                     .execute(&mut conn_for_ops)
                                     .await;
                                 if !mv.create.unwrap_or(false) {
-                                    let (schema_name, rel_name) = if let Some((sch, rel)) =
-                                        candidate_name.split_once('.')
-                                    {
-                                        (sch.to_string(), rel.to_string())
-                                    } else {
-                                        ("public".to_string(), candidate_name.clone())
-                                    };
+                                    let (schema_name, rel_name) =
+                                        if let Some((sch, rel)) = candidate_name.split_once('.') {
+                                            (sch.to_string(), rel.to_string())
+                                        } else {
+                                            ("public".to_string(), candidate_name.clone())
+                                        };
                                     let uniq_sql = format!(
                                         "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
                                         schema_name, rel_name
@@ -1569,7 +1584,9 @@ pub async fn get_by_filter(
                                             .into_iter()
                                             .filter_map(|r| r.row_to_json)
                                             .next()
-                                            .and_then(|v| v.get("has_unique").and_then(|b| b.as_bool()))
+                                            .and_then(|v| {
+                                                v.get("has_unique").and_then(|b| b.as_bool())
+                                            })
                                             .unwrap_or(false),
                                         Err(_) => false,
                                     };
@@ -1624,13 +1641,12 @@ pub async fn get_by_filter(
                             };
                             if validate_identifier(&fn_name, true) {
                                 if !mv.create.unwrap_or(false) {
-                                    let (schema_name, rel_name) = if let Some((sch, rel)) =
-                                        candidate_name.split_once('.')
-                                    {
-                                        (sch.to_string(), rel.to_string())
-                                    } else {
-                                        ("public".to_string(), candidate_name.clone())
-                                    };
+                                    let (schema_name, rel_name) =
+                                        if let Some((sch, rel)) = candidate_name.split_once('.') {
+                                            (sch.to_string(), rel.to_string())
+                                        } else {
+                                            ("public".to_string(), candidate_name.clone())
+                                        };
                                     let uniq_sql = format!(
                                         "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
                                         schema_name, rel_name
@@ -1643,7 +1659,9 @@ pub async fn get_by_filter(
                                             .into_iter()
                                             .filter_map(|r| r.row_to_json)
                                             .next()
-                                            .and_then(|v| v.get("has_unique").and_then(|b| b.as_bool()))
+                                            .and_then(|v| {
+                                                v.get("has_unique").and_then(|b| b.as_bool())
+                                            })
                                             .unwrap_or(false),
                                         Err(_) => false,
                                     };
