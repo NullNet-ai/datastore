@@ -63,6 +63,21 @@ pub struct ApiError {
     pub status: u16,
 }
 
+fn ensure_mv_prefix_on_last_ident(name: &str) -> String {
+    if let Some((schema, rel)) = name.rsplit_once('.') {
+        let rel_with = if rel.starts_with("mv_") {
+            rel.to_string()
+        } else {
+            format!("mv_{}", rel)
+        };
+        format!("{}.{}", schema, rel_with)
+    } else if name.starts_with("mv_") {
+        name.to_string()
+    } else {
+        format!("mv_{}", name)
+    }
+}
+
 impl From<Box<dyn std::error::Error>> for ApiError {
     fn from(error: Box<dyn std::error::Error>) -> Self {
         Self::new(
@@ -1231,10 +1246,9 @@ pub async fn get_by_filter(
     // Precompute materialized view name from parameters and return early if it already exists and is enabled
     let mut precomputed_mv_name: Option<String> = None;
     if let Some(mv_cfg) = parameters_for_debug.materialized_view.clone() {
-        let base_name = mv_cfg
-            .name
-            .clone()
-            .unwrap_or_else(|| format!("mv_{}", table));
+        let base_name = ensure_mv_prefix_on_last_ident(
+            &mv_cfg.name.clone().unwrap_or_else(|| table.clone()),
+        );
         let mut hash_source = parameters_for_debug.clone();
         hash_source.materialized_view = None;
         let hash_input = serde_json::to_string(&hash_source).unwrap_or_default();
@@ -1271,6 +1285,12 @@ pub async fn get_by_filter(
                         "SELECT row_to_json(t) FROM (SELECT * FROM {}) t",
                         candidate_name
                     );
+                    if EnvConfig::default().debug {
+                        log::debug!("FINAL_QUERY (MV): {}", final_query);
+                        if let Err(e) = write_query_to_debug_log(&final_query, &table, false).await {
+                            log::warn!("Failed to write debug final query log: {}", e);
+                        }
+                    }
                     let mut conn = db::get_async_connection().await;
                     let results = match diesel::dsl::sql_query(&final_query)
                         .load::<DynamicResult>(&mut conn)
@@ -1349,7 +1369,8 @@ pub async fn get_by_filter(
     let mut mv_name = String::new();
     if let Some(mv) = parameters_for_debug.materialized_view.clone() {
         let candidate_name = precomputed_mv_name.clone().unwrap_or_else(|| {
-            let base_name = mv.name.clone().unwrap_or_else(|| format!("mv_{}", table));
+            let base_name =
+                ensure_mv_prefix_on_last_ident(&mv.name.clone().unwrap_or_else(|| table.clone()));
             let mut hash_src = parameters_for_debug.clone();
             hash_src.materialized_view = None;
             let input = serde_json::to_string(&hash_src).unwrap_or_default();
@@ -1386,7 +1407,140 @@ pub async fn get_by_filter(
                         "CREATE MATERIALIZED VIEW IF NOT EXISTS {} AS {}",
                         candidate_name, query
                     );
+                    log::debug!("MV CREATE SQL: {}", create_sql);
                     let _ = sql_query(&create_sql).execute(&mut conn_for_ops).await;
+                }
+                if let Some(idx_str) = mv.index_column_name.clone() {
+                    let s = idx_str.trim();
+                    let (maybe_name, cols_inside) = if let Some(paren_start) = s.find('(') {
+                        if let Some(paren_end) = s.rfind(')') {
+                            let nm = s[..paren_start].trim();
+                            let cols = s[paren_start + 1..paren_end].trim();
+                            (if nm.is_empty() { None } else { Some(nm.to_string()) }, cols.to_string())
+                        } else {
+                            return HttpResponse::BadRequest().json(ApiResponse {
+                                success: false,
+                                message: "Invalid materialized_view.index_column_name: missing ')'".to_string(),
+                                count: 0,
+                                data: vec![],
+                            });
+                        }
+                    } else {
+                        (None, s.to_string())
+                    };
+                    let rel_name_str = if let Some((_, r)) = candidate_name.split_once('.') { r.to_string() } else { candidate_name.clone() };
+                    let name_part = maybe_name.unwrap_or_else(|| format!("{}_uniq", rel_name_str));
+                    let cols_part = if cols_inside.trim_start().starts_with('(') && cols_inside.trim_end().ends_with(')') {
+                        cols_inside.clone()
+                    } else {
+                        format!("({})", cols_inside)
+                    };
+                    if !validate_identifier(&name_part, false)
+                        || !cols_part.chars().all(|c| {
+                            c.is_ascii_alphanumeric()
+                                || c == '_'
+                                || c == '"'
+                                || c == ' '
+                                || c == ','
+                                || c == '('
+                                || c == ')'
+                                || c == '.'
+                        })
+                    {
+                        return HttpResponse::BadRequest().json(ApiResponse {
+                            success: false,
+                            message: "Invalid materialized_view.index_column_name format or identifier".to_string(),
+                            count: 0,
+                            data: vec![],
+                        });
+                    }
+                    let idx_sql = format!(
+                        "CREATE UNIQUE INDEX IF NOT EXISTS {} ON {} {}",
+                        name_part, candidate_name, cols_part
+                    );
+                    log::debug!("MV UNIQUE INDEX SQL: {}", idx_sql);
+                    match sql_query(&idx_sql).execute(&mut conn_for_ops).await {
+                        Ok(_) => {
+                            let (schema_name, rel_name) = if let Some((sch, rel)) =
+                                candidate_name.split_once('.')
+                            {
+                                (sch.to_string(), rel.to_string())
+                            } else {
+                                ("public".to_string(), candidate_name.clone())
+                            };
+                            let uniq_sql = format!(
+                                "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
+                                schema_name, rel_name
+                            );
+                            let has_unique = match diesel::dsl::sql_query(&uniq_sql)
+                                .load::<DynamicResult>(&mut conn_for_ops)
+                                .await
+                            {
+                                Ok(rows) => rows
+                                    .into_iter()
+                                    .filter_map(|r| r.row_to_json)
+                                    .next()
+                                    .and_then(|v| v.get("has_unique").and_then(|b| b.as_bool()))
+                                    .unwrap_or(false),
+                                Err(_) => false,
+                            };
+                            if !has_unique {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: format!(
+                                        "Materialized view {} requires a UNIQUE index to support REFRESH CONCURRENTLY. Tried to create index {} {}; verify the columns uniquely identify rows or create the index manually.",
+                                        candidate_name, name_part, cols_part
+                                    ),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                        Err(e) => {
+                            return HttpResponse::BadRequest().json(ApiResponse {
+                                success: false,
+                                message: format!(
+                                    "Failed to create UNIQUE index {} on {} {}: {}",
+                                    name_part, candidate_name, cols_part, e
+                                ),
+                                count: 0,
+                                data: vec![],
+                            });
+                        }
+                    }
+                } else {
+                    let (schema_name, rel_name) = if let Some((sch, rel)) = candidate_name.split_once('.') {
+                        (sch.to_string(), rel.to_string())
+                    } else {
+                        ("public".to_string(), candidate_name.clone())
+                    };
+                    let uniq_sql = format!(
+                        "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
+                        schema_name, rel_name
+                    );
+                    let has_unique = match diesel::dsl::sql_query(&uniq_sql)
+                        .load::<DynamicResult>(&mut conn_for_ops)
+                        .await
+                    {
+                        Ok(rows) => rows
+                            .into_iter()
+                            .filter_map(|r| r.row_to_json)
+                            .next()
+                            .and_then(|v| v.get("has_unique").and_then(|b| b.as_bool()))
+                            .unwrap_or(false),
+                        Err(_) => false,
+                    };
+                    if !has_unique {
+                        return HttpResponse::BadRequest().json(ApiResponse {
+                            success: false,
+                            message: format!(
+                                "Materialized view {} requires a UNIQUE index to support REFRESH CONCURRENTLY. Provide materialized_view.index_column_name like \"{}_uniq (id)\" or create the index manually.",
+                                candidate_name, rel_name
+                            ),
+                            count: 0,
+                            data: vec![],
+                        });
+                    }
                 }
                 if let Some(strategy) = mv.refresh_strategy.clone() {
                     match strategy.r#type.as_str() {
@@ -1395,6 +1549,39 @@ pub async fn get_by_filter(
                                 let _ = sql_query("CREATE EXTENSION IF NOT EXISTS pg_cron;")
                                     .execute(&mut conn_for_ops)
                                     .await;
+                                if !mv.create.unwrap_or(false) {
+                                    let (schema_name, rel_name) = if let Some((sch, rel)) =
+                                        candidate_name.split_once('.')
+                                    {
+                                        (sch.to_string(), rel.to_string())
+                                    } else {
+                                        ("public".to_string(), candidate_name.clone())
+                                    };
+                                    let uniq_sql = format!(
+                                        "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
+                                        schema_name, rel_name
+                                    );
+                                    let has_unique = match diesel::dsl::sql_query(&uniq_sql)
+                                        .load::<DynamicResult>(&mut conn_for_ops)
+                                        .await
+                                    {
+                                        Ok(rows) => rows
+                                            .into_iter()
+                                            .filter_map(|r| r.row_to_json)
+                                            .next()
+                                            .and_then(|v| v.get("has_unique").and_then(|b| b.as_bool()))
+                                            .unwrap_or(false),
+                                        Err(_) => false,
+                                    };
+                                    if !has_unique {
+                                        return HttpResponse::BadRequest().json(ApiResponse {
+                                            success: false,
+                                            message: format!("Materialized view {} requires a UNIQUE index to support REFRESH CONCURRENTLY. Provide materialized_view.index_column_name like \"{}_uniq (id)\" or create the index manually.", candidate_name, rel_name),
+                                            count: 0,
+                                            data: vec![],
+                                        });
+                                    }
+                                }
                                 let proc_name =
                                     if let Some((schema, rel)) = candidate_name.split_once('.') {
                                         format!("{}.udp_refresh_{}", schema, rel)
@@ -1402,10 +1589,19 @@ pub async fn get_by_filter(
                                         format!("udp_refresh_{}", candidate_name)
                                     };
                                 if validate_identifier(&proc_name, true) {
+                                    let mut lk_hasher = Sha256::new();
+                                    lk_hasher.update(candidate_name.as_bytes());
+                                    let lk_digest = lk_hasher.finalize();
+                                    let mut lk_bytes = [0u8; 8];
+                                    lk_bytes.copy_from_slice(&lk_digest[..8]);
+                                    let lock_key = i64::from_be_bytes(lk_bytes);
                                     let proc_sql = format!(
-                                        "CREATE OR REPLACE PROCEDURE {}() LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; END; $$;",
-                                        proc_name, candidate_name
+                                        "CREATE OR REPLACE PROCEDURE {}() LANGUAGE plpgsql AS $$ BEGIN IF pg_try_advisory_lock({}) THEN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; PERFORM pg_advisory_unlock({}); END IF; END; $$;",
+                                        proc_name, lock_key, candidate_name, lock_key
                                     );
+                                    if EnvConfig::default().debug {
+                                        log::debug!("MV REFRESH PROCEDURE SQL: {}", proc_sql);
+                                    }
                                     let _ = sql_query(&proc_sql).execute(&mut conn_for_ops).await;
                                     let job_name =
                                         format!("refresh_{}", candidate_name.replace('.', "_"));
@@ -1427,6 +1623,39 @@ pub async fn get_by_filter(
                                 base_fn.clone()
                             };
                             if validate_identifier(&fn_name, true) {
+                                if !mv.create.unwrap_or(false) {
+                                    let (schema_name, rel_name) = if let Some((sch, rel)) =
+                                        candidate_name.split_once('.')
+                                    {
+                                        (sch.to_string(), rel.to_string())
+                                    } else {
+                                        ("public".to_string(), candidate_name.clone())
+                                    };
+                                    let uniq_sql = format!(
+                                        "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
+                                        schema_name, rel_name
+                                    );
+                                    let has_unique = match diesel::dsl::sql_query(&uniq_sql)
+                                        .load::<DynamicResult>(&mut conn_for_ops)
+                                        .await
+                                    {
+                                        Ok(rows) => rows
+                                            .into_iter()
+                                            .filter_map(|r| r.row_to_json)
+                                            .next()
+                                            .and_then(|v| v.get("has_unique").and_then(|b| b.as_bool()))
+                                            .unwrap_or(false),
+                                        Err(_) => false,
+                                    };
+                                    if !has_unique {
+                                        return HttpResponse::BadRequest().json(ApiResponse {
+                                            success: false,
+                                            message: format!("Materialized view {} requires a UNIQUE index to support REFRESH CONCURRENTLY. Provide materialized_view.index_column_name like \"{}_uniq (id)\" or create the index manually.", candidate_name, rel_name),
+                                            count: 0,
+                                            data: vec![],
+                                        });
+                                    }
+                                }
                                 let fn_sql = format!(
                                     "CREATE OR REPLACE FUNCTION {}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; RETURN NULL; END; $$;",
                                     fn_name, candidate_name
@@ -1463,39 +1692,15 @@ pub async fn get_by_filter(
                         _ => {}
                     }
                 }
-                if let Some(idx_str) = mv.index_column_name.clone() {
-                    let s = idx_str.trim();
-                    if let Some(paren_start) = s.find('(') {
-                        if let Some(paren_end) = s.rfind(')') {
-                            let name_part = s[..paren_start].trim();
-                            let cols_part = &s[paren_start..=paren_end];
-                            if validate_identifier(name_part, false)
-                                && cols_part.chars().all(|c| {
-                                    c.is_ascii_alphanumeric()
-                                        || c == '_'
-                                        || c == '"'
-                                        || c == ' '
-                                        || c == ','
-                                        || c == '('
-                                        || c == ')'
-                                        || c == '.'
-                                })
-                            {
-                                let idx_sql = format!(
-                                    "CREATE UNIQUE INDEX IF NOT EXISTS {} ON {} {}",
-                                    name_part, candidate_name, cols_part
-                                );
-                                let _ = sql_query(&idx_sql).execute(&mut conn_for_ops).await;
-                            }
-                        }
-                    }
-                }
                 return HttpResponse::Ok().json(ApiResponse {
                     success: true,
                     message: format!("Materialized view prepared: {}", candidate_name),
                     count: 0,
                     data: vec![],
                 });
+            }
+            if !mv.create.unwrap_or(false) {
+                // For existing MVs, only validate presence of a UNIQUE index; do not create it.
             }
             mv_name = candidate_name;
             use_mv = mv.enabled.unwrap_or(false) && mv_exists;
@@ -1506,6 +1711,13 @@ pub async fn get_by_filter(
     } else {
         format!("SELECT row_to_json(t) FROM ({}) t", query)
     };
+
+    if EnvConfig::default().debug {
+        log::debug!("FINAL_QUERY: {}", final_query);
+        if let Err(e) = write_query_to_debug_log(&final_query, &table, false).await {
+            log::warn!("Failed to write debug final query log: {}", e);
+        }
+    }
 
     let results = match diesel::dsl::sql_query(&final_query)
         .load::<DynamicResult>(&mut conn)
@@ -3763,7 +3975,8 @@ pub async fn create_materialized_view(
     table: web::Path<String>,
     request_body: web::Json<serde_json::Value>,
 ) -> impl Responder {
-    let table_name = table.into_inner();
+    let table_name_raw = table.into_inner();
+    let table_name = ensure_mv_prefix_on_last_ident(&table_name_raw);
     if let Err(resp) = ensure_root_access(&auth) {
         return resp;
     }

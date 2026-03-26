@@ -2,8 +2,9 @@
 mod tests {
     use crate::{
         config::core::EnvConfig,
+        controllers::store_controller::get_by_filter,
         providers::queries::find::SQLConstructor,
-        structs::core::{FilterCriteria, GetByFilter, MatchPattern},
+        structs::core::{Auth, FilterCriteria, GetByFilter, MatchPattern, MaterializedViewConfig, RefreshStrategy},
     };
     use dotenv::dotenv;
     use reqwest;
@@ -11,6 +12,11 @@ mod tests {
     use std::fs;
     use std::path::Path;
     use tokio;
+    use actix_web::{web, HttpMessage, Responder};
+    use actix_web::test::TestRequest;
+    use actix_web::body::to_bytes;
+    use serial_test::serial;
+    use crate::database::db::create_connection;
 
     /// Authentication response structure for reusable login functionality
     #[derive(Debug, Clone)]
@@ -22,6 +28,138 @@ mod tests {
         pub server_available: bool,
         pub username: String,
         pub password: String,
+    }
+
+    fn make_request_with_auth(is_root: bool) -> actix_web::HttpRequest {
+        let req = TestRequest::default().to_http_request();
+        if is_root {
+            req.extensions_mut().insert(Some("root".to_string()));
+        }
+        req.extensions_mut().insert(Auth {
+            organization_id: "01ARZ3NDEKTSV4RRFFQ69G5FAV".to_string(),
+            responsible_account: "admin@dnamicro.com".to_string(),
+            sensitivity_level: 1000,
+            role_name: "super_admin".to_string(),
+            account_organization_id: "01ARZ3NDEKTSV4RRFFQ69G5FAV".to_string(),
+            role_id: "super_admin".to_string(),
+            is_root_account: is_root,
+            account_id: "admin@dnamicro.com".to_string(),
+        });
+        req
+    }
+
+    async fn to_json_response(resp: impl Responder) -> serde_json::Value {
+        let assert_req = TestRequest::default().to_http_request();
+        let response = resp.respond_to(&assert_req);
+        let body_bytes = to_bytes(response.into_body()).await.unwrap_or_default();
+        serde_json::from_slice::<serde_json::Value>(&body_bytes).unwrap_or_else(|_| json!({}))
+    }
+
+    #[tokio::test]
+    #[serial]
+    #[ignore]
+    async fn get_by_filter_creates_materialized_view_when_create_true() {
+        dotenv().ok();
+        if create_connection().await.is_err() {
+            eprintln!("Skipping test: database not reachable");
+            return;
+        }
+        let req = make_request_with_auth(true);
+        let table = web::Path::from("contacts".to_string());
+        let payload = GetByFilter {
+            pluck: vec!["id".to_string()],
+            limit: 1,
+            offset: 0,
+            materialized_view: Some(MaterializedViewConfig {
+                create: Some(true),
+                enabled: Some(false),
+                name: None,
+                index_column_name: Some("mv_contacts_idx (id)".to_string()),
+                refresh_strategy: None,
+            }),
+            ..Default::default()
+        };
+        let resp = get_by_filter(req, table, web::Json(payload)).await;
+        let json = to_json_response(resp).await;
+        let message = json.get("message").and_then(|v| v.as_str()).unwrap_or("");
+        assert!(message.starts_with("Materialized view prepared: "));
+        let mv_name = message.trim_start_matches("Materialized view prepared: ").to_string();
+        let client = create_connection().await.unwrap();
+        let row = client
+            .query_one("SELECT to_regclass($1) IS NOT NULL AS exists", &[&mv_name])
+            .await
+            .unwrap();
+        let exists: bool = row.get("exists");
+        assert!(exists, "materialized view should exist");
+        let _ = client
+            .execute(&format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE", mv_name), &[])
+            .await;
+    }
+
+    #[tokio::test]
+    #[serial]
+    #[ignore]
+    async fn get_by_filter_schedules_cron_job_for_scheduled_refresh() {
+        dotenv().ok();
+        if create_connection().await.is_err() {
+            eprintln!("Skipping test: database not reachable");
+            return;
+        }
+        let req = make_request_with_auth(true);
+        let table = web::Path::from("contacts".to_string());
+        let payload = GetByFilter {
+            pluck: vec!["id".to_string()],
+            limit: 1,
+            offset: 0,
+            materialized_view: Some(MaterializedViewConfig {
+                create: Some(true),
+                enabled: Some(false),
+                name: None,
+                index_column_name: Some("mv_contacts_idx (id)".to_string()),
+                refresh_strategy: Some(RefreshStrategy {
+                    r#type: "scheduled".to_string(),
+                    cron: Some("* * * * *".to_string()),
+                    trigger: None,
+                }),
+            }),
+            ..Default::default()
+        };
+        let resp = get_by_filter(req, table, web::Json(payload)).await;
+        let json = to_json_response(resp).await;
+        let message = json.get("message").and_then(|v| v.as_str()).unwrap_or("");
+        assert!(message.starts_with("Materialized view prepared: "));
+        let mv_name = message.trim_start_matches("Materialized view prepared: ").to_string();
+        let client = create_connection().await.unwrap();
+        let cron_table_exists: bool = client
+            .query_one("SELECT to_regclass('cron.job') IS NOT NULL AS exists", &[])
+            .await
+            .map(|row| row.get::<_, bool>("exists"))
+            .unwrap_or(false);
+        if !cron_table_exists {
+            eprintln!("Skipping cron assertions: pg_cron not available");
+            let _ = client
+                .execute(&format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE", mv_name), &[])
+                .await;
+            return;
+        }
+        let job_name = format!("refresh_{}", mv_name.replace('.', "_"));
+        let job_count: i64 = client
+            .query_one("SELECT COUNT(*)::bigint AS cnt FROM cron.job WHERE jobname = $1", &[&job_name])
+            .await
+            .map(|row| row.get::<_, i64>("cnt"))
+            .unwrap_or(0);
+        assert!(job_count > 0, "scheduled cron job should exist");
+        let job_ids = client
+            .query("SELECT jobid FROM cron.job WHERE jobname = $1", &[&job_name])
+            .await
+            .unwrap_or_default();
+        for row in job_ids {
+            let jobid: i32 = row.get("jobid");
+            let _ = client.query("SELECT cron.unschedule($1)", &[&jobid]).await;
+        }
+        let _ = client
+            .execute(&format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE", mv_name), &[])
+            .await;
     }
 
     fn get_table_name() -> String {

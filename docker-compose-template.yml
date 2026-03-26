@@ -134,6 +134,7 @@ services:
     networks:
       - internal
   # Main store application
+  # docker compose -f docker-compose-template.yml up -d store --build
   store:
     build:
       context: .
