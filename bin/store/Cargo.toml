@@ -93,3 +93,7 @@ panic = "unwind"
 [profile.release]
 lto = false
 codegen-units = 16
+
+[[bin]]
+name = "update_counters"
+path = "src/script/update_counters.rs"
