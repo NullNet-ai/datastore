@@ -5,7 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.2.60
+## 0.2.62
+
+### Author
+Jean
+
+### Fixed
+  - ***Search suggestions — GROUP BY for formatted/concatenated fields***:
+    - `providers/queries/search_suggestion/sql_constructor.rs`
+      - Align `GROUP BY` with the actual projection for search suggestions by grouping on the same formatted or concatenated expression (`entity_field`) instead of the raw `entity.field` when a custom expression is used.
+
+## 0.2.61
 ### Author
 Bert
 
