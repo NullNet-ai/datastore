@@ -466,7 +466,7 @@ pub struct GetByFilter {
     pub time_format: String,
 
     #[serde(default)]
-    pub is_partitioned_table: Option<bool>,
+    pub materialized_view: Option<MaterializedViewConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -765,6 +765,43 @@ impl Default for ETimeFormats {
 
 fn default_time_format() -> String {
     ETimeFormats::default().to_string()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TriggerOptions {
+    pub table: String,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub timing: Option<String>,
+    #[serde(default)]
+    pub events: Option<Vec<String>>,
+    #[serde(default)]
+    pub level: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RefreshStrategy {
+    #[serde(rename = "type")]
+    pub r#type: String,
+    #[serde(default)]
+    pub cron: Option<String>,
+    #[serde(default)]
+    pub trigger: Option<TriggerOptions>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MaterializedViewConfig {
+    #[serde(default)]
+    pub create: Option<bool>,
+    #[serde(default)]
+    pub enabled: Option<bool>,
+    #[serde(default)]
+    pub name: Option<String>,
+    #[serde(default)]
+    pub index_column_name: Option<String>,
+    #[serde(default)]
+    pub refresh_strategy: Option<RefreshStrategy>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

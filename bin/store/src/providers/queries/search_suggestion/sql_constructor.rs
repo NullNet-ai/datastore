@@ -389,6 +389,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
                 value ASC
             ) AS value_json
         FROM all_values
+        WHERE value IS NOT NULL
         GROUP BY entity_type, key",
         search_term,
         search_term,
@@ -477,8 +478,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
             return field_query;
         } else {
             // Construct group by
-            let group_by =
-                self.construct_group_by(&entity, &field, concatenated_expressions, Some(parse_as));
+            let group_by = self.construct_group_by(&entity, &field, entity_field, concatenated_expressions, Some(parse_as));
             field_query.push_str(&group_by);
             // Construct offset
             let offset = self.sql_constructor.construct_offset();
@@ -727,6 +727,7 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
         &self,
         entity: &str,
         field: &str,
+        entity_field: &str,
         concatenated_expressions: &ConcatenatedExpressions,
         parse_as: Option<&str>,
     ) -> String {
@@ -735,6 +736,8 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
             .and_then(|fields| fields.get(field))
         {
             format!(" GROUP BY {}", field_expr.expression.clone())
+        } else if !entity_field.is_empty() {
+            format!(" GROUP BY {}", entity_field)
         } else if !entity.is_empty() && !field.is_empty() {
             let field = FindSQLConstructor::<SearchSuggestionParams>::get_field(
                 entity,

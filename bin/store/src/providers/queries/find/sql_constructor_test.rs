@@ -256,6 +256,77 @@ mod tests {
         }
     }
 
+    #[test]
+    fn should_group_advance_filters_left_to_right_in_build_infix_expression() {
+        let mock_filter = MockQueryFilter::default();
+        let constructor = SQLConstructor::new(mock_filter, "samples".to_string(), true, None);
+
+        let a = FilterCriteria::Criteria {
+            field: "name".to_string(),
+            entity: Some("samples".to_string()),
+            operator: FilterOperator::Equal,
+            values: vec![json!("A")],
+            case_sensitive: None,
+            parse_as: String::new(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        };
+        let b = FilterCriteria::Criteria {
+            field: "sample_text".to_string(),
+            entity: Some("samples".to_string()),
+            operator: FilterOperator::Equal,
+            values: vec![json!("B")],
+            case_sensitive: None,
+            parse_as: String::new(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        };
+        let c = FilterCriteria::Criteria {
+            field: "id".to_string(),
+            entity: Some("samples".to_string()),
+            operator: FilterOperator::Equal,
+            values: vec![json!("C")],
+            case_sensitive: None,
+            parse_as: String::new(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        };
+
+        let expr_a = constructor
+            .build_infix_expression(&[a.clone()])
+            .expect("single criteria should build");
+        let expr_b = constructor
+            .build_infix_expression(&[b.clone()])
+            .expect("single criteria should build");
+        let expr_c = constructor
+            .build_infix_expression(&[c.clone()])
+            .expect("single criteria should build");
+
+        let filters = vec![
+            a,
+            FilterCriteria::LogicalOperator {
+                operator: LogicalOperator::Or,
+            },
+            b,
+            FilterCriteria::LogicalOperator {
+                operator: LogicalOperator::And,
+            },
+            c,
+        ];
+        let expr = constructor
+            .build_infix_expression(&filters)
+            .expect("expression should build");
+
+        let expected = format!("(({} OR {}) AND {})", expr_a, expr_b, expr_c);
+        assert_eq!(
+            expr, expected,
+            "left-to-right grouping mismatch\nexpr_a: {expr_a}\nexpr_b: {expr_b}\nexpr_c: {expr_c}\nexpected: {expected}\nactual: {expr}\n"
+        );
+    }
+
     /// Tests SQLConstructor creation and basic functionality:
     /// - Constructor with default parameters
     /// - Constructor with organization_id

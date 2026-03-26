@@ -8,16 +8,6 @@ static CACHE: Lazy<Mutex<HashMap<String, bool>>> = Lazy::new(|| Mutex::new(HashM
 
 const SCHEMA_CONTENT: &str = include_str!("../generated/schema.rs");
 
-pub fn is_partitioned_table(table: &str) -> bool {
-    if let Some(v) = CACHE.lock().unwrap().get(table) {
-        return *v;
-    }
-    let result = has_id_timestamp_pk_in_schema(table);
-    CACHE.lock().unwrap().insert(table.to_string(), result);
-    schedule_relkind_query(table.to_string());
-    result
-}
-
 fn schedule_relkind_query(table: String) {
     if tokio::runtime::Handle::try_current().is_ok() {
         tokio::task::spawn_blocking(move || {
@@ -61,18 +51,6 @@ async fn query_relkind(client: &tokio_postgres::Client, table: &str) -> Option<S
         Ok(Some(row)) => row.try_get::<_, String>(0).ok(),
         _ => None,
     }
-}
-
-pub async fn is_partitioned_table_async(table: &str) -> bool {
-    if let Ok(client) = crate::database::db::create_connection().await {
-        if let Some(relkind) = query_relkind(&client, table).await {
-            let is_part = relkind.as_str() == "p";
-            let mut cache = CACHE.lock().unwrap();
-            cache.insert(table.to_string(), is_part);
-            return is_part;
-        }
-    }
-    has_id_timestamp_pk_in_schema(table)
 }
 
 fn has_id_timestamp_pk_in_schema(table: &str) -> bool {

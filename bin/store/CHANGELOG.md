@@ -5,6 +5,92 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.62
+
+### Author
+Jean
+
+### Fixed
+  - ***Search suggestions — GROUP BY for formatted/concatenated fields***:
+    - `providers/queries/search_suggestion/sql_constructor.rs`
+      - Align `GROUP BY` with the actual projection for search suggestions by grouping on the same formatted or concatenated expression (`entity_field`) instead of the raw `entity.field` when a custom expression is used.
+
+## 0.2.61
+### Author
+Bert
+
+### Added
+  - ***Prometheus metrics***:
+    - `METRICS_QUERIES.md`
+      - Add Prometheus metrics queries route for API and system metrics.
+      - Add Prometheus metrics results route for API and system metrics.
+
+## 0.2.60
+
+### Author
+Jean
+
+### Fixed
+  - ***Search suggestions — filter NULL values***:
+    - `providers/queries/search_suggestion/sql_constructor.rs`
+      - Exclude NULL suggestion values before `JSON_OBJECT_AGG` so the JSON map does not attempt to use NULL keys.
+
+## 0.2.59
+
+### Author
+Jean
+
+### Fixed
+  - ***Nested self-joins — lateral join key correlation***:
+    - `providers/queries/find/constructors/joins_constructor.rs`
+      - Ensure lateral JOINs distinguish self-joins from regular joins so self-join correlations use the main table alias on the from side while non-self joins continue to correlate the lateral alias to the from-table reference.
+
+## 0.2.58
+
+### Author
+Jean
+
+### Changed
+  - ***ORDER BY date field casting***:
+    - `providers/queries/find/constructors/order_by_constructor.rs`
+      - Ensure fields ending with `_date` are cast to `DATE` after optional case-normalization so ORDER BY uses chronological rather than lexicographic ordering for date columns.
+
+## 0.2.57
+
+### Author
+Jean
+
+### Fixed
+  - ***Nested joins — lateral subquery join key***:
+    - `providers/queries/find/constructors/joins_constructor.rs`
+      - **Problem:** The lateral subquery used the target field on both sides of the join, which could select the wrong key for nested joins.
+      - **Solution:** Use `from_field` for the selected column and join condition so nested joins use the correct from-side key.
+
+## 0.2.56
+
+### Author
+Kashan
+
+### Fixed
+  - ***CRDT message value double-serialization for string fields***:
+    - `providers/operations/sync/message_service.rs`
+      - **Problem:** `value.to_string()` on a `serde_json::Value::String` JSON-serializes the string, wrapping it in quotes and escaping newlines (`\n` → `\\n`) and inner quotes (`"` → `\\\"`). This caused multi-line text content (e.g., HTML templates) to be stored in the database with literal escape sequences instead of actual newlines and quotes.
+      - **Solution:** For `String` values, extract the inner string directly via pattern matching (`Value::String(s) => s.clone()`). Non-string values (numbers, booleans, arrays, objects) continue to use `.to_string()` for correct JSON serialization.
+
+## 0.2.55
+
+### Author
+Jean
+
+### Fixed
+  - ***Advance filters and WHERE expression grouping (left-to-right)***:
+    - `providers/queries/find/constructors/where_constructor.rs`
+      - Replace operator-precedence-based grouping with explicit left-to-right grouping so expressions like `A OR B AND C` render as `((A OR B) AND C)` and `A AND B OR C` as `((A AND B) OR C)`.
+    - `providers/queries/find/sql_constructor.rs`
+      - Align `build_infix_expression` for `advance_filters` with the same left-to-right grouping behavior as the WHERE constructor.
+    - `providers/queries/find/sql_constructor_test.rs`
+      - Add tests that validate the left-to-right grouping for both WHERE tokens and `advance_filters` expressions.
+
 ## 0.2.54
 
 ### Author

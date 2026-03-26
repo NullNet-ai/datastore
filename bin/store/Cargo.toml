@@ -1,8 +1,8 @@
 [package]
 name = "store"
-version = "0.2.54"
+version = "0.2.62"
 edition = "2021"
-rust-version = "1.91.0"
+rust-version = "1.91.1"
 
 authors = [
     "Kashan Ali Khalid <kashankhalid@dnamicro.com>",
@@ -71,6 +71,11 @@ futures-util = "0.3.31"
 redis = { version = "0.23.0", features = ["tokio-comp"] }
 sha1 = "0.10.6"
 woothee = "0.13.0"
+metrics = "0.24"
+metrics-exporter-prometheus = "0.18"
+actix-web-metrics = "0.4"
+metrics-process = "2.4"
+tokio-metrics = { version = "0.4.9" }
 
 
 [dev-dependencies]

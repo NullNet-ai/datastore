@@ -1,4 +1,6 @@
-use actix_web::{HttpMessage, HttpRequest, Responder};
+use actix_web::{HttpMessage, HttpRequest, Responder, HttpResponse};
+use reqwest;
+use crate::config::core::EnvConfig;
 use serde_json::Value;
 
 fn extract_and_store_type(req: HttpRequest) -> HttpRequest {
@@ -231,3 +233,158 @@ create_root_wrapper!(root_delete_trigger => delete_trigger,
     auth: HttpRequest,
     path: actix_web::web::Path<(String, String)>
 );
+pub async fn root_prometheus_queries() -> impl Responder {
+    let body = serde_json::json!({
+        "api": {
+            "throughput": "sum(rate(http_server_request_duration_count[1m]))",
+            "errors": "(sum(rate(http_server_request_duration_count{http_response_status_code=~\\\"5..\\\"}[5m])))/(sum(rate(http_server_request_duration_count[5m])))",
+            "errors_by_code": "sum by (http_response_status_code)(rate(http_server_request_duration_count{http_response_status_code=~\\\"5..\\\"}[5m]))",
+            "client_errors": "(sum(rate(http_server_request_duration_count{http_response_status_code=~\\\"4..\\\"}[5m])))/(sum(rate(http_server_request_duration_count[5m])))",
+            "client_errors_by_code": "sum by (http_response_status_code)(rate(http_server_request_duration_count{http_response_status_code=~\\\"4..\\\"}[5m]))"
+        },
+        "logging": {
+            "writes_debug": "rate(logs_written_total_debug[5m])",
+            "writes_info": "rate(logs_written_total_info[5m])",
+            "writes_warn": "rate(logs_written_total_warn[5m])",
+            "writes_error": "rate(logs_written_total_error[5m])",
+            "writes_trace": "rate(logs_written_total_trace[5m])",
+            "writes_critical": "rate(logs_written_total_critical[5m])",
+            "write_errors": "rate(log_write_failed_total[5m])",
+            "file_size_bytes": "log_file_size_bytes"
+        },
+        "system": {
+            "cpu_usage": "rate(process_cpu_seconds_total[1m])",
+            "memory_usage": "process_resident_memory_bytes"
+        }
+    });
+    HttpResponse::Ok().json(body)
+}
+
+async fn query_prometheus_sum(base_url: &str, query: &str) -> Option<f64> {
+    let url = format!("{}/api/v1/query", base_url);
+    let client = reqwest::Client::new();
+    let resp = client.get(url).query(&[("query", query)]).send().await.ok()?;
+    let json: serde_json::Value = resp.json().await.ok()?;
+    let result = json.get("data")?.get("result")?;
+    let mut sum = 0.0;
+    if let Some(arr) = result.as_array() {
+        for item in arr {
+            if let Some(value) = item.get("value") {
+                if let Some(v_arr) = value.as_array() {
+                    if let Some(v_str) = v_arr.get(1).and_then(|v| v.as_str()) {
+                        if let Ok(v) = v_str.parse::<f64>() {
+                            sum += v;
+                        }
+                    }
+                }
+            }
+        }
+        Some(sum)
+    } else {
+        None
+    }
+}
+
+async fn query_prometheus_group_sum(
+    base_url: &str,
+    query: &str,
+    group_label: &str,
+) -> std::collections::BTreeMap<String, f64> {
+    let url = format!("{}/api/v1/query", base_url);
+    let client = reqwest::Client::new();
+    let mut map = std::collections::BTreeMap::new();
+    if let Ok(resp) = client.get(url).query(&[("query", query)]).send().await {
+        if let Ok(json) = resp.json::<serde_json::Value>().await {
+            if let Some(arr) = json.get("data").and_then(|d| d.get("result")).and_then(|r| r.as_array()) {
+                for item in arr {
+                    let key = item
+                        .get("metric")
+                        .and_then(|m| m.get(group_label))
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("unknown")
+                        .to_string();
+                    let val = item
+                        .get("value")
+                        .and_then(|v| v.as_array())
+                        .and_then(|a| a.get(1))
+                        .and_then(|v| v.as_str())
+                        .and_then(|s| s.parse::<f64>().ok())
+                        .unwrap_or(0.0);
+                    let entry = map.entry(key).or_insert(0.0);
+                    *entry += val;
+                }
+            }
+        }
+    }
+    map
+}
+
+pub async fn root_prometheus_results() -> impl Responder {
+    let base_url = EnvConfig::default().prometheus_base_url;
+    let throughput_q = "sum(rate(http_server_request_duration_count[1m]))";
+    let errors_q = "(sum(rate(http_server_request_duration_count{http_response_status_code=~\"5..\"}[5m])))/(sum(rate(http_server_request_duration_count[5m])))";
+    let client_errors_q = "(sum(rate(http_server_request_duration_count{http_response_status_code=~\"4..\"}[5m])))/(sum(rate(http_server_request_duration_count[5m])))";
+    let cpu_q = "rate(process_cpu_seconds_total[1m])";
+    let mem_q = "process_resident_memory_bytes";
+    let writes_debug_q = "rate(logs_written_total_debug[5m])";
+    let writes_info_q = "rate(logs_written_total_info[5m])";
+    let writes_warn_q = "rate(logs_written_total_warn[5m])";
+    let writes_error_q = "rate(logs_written_total_error[5m])";
+    let writes_trace_q = "rate(logs_written_total_trace[5m])";
+    let writes_critical_q = "rate(logs_written_total_critical[5m])";
+    let write_errors_q = "rate(log_write_failed_total[5m])";
+    let file_size_bytes_q = "log_file_size_bytes";
+
+    let throughput = query_prometheus_sum(&base_url, throughput_q).await;
+    let errors = query_prometheus_sum(&base_url, errors_q).await;
+    let client_errors = query_prometheus_sum(&base_url, client_errors_q).await;
+    let cpu = query_prometheus_sum(&base_url, cpu_q).await;
+    let memory = query_prometheus_sum(&base_url, mem_q).await;
+    let writes_debug = query_prometheus_sum(&base_url, writes_debug_q).await;
+    let writes_info = query_prometheus_sum(&base_url, writes_info_q).await;
+    let writes_warn = query_prometheus_sum(&base_url, writes_warn_q).await;
+    let writes_error = query_prometheus_sum(&base_url, writes_error_q).await;
+    let writes_trace = query_prometheus_sum(&base_url, writes_trace_q).await;
+    let writes_critical = query_prometheus_sum(&base_url, writes_critical_q).await;
+    let write_errors = query_prometheus_sum(&base_url, write_errors_q).await;
+    let file_size_bytes = query_prometheus_sum(&base_url, file_size_bytes_q).await;
+
+    let errors_by_code = query_prometheus_group_sum(
+        &base_url,
+        "sum by (http_response_status_code)(rate(http_server_request_duration_count{http_response_status_code=~\"5..\"}[5m]))",
+        "http_response_status_code",
+    )
+    .await;
+
+    let client_errors_by_code = query_prometheus_group_sum(
+        &base_url,
+        "sum by (http_response_status_code)(rate(http_server_request_duration_count{http_response_status_code=~\"4..\"}[5m]))",
+        "http_response_status_code",
+    )
+    .await;
+
+    let body = serde_json::json!({
+        "api": {
+            "throughput": throughput,
+            "errors": errors,
+            "errors_by_code": errors_by_code,
+            "client_errors": client_errors,
+            "client_errors_by_code": client_errors_by_code
+        },
+        "system": {
+            "cpu_usage": cpu,
+            "memory_usage": memory
+        },
+        "logging": {
+            "writes_debug": writes_debug,
+            "writes_info": writes_info,
+            "writes_warn": writes_warn,
+            "writes_error": writes_error,
+            "writes_trace": writes_trace,
+            "writes_critical": writes_critical,
+            "write_errors": write_errors,
+            "file_size_bytes": file_size_bytes
+        }
+    });
+    HttpResponse::Ok().json(body)
+}

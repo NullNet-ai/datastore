@@ -19,7 +19,6 @@ use crate::structs::core::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
     QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
-use crate::structs::core::{FilterCriteria, FilterOperator};
 use crate::utils::helpers::{
     ensure_root_access, format_diesel_error, normalize_date_format, require_unsafe_query_raw,
     table_exists, validate_identifier,
@@ -29,6 +28,7 @@ use crate::utils::sql_sanitizer::{
     strip_strings_and_comments, validate_execute_payloads, validate_query_safety,
     validate_select_limits, validate_update_has_where,
 };
+use crate::structs::core::{FilterCriteria, FilterOperator, LogicalOperator};
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
@@ -46,6 +46,7 @@ use ulid::Ulid;
 use chrono::Local;
 use std::collections::BTreeMap;
 use std::fmt;
+use sha2::{Digest, Sha256};
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
 // use diesel::sql_types::*;
@@ -1227,6 +1228,78 @@ pub async fn get_by_filter(
     // Clone parameters for debug logging (since they will be moved to SQLConstructor)
     let parameters_for_debug = parameters.clone();
 
+    // Precompute materialized view name from parameters and return early if it already exists and is enabled
+    let mut precomputed_mv_name: Option<String> = None;
+    if let Some(mv_cfg) = parameters_for_debug.materialized_view.clone() {
+        let base_name = mv_cfg
+            .name
+            .clone()
+            .unwrap_or_else(|| format!("mv_{}", table));
+        let mut hash_source = parameters_for_debug.clone();
+        hash_source.materialized_view = None;
+        let hash_input = serde_json::to_string(&hash_source).unwrap_or_default();
+        let mut hasher = Sha256::new();
+        hasher.update(hash_input.as_bytes());
+        let digest = hasher.finalize();
+        let mut hash_hex = hex::encode(digest);
+        if hash_hex.len() > 16 {
+            hash_hex.truncate(16);
+        }
+        let candidate_name = format!("{}_{}", base_name, hash_hex);
+        if validate_identifier(&candidate_name, true) {
+            precomputed_mv_name = Some(candidate_name.clone());
+            if mv_cfg.enabled.unwrap_or(false) {
+                let mut conn_for_ops = db::get_async_connection().await;
+                let exists_sql = format!(
+                    "SELECT row_to_json(t) FROM (SELECT to_regclass('{}') IS NOT NULL AS exists) t",
+                    candidate_name
+                );
+                let mv_exists = match diesel::dsl::sql_query(&exists_sql)
+                    .load::<DynamicResult>(&mut conn_for_ops)
+                    .await
+                {
+                    Ok(rows) => rows
+                        .into_iter()
+                        .filter_map(|r| r.row_to_json)
+                        .next()
+                        .and_then(|v| v.get("exists").and_then(|b| b.as_bool()))
+                        .unwrap_or(false),
+                    Err(_) => false,
+                };
+                if mv_exists {
+                    let final_query =
+                        format!("SELECT row_to_json(t) FROM (SELECT * FROM {}) t", candidate_name);
+                    let mut conn = db::get_async_connection().await;
+                    let results = match diesel::dsl::sql_query(&final_query)
+                        .load::<DynamicResult>(&mut conn)
+                        .await
+                    {
+                        Ok(results) => results,
+                        Err(e) => {
+                            return HttpResponse::InternalServerError().json(ApiResponse {
+                                success: false,
+                                message: format!("Query execution error: {}", e),
+                                count: 0,
+                                data: vec![],
+                            });
+                        }
+                    };
+                    let data: Vec<serde_json::Value> =
+                        results.into_iter().filter_map(|r| r.row_to_json).collect();
+                    return HttpResponse::Ok().json(ApiResponse {
+                        success: true,
+                        message: format!(
+                            "Filter operation completed for table: {} (using materialized view)",
+                            &table
+                        ),
+                        count: data.len() as i32,
+                        data,
+                    });
+                }
+            }
+        }
+    }
+
     // Create SQLConstructor with organization_id if available
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root, timezone);
     if let Some(org_id) = organization_id {
@@ -1270,7 +1343,155 @@ pub async fn get_by_filter(
     }
 
     log::debug!("@@@parameters: {:?}", parameters_for_debug.clone());
-    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    let mut use_mv = false;
+    let mut mv_name = String::new();
+    if let Some(mv) = parameters_for_debug.materialized_view.clone() {
+        let candidate_name = precomputed_mv_name.clone().unwrap_or_else(|| {
+            let base_name = mv
+                .name
+                .clone()
+                .unwrap_or_else(|| format!("mv_{}", table));
+            let mut hash_src = parameters_for_debug.clone();
+            hash_src.materialized_view = None;
+            let input = serde_json::to_string(&hash_src).unwrap_or_default();
+            let mut hasher = Sha256::new();
+            hasher.update(input.as_bytes());
+            let digest = hasher.finalize();
+            let mut hash_hex = hex::encode(digest);
+            if hash_hex.len() > 16 {
+                hash_hex.truncate(16);
+            }
+            format!("{}_{}", base_name, hash_hex)
+        });
+        if validate_identifier(&candidate_name, true) {
+            let mut conn_for_ops = db::get_async_connection().await;
+            let exists_sql = format!(
+                "SELECT row_to_json(t) FROM (SELECT to_regclass('{}') IS NOT NULL AS exists) t",
+                candidate_name
+            );
+            let mv_exists = match diesel::dsl::sql_query(&exists_sql)
+                .load::<DynamicResult>(&mut conn_for_ops)
+                .await
+            {
+                Ok(rows) => rows
+                    .into_iter()
+                    .filter_map(|r| r.row_to_json)
+                    .next()
+                    .and_then(|v| v.get("exists").and_then(|b| b.as_bool()))
+                    .unwrap_or(false),
+                Err(_) => false,
+            };
+            if mv.create.unwrap_or(false) {
+                if !mv_exists {
+                    let create_sql = format!(
+                        "CREATE MATERIALIZED VIEW IF NOT EXISTS {} AS {}",
+                        candidate_name, query
+                    );
+                    let _ = sql_query(&create_sql).execute(&mut conn_for_ops).await;
+                }
+                if let Some(strategy) = mv.refresh_strategy.clone() {
+                    match strategy.r#type.as_str() {
+                        "scheduled" => {
+                            if let Some(cron) = strategy.cron.clone() {
+                                let _ = sql_query("CREATE EXTENSION IF NOT EXISTS pg_cron;")
+                                    .execute(&mut conn_for_ops)
+                                    .await;
+                                let proc_name = if let Some((schema, rel)) =
+                                    candidate_name.split_once('.')
+                                {
+                                    format!("{}.udp_refresh_{}", schema, rel)
+                                } else {
+                                    format!("udp_refresh_{}", candidate_name)
+                                };
+                                if validate_identifier(&proc_name, true) {
+                                    let proc_sql = format!(
+                                        "CREATE OR REPLACE PROCEDURE {}() LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; END; $$;",
+                                        proc_name, candidate_name
+                                    );
+                                    let _ = sql_query(&proc_sql).execute(&mut conn_for_ops).await;
+                                    let job_name =
+                                        format!("refresh_{}", candidate_name.replace('.', "_"));
+                                    let schedule_sql = format!(
+                                        "SELECT cron.schedule('{}', '{}', $$ CALL {}(); $$);",
+                                        job_name, cron, proc_name
+                                    );
+                                    let _ =
+                                        sql_query(&schedule_sql).execute(&mut conn_for_ops).await;
+                                }
+                            }
+                        }
+                        "trigger" | "incremental" => {
+                            let base_fn = format!("fn_trg_refresh_{}", Ulid::new());
+                            let fn_name = if let Some((schema, _)) = candidate_name.split_once('.') {
+                                format!("{}.{}", schema, base_fn)
+                            } else {
+                                base_fn.clone()
+                            };
+                            if validate_identifier(&fn_name, true) {
+                                let fn_sql = format!(
+                                    "CREATE OR REPLACE FUNCTION {}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; RETURN NULL; END; $$;",
+                                    fn_name, candidate_name
+                                );
+                                let _ = sql_query(&fn_sql).execute(&mut conn_for_ops).await;
+                            }
+                            if let Some(trig) = strategy.trigger.clone() {
+                                let timing = trig.timing.unwrap_or_else(|| "AFTER".to_string());
+                                let level = trig.level.unwrap_or_else(|| "STATEMENT".to_string());
+                                let events = trig
+                                    .events
+                                    .unwrap_or_else(|| vec!["INSERT".to_string(), "UPDATE".to_string(), "DELETE".to_string()])
+                                    .join(" OR ");
+                                let trig_name = trig
+                                    .name
+                                    .unwrap_or_else(|| format!("trg_refresh_{}", Ulid::new()));
+                                if validate_identifier(&trig_name, false) && validate_identifier(&trig.table, true) {
+                                    let trig_sql = format!(
+                                        "CREATE OR REPLACE TRIGGER {} {} {} ON {} FOR EACH {} EXECUTE FUNCTION {}();",
+                                        trig_name, timing, events, trig.table, level, fn_name
+                                    );
+                                    let _ = sql_query(&trig_sql).execute(&mut conn_for_ops).await;
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                if let Some(idx_str) = mv.index_column_name.clone() {
+                    let s = idx_str.trim();
+                    if let Some(paren_start) = s.find('(') {
+                        if let Some(paren_end) = s.rfind(')') {
+                            let name_part = s[..paren_start].trim();
+                            let cols_part = &s[paren_start..=paren_end];
+                            if validate_identifier(name_part, false)
+                                && cols_part
+                                    .chars()
+                                    .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '"' || c == ' ' || c == ',' || c == '(' || c == ')' || c == '.')
+                            {
+                                let idx_sql = format!(
+                                    "CREATE UNIQUE INDEX IF NOT EXISTS {} ON {} {}",
+                                    name_part, candidate_name, cols_part
+                                );
+                                let _ = sql_query(&idx_sql).execute(&mut conn_for_ops).await;
+                            }
+                        }
+                    }
+                }
+                return HttpResponse::Ok().json(ApiResponse {
+                    success: true,
+                    message: format!("Materialized view prepared: {}", candidate_name),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+            mv_name = candidate_name;
+            use_mv = mv.enabled.unwrap_or(false) && mv_exists;
+        }
+    }
+    let final_query = if use_mv {
+        format!("SELECT row_to_json(t) FROM (SELECT * FROM {}) t", mv_name)
+    } else {
+        format!("SELECT row_to_json(t) FROM ({}) t", query)
+    };
 
     let results = match diesel::dsl::sql_query(&final_query)
         .load::<DynamicResult>(&mut conn)
@@ -1848,7 +2069,7 @@ pub async fn get_file_by_id(
 pub async fn download_file_by_id(
     auth: HttpRequest,
     path_params: web::Path<String>,
-    _query: web::Query<std::collections::HashMap<String, String>>,
+    query: web::Query<std::collections::HashMap<String, String>>,
     app_state: web::Data<providers::storage::AppState>,
 ) -> HttpResponse {
     let file_id = path_params.into_inner();
@@ -1875,25 +2096,15 @@ pub async fn download_file_by_id(
         .map(|s| s == "root")
         .unwrap_or(false);
 
-    // Log the operation
-    if is_root_controller {
-        log::info!(
-            "Processing download_file_by_id via root controller for file_id: {}",
-            file_id
-        );
-    } else {
-        log::info!(
-            "Processing download_file_by_id via simple controller for file_id: {}",
-            file_id
-        );
-    }
-
     // First, get file metadata from database
     let pluck_fields = vec![
         "mimetype".to_string(),
         "download_path".to_string(),
         "size".to_string(),
         "etag".to_string(),
+        "tags".to_string(),
+        "filename".to_string(),
+        "path".to_string(),
     ];
 
     // Extract organization_id from auth_data
@@ -1930,12 +2141,11 @@ pub async fn download_file_by_id(
         }
     };
 
-    // Extract file information from metadata
-    log::debug!("file_metadata: {:?}", file_metadata);
-    let mimetype = file_metadata
+    let mut mimetype = file_metadata
         .get("mimetype")
         .and_then(|v| v.as_str())
-        .unwrap_or("application/octet-stream");
+        .unwrap_or("application/octet-stream")
+        .to_string();
     let download_path = file_metadata
         .get("download_path")
         .and_then(|v| v.as_str())
@@ -1944,19 +2154,317 @@ pub async fn download_file_by_id(
         .get("etag")
         .and_then(|v| v.as_str())
         .unwrap_or("");
+    let filename = file_metadata
+        .get("filename")
+        .and_then(|v| v.as_str())
+        .unwrap_or("");
+    let tags_contains_thumbnail = file_metadata
+        .get("tags")
+        .and_then(|v| v.as_array())
+        .map(|arr| {
+            arr.iter().any(|t| {
+                t.as_str()
+                    .map(|s| s.eq_ignore_ascii_case("thumbnail"))
+                    .unwrap_or(false)
+            })
+        })
+        .unwrap_or(false);
+    let is_thumbnail_requested = query
+        .get("q")
+        .map(|v| v.eq_ignore_ascii_case("thumbnail"))
+        .unwrap_or(false);
 
-    // Get bucket name with organization context
     let base_bucket_name =
         std::env::var("STORAGE_BUCKET_NAME").unwrap_or_else(|_| app_state.bucket_name.clone());
     let bucket_name = base_bucket_name.clone();
 
-    // Use the download_path as-is since it should already contain the organization name
-    // The new path structure is: organization_name/file_id.extension
-    let s3_key = download_path;
+    let mut effective_download_path = download_path.to_string();
+
+    // If thumbnail is NOT requested but the current record is a thumbnail, try to resolve original
+    if !is_thumbnail_requested && tags_contains_thumbnail {
+        let db_pluck = vec![
+            "download_path".to_string(),
+            "mimetype".to_string(),
+            "size".to_string(),
+            "id".to_string(),
+            "tags".to_string(),
+            "filename".to_string(),
+            "path".to_string(),
+        ];
+        let mut adv_filters: Vec<FilterCriteria> = Vec::new();
+        if let Some(fname) = file_metadata.get("filename").and_then(|v| v.as_str()) {
+            if !fname.is_empty() {
+                adv_filters.push(FilterCriteria::Criteria {
+                    field: "filename".to_string(),
+                    entity: None,
+                    operator: FilterOperator::Equal,
+                    values: vec![serde_json::Value::String(fname.to_string())],
+                    case_sensitive: Some(false),
+                    parse_as: "text".to_string(),
+                    match_pattern: None,
+                    is_search: None,
+                    has_group_count: None,
+                });
+                adv_filters.push(FilterCriteria::LogicalOperator {
+                    operator: LogicalOperator::And,
+                });
+            }
+        }
+        // Ensure path does NOT include thumbnail
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "path".to_string(),
+            entity: None,
+            operator: FilterOperator::NotContains,
+            values: vec![serde_json::Value::String("thumbnail".to_string())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+        adv_filters.push(FilterCriteria::LogicalOperator {
+            operator: LogicalOperator::And,
+        });
+        // Ensure same organization
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "organization_id".to_string(),
+            entity: None,
+            operator: FilterOperator::Equal,
+            values: vec![serde_json::Value::String(auth_data.organization_id.clone())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+
+        let parameters = GetByFilter {
+            pluck: db_pluck.clone(),
+            pluck_object: Default::default(),
+            pluck_group_object: Default::default(),
+            advance_filters: adv_filters,
+            group_advance_filters: vec![],
+            joins: vec![],
+            group_by: None,
+            concatenate_fields: vec![],
+            multiple_sort: vec![],
+            date_format: "YYYY-mm-dd".to_string(),
+            order_by: "updated_time".to_string(),
+            order_direction: "DESC".to_string(),
+            is_case_sensitive_sorting: None,
+            offset: 0,
+            limit: 1,
+            distinct_by: None,
+            timezone: None,
+            time_format: "HH24:MI".to_string(),
+            materialized_view: None,
+        };
+        let mut sql_constructor = SQLConstructor::new(
+            parameters.clone(),
+            "files".to_string(),
+            is_root_controller,
+            None,
+        );
+        sql_constructor = sql_constructor.with_organization_id(auth_data.organization_id.clone());
+        if let Ok(query_sql) = sql_constructor.construct() {
+            let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query_sql);
+            let mut conn = db::get_async_connection().await;
+            if let Ok(results) = diesel::dsl::sql_query(&final_query)
+                .load::<DynamicResult>(&mut conn)
+                .await
+            {
+                if let Some(first) = results.into_iter().filter_map(|r| r.row_to_json).next() {
+                    if let Some(obj) = first.as_object() {
+                        if let Some(dp) = obj.get("download_path").and_then(|v| v.as_str()) {
+                            effective_download_path = dp.to_string();
+                        } else if let Some(pv) = obj.get("path").and_then(|v| v.as_str()) {
+                            let prefix = format!("{}/", bucket_name);
+                            let key = if pv.starts_with(&prefix) {
+                                pv.strip_prefix(&prefix).unwrap_or(pv)
+                            } else {
+                                pv
+                            };
+                            effective_download_path = key.to_string();
+                        }
+                        if let Some(mt) = obj.get("mimetype").and_then(|v| v.as_str()) {
+                            mimetype = mt.to_string();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if is_thumbnail_requested && !tags_contains_thumbnail {
+        let db_pluck = vec![
+            "download_path".to_string(),
+            "mimetype".to_string(),
+            "size".to_string(),
+            "id".to_string(),
+            "tags".to_string(),
+            "filename".to_string(),
+            "path".to_string(),
+        ];
+        let mut adv_filters: Vec<FilterCriteria> = Vec::new();
+        if !filename.is_empty() {
+            adv_filters.push(FilterCriteria::Criteria {
+                field: "filename".to_string(),
+                entity: None,
+                operator: FilterOperator::Equal,
+                values: vec![serde_json::Value::String(filename.to_string())],
+                case_sensitive: Some(false),
+                parse_as: "text".to_string(),
+                match_pattern: None,
+                is_search: None,
+                has_group_count: None,
+            });
+            adv_filters.push(FilterCriteria::LogicalOperator {
+                operator: LogicalOperator::And,
+            });
+        }
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "tags".to_string(),
+            entity: None,
+            operator: FilterOperator::Contains,
+            values: vec![serde_json::Value::String("thumbnail".to_string())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+        adv_filters.push(FilterCriteria::LogicalOperator {
+            operator: LogicalOperator::And,
+        });
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "path".to_string(),
+            entity: None,
+            operator: FilterOperator::Contains,
+            values: vec![serde_json::Value::String("thumbnail".to_string())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+        adv_filters.push(FilterCriteria::LogicalOperator {
+            operator: LogicalOperator::And,
+        });
+        adv_filters.push(FilterCriteria::Criteria {
+            field: "organization_id".to_string(),
+            entity: None,
+            operator: FilterOperator::Equal,
+            values: vec![serde_json::Value::String(auth_data.organization_id.clone())],
+            case_sensitive: Some(false),
+            parse_as: "text".to_string(),
+            match_pattern: None,
+            is_search: None,
+            has_group_count: None,
+        });
+        let parameters = GetByFilter {
+            pluck: db_pluck.clone(),
+            pluck_object: Default::default(),
+            pluck_group_object: Default::default(),
+            advance_filters: adv_filters,
+            group_advance_filters: vec![],
+            joins: vec![],
+            group_by: None,
+            concatenate_fields: vec![],
+            multiple_sort: vec![],
+            date_format: "YYYY-mm-dd".to_string(),
+            order_by: "updated_time".to_string(),
+            order_direction: "DESC".to_string(),
+            is_case_sensitive_sorting: None,
+            offset: 0,
+            limit: 1,
+            distinct_by: None,
+            timezone: None,
+            time_format: "HH24:MI".to_string(),
+            materialized_view: None,
+        };
+        let mut sql_constructor = SQLConstructor::new(
+            parameters.clone(),
+            "files".to_string(),
+            is_root_controller,
+            None,
+        );
+        sql_constructor = sql_constructor.with_organization_id(auth_data.organization_id.clone());
+        if let Ok(query_sql) = sql_constructor.construct() {
+            let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query_sql);
+            let mut conn = db::get_async_connection().await;
+            if let Ok(results) = diesel::dsl::sql_query(&final_query)
+                .load::<DynamicResult>(&mut conn)
+                .await
+            {
+                if let Some(first) = results.into_iter().filter_map(|r| r.row_to_json).next() {
+                    if let Some(obj) = first.as_object() {
+                        if let Some(dp) = obj.get("download_path").and_then(|v| v.as_str()) {
+                            effective_download_path = dp.to_string();
+                        } else if let Some(pv) = obj.get("path").and_then(|v| v.as_str()) {
+                            let prefix = format!("{}/", bucket_name);
+                            let key = if pv.starts_with(&prefix) {
+                                pv.strip_prefix(&prefix).unwrap_or(pv)
+                            } else {
+                                pv
+                            };
+                            effective_download_path = key.to_string();
+                        }
+                        if let Some(mt) = obj.get("mimetype").and_then(|v| v.as_str()) {
+                            mimetype = mt.to_string();
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let variant_label = if is_thumbnail_requested {
+        "thumbnail"
+    } else {
+        "original"
+    };
+    let temp_file_ttl_secs: u64 = EnvConfig::default().temporary_file_ttl_secs;
+    let cache_dir = std::env::temp_dir()
+        .join("store_cache")
+        .join(auth_data.organization_id.clone());
+    let cache_file_path = cache_dir.join(format!("{}_{}.cache", file_id, variant_label));
+    log::debug!("Cache file path: {:?}", cache_file_path);
+    if let Ok(meta) = tokio::fs::metadata(&cache_file_path).await {
+        if let Ok(modified) = meta.modified() {
+            let now = std::time::SystemTime::now();
+            if now
+                .duration_since(modified)
+                .unwrap_or(std::time::Duration::from_secs(0))
+                <= std::time::Duration::from_secs(temp_file_ttl_secs)
+            {
+                if let Ok(bytes_vec) = tokio::fs::read(&cache_file_path).await {
+                    use futures_util::stream;
+                    let cached_bytes = bytes::Bytes::from(bytes_vec);
+                    let byte_stream =
+                        stream::once(async move { Ok::<_, std::io::Error>(cached_bytes) });
+                    let actual_content_type = mimetype.to_string();
+                    let is_image = actual_content_type.starts_with("image/");
+                    let filename = effective_download_path.split('/').last().unwrap_or("file");
+                    let content_disposition = if is_image {
+                        format!("inline; filename=\"{}\"", filename)
+                    } else {
+                        format!("attachment; filename=\"{}\"", filename)
+                    };
+                    return HttpResponse::Ok()
+                        .content_type(actual_content_type)
+                        .insert_header(("Cache-Control", "public, max-age=3600"))
+                        .insert_header(("Accept-Ranges", "bytes"))
+                        .insert_header(("Content-Disposition", content_disposition))
+                        .streaming(byte_stream);
+                }
+            }
+        }
+    }
 
     // Stream file from S3
     let s3_client = &app_state.s3_client;
 
+    let s3_key = effective_download_path.as_str();
     match s3_client
         .get_object()
         .bucket(&bucket_name)
@@ -1965,32 +2473,37 @@ pub async fn download_file_by_id(
         .await
     {
         Ok(output) => {
-            // Use the mimetype from database for proper content type handling
-            // This ensures correct MIME type detection for preview functionality
             let actual_content_type = mimetype.to_string();
 
-            // Capture content length before consuming the body
             let content_length = output.content_length().unwrap_or(0);
 
-            // Convert the S3 body stream to bytes and create a streaming response
             match output.body.collect().await {
                 Ok(data) => {
                     let bytes = data.into_bytes();
 
-                    // Create a stream from the bytes for efficient streaming
                     use futures_util::stream;
-                    let byte_stream = stream::once(async move { Ok::<_, std::io::Error>(bytes) });
+                    let bytes_for_stream = bytes.clone();
+                    let byte_stream =
+                        stream::once(async move { Ok::<_, std::io::Error>(bytes_for_stream) });
+                    let cache_dir_clone = cache_dir.clone();
+                    let cache_file_path_clone = cache_file_path.clone();
+                    let to_write_vec = bytes.to_vec();
+                    let ttl_for_task = temp_file_ttl_secs;
+                    tokio::spawn(async move {
+                        let _ = tokio::fs::create_dir_all(&cache_dir_clone).await;
+                        let _ = tokio::fs::write(&cache_file_path_clone, &to_write_vec).await;
+                        tokio::spawn(async move {
+                            tokio::time::sleep(std::time::Duration::from_secs(ttl_for_task)).await;
+                            let _ = tokio::fs::remove_file(&cache_file_path_clone).await;
+                        });
+                    });
 
-                    // Determine if this is an image for inline display
                     let is_image = actual_content_type.starts_with("image/");
                     let filename = s3_key.split('/').last().unwrap_or("file");
 
-                    // Set Content-Disposition for proper preview behavior
                     let content_disposition = if is_image {
-                        // For images, use inline disposition to enable preview in browsers/Postman
                         format!("inline; filename=\"{}\"", filename)
                     } else {
-                        // For non-images, use attachment to trigger download
                         format!("attachment; filename=\"{}\"", filename)
                     };
 
@@ -2017,122 +2530,113 @@ pub async fn download_file_by_id(
             log::error!("Error downloading file {} from S3: {:?}", file_id, e);
             let normalize_etag = |s: &str| {
                 s.trim()
-                    .trim_start_matches("\\\"") // strip \"
-                    .trim_end_matches("\\\"") // strip \"
-                    .trim_end_matches('\\') // trailing back-slash
-                    .trim_matches('"') // strip any remaining "
+                    .trim_start_matches("\\\"")
+                    .trim_end_matches("\\\"")
+                    .trim_end_matches('\\')
+                    .trim_matches('"')
                     .to_string()
             };
-
             let target_etag = normalize_etag(file_etag);
-            log::debug!("file_etag: {:?}", &target_etag);
+            if target_etag.is_empty() {
+                return HttpResponse::NotFound().json(ApiResponse {
+                    success: false,
+                    message: "File not found in storage".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
             let mut found_key: Option<String> = None;
-
-            if !target_etag.is_empty() {
-                let db_pluck = vec![
-                    "download_path".to_string(),
-                    "mimetype".to_string(),
-                    "size".to_string(),
-                    "etag".to_string(),
-                    "id".to_string(),
-                ];
-                let parameters = GetByFilter {
-                    pluck: db_pluck.clone(),
-                    pluck_object: Default::default(),
-                    pluck_group_object: Default::default(),
-                    advance_filters: vec![
-                        FilterCriteria::Criteria {
-                            field: "etag".to_string(),
-                            entity: None,
-                            operator: FilterOperator::Equal,
-                            values: vec![serde_json::Value::String(target_etag.clone())],
-                            case_sensitive: Some(false),
-                            parse_as: "text".to_string(),
-                            match_pattern: None,
-                            is_search: None,
-                            has_group_count: None,
-                        },
-                        FilterCriteria::Criteria {
-                            field: "organization_id".to_string(),
-                            entity: None,
-                            operator: FilterOperator::Equal,
-                            values: vec![serde_json::Value::String(
-                                auth_data.organization_id.clone(),
-                            )],
-                            case_sensitive: Some(false),
-                            parse_as: "text".to_string(),
-                            match_pattern: None,
-                            is_search: None,
-                            has_group_count: None,
-                        },
-                    ],
-                    group_advance_filters: vec![],
-                    joins: vec![],
-                    group_by: None,
-                    concatenate_fields: vec![],
-                    multiple_sort: vec![],
-                    date_format: "YYYY-mm-dd".to_string(),
-                    order_by: "id".to_string(),
-                    order_direction: "ASC".to_string(),
-                    is_case_sensitive_sorting: None,
-                    offset: 0,
-                    limit: 1,
-                    distinct_by: None,
-                    timezone: None,
-                    time_format: "HH24:MI".to_string(),
-                    ..Default::default()
-                };
-                let mut sql_constructor = SQLConstructor::new(
-                    parameters.clone(),
-                    "files".to_string(),
-                    is_root_controller,
-                    None,
-                );
-                sql_constructor =
-                    sql_constructor.with_organization_id(auth_data.organization_id.clone());
-                if let Ok(query) = sql_constructor.construct() {
-                    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
-                    let mut conn = db::get_async_connection().await;
-                    match diesel::dsl::sql_query(&final_query)
-                        .load::<DynamicResult>(&mut conn)
-                        .await
-                    {
-                        Ok(results) => {
-                            if let Some(first) =
-                                results.into_iter().filter_map(|r| r.row_to_json).next()
-                            {
-                                if let Some(obj) = first.as_object() {
-                                    if let Some(dp) =
-                                        obj.get("download_path").and_then(|v| v.as_str())
-                                    {
-                                        found_key = Some(dp.to_string());
-                                    }
+            let db_pluck = vec![
+                "download_path".to_string(),
+                "mimetype".to_string(),
+                "id".to_string(),
+            ];
+            let parameters = GetByFilter {
+                pluck: db_pluck.clone(),
+                pluck_object: Default::default(),
+                pluck_group_object: Default::default(),
+                advance_filters: vec![
+                    FilterCriteria::Criteria {
+                        field: "etag".to_string(),
+                        entity: None,
+                        operator: FilterOperator::Equal,
+                        values: vec![serde_json::Value::String(target_etag.clone())],
+                        case_sensitive: Some(false),
+                        parse_as: "text".to_string(),
+                        match_pattern: None,
+                        is_search: None,
+                        has_group_count: None,
+                    },
+                    FilterCriteria::LogicalOperator {
+                        operator: LogicalOperator::And,
+                    },
+                    FilterCriteria::Criteria {
+                        field: "organization_id".to_string(),
+                        entity: None,
+                        operator: FilterOperator::Equal,
+                        values: vec![serde_json::Value::String(auth_data.organization_id.clone())],
+                        case_sensitive: Some(false),
+                        parse_as: "text".to_string(),
+                        match_pattern: None,
+                        is_search: None,
+                        has_group_count: None,
+                    },
+                ],
+                group_advance_filters: vec![],
+                joins: vec![],
+                group_by: None,
+                concatenate_fields: vec![],
+                multiple_sort: vec![],
+                date_format: "YYYY-mm-dd".to_string(),
+                order_by: "id".to_string(),
+                order_direction: "ASC".to_string(),
+                is_case_sensitive_sorting: None,
+                offset: 0,
+                limit: 1,
+                distinct_by: None,
+                timezone: None,
+                time_format: "HH24:MI".to_string(),
+                materialized_view: None,
+            };
+            let mut sql_constructor = SQLConstructor::new(
+                parameters.clone(),
+                "files".to_string(),
+                is_root_controller,
+                None,
+            )
+            .with_organization_id(auth_data.organization_id.clone());
+            if let Ok(query) = sql_constructor.construct() {
+                let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+                let mut conn = db::get_async_connection().await;
+                if let Ok(results) = diesel::dsl::sql_query(&final_query)
+                    .load::<DynamicResult>(&mut conn)
+                    .await
+                {
+                    if let Some(first) = results.into_iter().filter_map(|r| r.row_to_json).next() {
+                        if let Some(obj) = first.as_object() {
+                            if let Some(dp) = obj.get("download_path").and_then(|v| v.as_str()) {
+                                found_key = Some(dp.to_string());
+                            }
+                            if mimetype == "application/octet-stream" {
+                                if let Some(mt) = obj.get("mimetype").and_then(|v| v.as_str()) {
+                                    mimetype = mt.to_string();
                                 }
                             }
-                        }
-                        Err(err) => {
-                            log::error!(
-                                "DB fallback query by ETag failed for file {}: {:?}",
-                                file_id,
-                                err
-                            );
                         }
                     }
                 }
             }
-
-            if !target_etag.is_empty() {
+            if found_key.is_none() {
                 let org_name = std::env::var("DEFAULT_ORGANIZATION_NAME")
                     .unwrap_or_else(|_| "default".to_string());
                 let valid_prefix =
                     get_valid_bucket_name(&org_name, Some(auth_data.organization_id.as_str()));
-                let prefix = Some(valid_prefix.as_str());
                 let mut continuation: Option<String> = None;
                 loop {
-                    let mut req = s3_client.list_objects_v2().bucket(&bucket_name);
-                    if let Some(p) = prefix {
-                        req = req.prefix(p);
-                    }
+                    let mut req = s3_client
+                        .list_objects_v2()
+                        .bucket(&bucket_name)
+                        .prefix(&valid_prefix);
                     if let Some(token) = continuation.as_deref() {
                         req = req.continuation_token(token);
                     }
@@ -2166,7 +2670,6 @@ pub async fn download_file_by_id(
                         }
                     }
                 }
-
                 if found_key.is_none() {
                     let mut continuation_all: Option<String> = None;
                     loop {
@@ -2217,35 +2720,45 @@ pub async fn download_file_by_id(
                     .await
                 {
                     Ok(output) => {
-                        // Persist the key we found so future requests skip the expensive search
                         let update_body =
                             serde_json::json!({"id": file_id, "download_path": &fallback_key});
-                        if let Err(e) = process_and_update_record(
+                        let _ = process_and_update_record(
                             "files",
                             update_body,
                             file_id.as_str(),
-                            None,     // pluck_fields
-                            "update", // operation
+                            None,
+                            "update",
                             &auth_data,
-                            false, // is_root_account
+                            false,
                         )
-                        .await
-                        {
-                            log::warn!(
-                                "Failed to update download_path for file {}: {:?}",
-                                file_id,
-                                e
-                            );
-                        }
-
+                        .await;
                         let actual_content_type = mimetype.to_string();
                         let content_length = output.content_length().unwrap_or(0);
                         match output.body.collect().await {
                             Ok(data) => {
                                 let bytes = data.into_bytes();
                                 use futures_util::stream;
-                                let byte_stream =
-                                    stream::once(async move { Ok::<_, std::io::Error>(bytes) });
+                                let bytes_for_stream = bytes.clone();
+                                let byte_stream = stream::once(async move {
+                                    Ok::<_, std::io::Error>(bytes_for_stream)
+                                });
+                                let cache_dir_clone = cache_dir.clone();
+                                let cache_file_path_clone = cache_file_path.clone();
+                                let to_write_vec = bytes.to_vec();
+                                let ttl_for_task = temp_file_ttl_secs;
+                                tokio::spawn(async move {
+                                    let _ = tokio::fs::create_dir_all(&cache_dir_clone).await;
+                                    let _ = tokio::fs::write(&cache_file_path_clone, &to_write_vec)
+                                        .await;
+                                    tokio::spawn(async move {
+                                        tokio::time::sleep(std::time::Duration::from_secs(
+                                            ttl_for_task,
+                                        ))
+                                        .await;
+                                        let _ =
+                                            tokio::fs::remove_file(&cache_file_path_clone).await;
+                                    });
+                                });
                                 let is_image = actual_content_type.starts_with("image/");
                                 let filename = fallback_key.split('/').last().unwrap_or("file");
                                 let content_disposition = if is_image {
@@ -2253,26 +2766,26 @@ pub async fn download_file_by_id(
                                 } else {
                                     format!("attachment; filename=\"{}\"", filename)
                                 };
-                                HttpResponse::Ok()
+                                return HttpResponse::Ok()
                                     .content_type(actual_content_type)
                                     .insert_header(("Content-Length", content_length.to_string()))
                                     .insert_header(("Cache-Control", "public, max-age=3600"))
                                     .insert_header(("Accept-Ranges", "bytes"))
                                     .insert_header(("Content-Disposition", content_disposition))
-                                    .streaming(byte_stream)
+                                    .streaming(byte_stream);
                             }
-                            Err(e) => {
+                            Err(err) => {
                                 log::error!(
                                     "Error reading S3 object body (fallback by ETag) for file {}: {:?}",
                                     file_id,
-                                    e
+                                    err
                                 );
-                                HttpResponse::InternalServerError().json(ApiResponse {
+                                return HttpResponse::InternalServerError().json(ApiResponse {
                                     success: false,
                                     message: "Failed to read file content".to_string(),
                                     count: 0,
                                     data: vec![],
-                                })
+                                });
                             }
                         }
                     }
@@ -2310,48 +2823,11 @@ pub async fn upload_file(
     // Check if storage is disabled
     if is_storage_disabled() {
         log::info!("Storage is disabled (DISABLE_STORAGE=true), returning mock upload response");
-
-        // Generate mock file metadata for disabled storage
-        let mock_id = Ulid::new().to_string();
-        let organization_name =
-            std::env::var("DEFAULT_ORGANIZATION_NAME").unwrap_or_else(|_| "default".to_string());
-        let mock_metadata = serde_json::json!({
-            "id": mock_id,
-            "status": "mock_uploaded",
-            "previous_status": "",
-            "created_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
-            "created_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
-            "updated_date": chrono::Utc::now().format("%Y-%m-%d").to_string(),
-            "updated_time": chrono::Utc::now().format("%H:%M:%S").to_string(),
-            "organization_id": "",
-            "created_by": "",
-            "updated_by": "",
-            "deleted_by": "",
-            "requested_by": "",
-            "tags": [],
-            "image_url": format!("mock-bucket/{}/{}.png", organization_name, mock_id),
-            "fieldname": "files",
-            "originalname": "mock-file.png",
-            "encoding": "7bit",
-            "mimetype": "image/png",
-            "destination": "mock-bucket",
-            "filename": format!("{}.png", mock_id),
-            "path": format!("mock-bucket/{}/{}.png", organization_name, mock_id),
-            "size": 1024,
-            "uploaded_by": "",
-            "downloaded_by": "",
-            "etag": "mock-etag",
-            "version_id": "",
-            "download_path": format!("{}.png", mock_id),
-            "presigned_url": "",
-            "presigned_url_expire": 0
-        });
-
         return HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: "Mock upload successful (storage disabled)".to_string(),
-            count: 1,
-            data: vec![mock_metadata],
+            success: false,
+            message: "Upload failed (storage disabled)".to_string(),
+            count: 0,
+            data: vec![],
         });
     }
 
@@ -2532,7 +3008,19 @@ pub async fn upload_file(
                 Ok(get_output) => {
                     // File already exists in MinIO, use the extracted ID from filename
                     let actual_id = final_id.clone();
-                    let actual_filename = final_filename.clone();
+                    let mut actual_filename = final_filename.clone();
+                    let normalized_filename =
+                        format!("{}/{}.{}", valid_bucket_name, actual_id, extension);
+                    if actual_filename != normalized_filename {
+                        let _ = client
+                            .copy_object()
+                            .bucket(&bucket_name)
+                            .key(&normalized_filename)
+                            .copy_source(format!("{}/{}", bucket_name, actual_filename))
+                            .send()
+                            .await;
+                        actual_filename = normalized_filename;
+                    }
 
                     dbg!(format!(
                         "Found existing file with ID '{}' and filename '{}'",
@@ -2569,8 +3057,8 @@ pub async fn upload_file(
                             })
                             .unwrap_or_else(|| "Unknown".to_string()),
                         "organization_id": auth_data.organization_id.clone(),
-                        "created_by": auth_data.account_organization_id.clone(),
-                        "updated_by": auth_data.responsible_account.clone(),
+                        // "created_by": auth_data.account_organization_id.clone(),
+                        // "updated_by": auth_data.responsible_account.clone(),
                         "deleted_by": "",
                         "requested_by": auth_data.responsible_account.clone(),
                         // "timestamp": chrono::Utc::now().timestamp(),
@@ -3292,12 +3780,142 @@ pub async fn create_materialized_view(
     );
     let mut conn = db::get_async_connection().await;
     match sql_query(&sql).execute(&mut conn).await {
-        Ok(_) => HttpResponse::Ok().json(ApiResponse {
-            success: true,
-            message: "Materialized view created".to_string(),
-            count: 0,
-            data: vec![],
-        }),
+        Ok(_) => {
+            if let Some(idx_val) = request_body
+                .get("index_column_name")
+                .and_then(|v| v.as_str())
+                .or_else(|| {
+                    request_body
+                        .get("materialized_view")
+                        .and_then(|v| v.get("index_column_name"))
+                        .and_then(|v| v.as_str())
+                })
+            {
+                let s = idx_val.trim();
+                if let Some(paren_start) = s.find('(') {
+                    if let Some(paren_end) = s.rfind(')') {
+                        let name_part = s[..paren_start].trim();
+                        let cols_part = &s[paren_start..=paren_end];
+                        if validate_identifier(name_part, false)
+                            && cols_part.chars().all(|c| {
+                                c.is_ascii_alphanumeric()
+                                    || c == '_'
+                                    || c == '"'
+                                    || c == ' '
+                                    || c == ','
+                                    || c == '('
+                                    || c == ')'
+                                    || c == '.'
+                            })
+                        {
+                            let idx_sql = format!(
+                                "CREATE UNIQUE INDEX IF NOT EXISTS {} ON {} {}",
+                                name_part, table_name, cols_part
+                            );
+                            let _ = sql_query(&idx_sql).execute(&mut conn).await;
+                        }
+                    }
+                }
+            }
+            if let Some(strategy_val) = request_body.get("refresh_strategy") {
+                if let Some(obj) = strategy_val.as_object() {
+                    let ty = obj
+                        .get("type")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string();
+                    if ty == "scheduled" {
+                        if let Some(cron) = obj.get("cron").and_then(|v| v.as_str()) {
+                            let _ = sql_query("CREATE EXTENSION IF NOT EXISTS pg_cron;")
+                                .execute(&mut conn)
+                                .await;
+                            let proc_name = if let Some((schema, rel)) = table_name.split_once('.') {
+                                format!("{}.udp_refresh_{}", schema, rel)
+                            } else {
+                                format!("udp_refresh_{}", table_name)
+                            };
+                            if validate_identifier(&proc_name, true) {
+                                let proc_sql = format!(
+                                    "CREATE OR REPLACE PROCEDURE {}() LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; END; $$;",
+                                    proc_name, table_name
+                                );
+                                let _ = sql_query(&proc_sql).execute(&mut conn).await;
+                                let job_name =
+                                    format!("refresh_{}", table_name.replace('.', "_"));
+                                let schedule_sql = format!(
+                                    "SELECT cron.schedule('{}', '{}', $$ CALL {}(); $$);",
+                                    job_name, cron, proc_name
+                                );
+                                let _ = sql_query(&schedule_sql).execute(&mut conn).await;
+                            }
+                        }
+                    } else if ty == "trigger" || ty == "incremental" {
+                        let base_fn = format!("fn_trg_refresh_{}", Ulid::new());
+                        let fn_name = if let Some((schema, _)) = table_name.split_once('.') {
+                            format!("{}.{}", schema, base_fn)
+                        } else {
+                            base_fn.clone()
+                        };
+                        if validate_identifier(&fn_name, true) {
+                            let fn_sql = format!(
+                                "CREATE OR REPLACE FUNCTION {}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; RETURN NULL; END; $$;",
+                                fn_name, table_name
+                            );
+                            let _ = sql_query(&fn_sql).execute(&mut conn).await;
+                        }
+                        if let Some(trig_val) = obj.get("trigger").and_then(|v| v.as_object()) {
+                            let timing = trig_val
+                                .get("timing")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("AFTER")
+                                .to_string();
+                            let level = trig_val
+                                .get("level")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("STATEMENT")
+                                .to_string();
+                            let events_vec: Vec<String> = if let Some(arr) =
+                                trig_val.get("events").and_then(|v| v.as_array())
+                            {
+                                arr.iter()
+                                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                                    .collect()
+                            } else {
+                                vec!["INSERT".to_string(), "UPDATE".to_string(), "DELETE".to_string()]
+                            };
+                            let events = if events_vec.is_empty() {
+                                "INSERT OR UPDATE OR DELETE".to_string()
+                            } else {
+                                events_vec.join(" OR ")
+                            };
+                            let trig_name = trig_val
+                                .get("name")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string())
+                                .unwrap_or_else(|| format!("trg_refresh_{}", Ulid::new()));
+                            let target_table = trig_val
+                                .get("table")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            if validate_identifier(&trig_name, false) && validate_identifier(&target_table, true) {
+                                let trig_sql = format!(
+                                    "CREATE OR REPLACE TRIGGER {} {} {} ON {} FOR EACH {} EXECUTE FUNCTION {}();",
+                                    trig_name, timing, events, target_table, level, fn_name
+                                );
+                                let _ = sql_query(&trig_sql).execute(&mut conn).await;
+                            }
+                        }
+                    }
+                }
+            }
+            HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: "Materialized view created".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
         Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
             success: false,
             message: format!(

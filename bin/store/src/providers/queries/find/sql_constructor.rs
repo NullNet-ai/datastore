@@ -74,10 +74,6 @@ pub trait QueryFilter {
     fn get_timezone(&self) -> Option<&str> {
         Some("Asia/Manila")
     }
-
-    fn get_is_partitioned_table(&self) -> bool {
-        false
-    }
 }
 
 // Implement QueryFilter for GetByFilter
@@ -199,10 +195,6 @@ impl QueryFilter for GetByFilter {
 
     fn get_time_format(&self) -> &str {
         &self.time_format
-    }
-
-    fn get_is_partitioned_table(&self) -> bool {
-        self.is_partitioned_table.unwrap_or(false)
     }
 }
 
@@ -339,7 +331,6 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             self.request_body.get_pluck_group_object(),
             self.request_body.get_concatenate_fields(),
             self.request_body.get_joins(),
-            self.request_body.get_is_partitioned_table(),
         ));
 
         let order_by_constructor = OrderByConstructor::new(
@@ -899,22 +890,13 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         )
     }
 
-    /// Builds an infix expression with proper order of operations using infix notation
-    ///
-    /// Order of precedence (highest to lowest):
-    /// 1. Parentheses (for grouping OR expressions)
-    /// 2. AND operators (higher precedence)
-    /// 3. OR operators (lower precedence)
+    /// Builds an infix expression by grouping left-to-right.
     ///
     /// Examples:
-    /// - `A AND B OR C AND D` becomes `(A AND B) OR (C AND D)`
-    /// - `A OR B AND C` becomes `A OR (B AND C)`
-    /// - Single conditions and pure AND chains remain unchanged
+    /// - `A OR B AND C` becomes `((A OR B) AND C)`
+    /// - `A AND B OR C` becomes `((A AND B) OR C)`
     ///
-    /// The implementation ensures that:
-    /// - Filter arrays follow the pattern: [criteria, operator, criteria, operator, ...]
-    /// - AND operations are grouped together naturally
-    /// - OR operations split the expression into separate groups with parentheses when needed
+    /// Filters follow the pattern: [criteria, operator, criteria, operator, ...]
     pub fn build_infix_expression(&self, filters: &[FilterCriteria]) -> Result<String, String> {
         if filters.is_empty() {
             return Ok(String::new());
@@ -974,7 +956,7 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
             return Err("Failed to parse filter tokens: invalid filter sequence".to_string());
         }
 
-        // Build expression with proper precedence (AND > OR)
+        // Build expression with proper precedenceby grouping left-to-right
         Ok(self.build_expression_with_precedence(&tokens))
     }
     fn parse_filter_tokens(&self, filters: &[FilterCriteria]) -> Result<Vec<Token>, String> {
@@ -1058,75 +1040,44 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
         tokens.len() % 2 == 1
     }
     fn build_expression_with_precedence(&self, tokens: &[Token]) -> String {
+        self.build_expression_with_grouping_left_to_right(tokens)
+    }
+
+    fn build_expression_with_grouping_left_to_right(&self, tokens: &[Token]) -> String {
         if tokens.is_empty() {
             return String::new();
         }
 
-        if tokens.len() == 1 {
-            if let Token::Condition(condition) = &tokens[0] {
-                return condition.clone();
-            }
+        let Token::Condition(first_condition) = &tokens[0] else {
             return String::new();
-        }
+        };
 
-        // Split by OR operators (lowest precedence)
-        let or_groups = self.split_by_or(tokens);
+        let mut current_expression = first_condition.clone();
+        let mut i = 1;
 
-        if or_groups.len() == 1 {
-            // No OR operators, just handle AND operations
-            self.build_and_expression(&or_groups[0])
-        } else {
-            // Multiple OR groups, join them with OR and wrap in parentheses if needed
-            let or_expressions: Vec<String> = or_groups
-                .iter()
-                .map(|group| {
-                    let expr = self.build_and_expression(group);
-                    if group.len() > 1 {
-                        format!("({})", expr)
-                    } else {
-                        expr
-                    }
-                })
-                .collect();
-
-            or_expressions.join(" OR ")
-        }
-    }
-    fn split_by_or(&self, tokens: &[Token]) -> Vec<Vec<Token>> {
-        let mut groups = Vec::new();
-        let mut current_group = Vec::new();
-
-        for token in tokens {
-            match token {
-                Token::Or => {
-                    if !current_group.is_empty() {
-                        groups.push(current_group);
-                        current_group = Vec::new();
-                    }
+        while i + 1 < tokens.len() {
+            let operator = match tokens[i] {
+                Token::And => "AND",
+                Token::Or => "OR",
+                Token::Condition(_) => {
+                    i += 1;
+                    continue;
                 }
-                _ => current_group.push(token.clone()),
-            }
-        }
+            };
 
-        if !current_group.is_empty() {
-            groups.push(current_group);
-        }
-
-        groups
-    }
-    fn build_and_expression(&self, tokens: &[Token]) -> String {
-        let conditions: Vec<String> = tokens
-            .iter()
-            .filter_map(|token| {
-                if let Token::Condition(condition) = token {
-                    Some(condition.clone())
-                } else {
-                    None
+            let rhs = match &tokens[i + 1] {
+                Token::Condition(condition) => condition,
+                _ => {
+                    i += 1;
+                    continue;
                 }
-            })
-            .collect();
+            };
 
-        conditions.join(" AND ")
+            current_expression = format!("({} {} {})", current_expression, operator, rhs);
+            i += 2;
+        }
+
+        current_expression
     }
 
     fn format_condition_with_case_sensitivity_and_pattern(

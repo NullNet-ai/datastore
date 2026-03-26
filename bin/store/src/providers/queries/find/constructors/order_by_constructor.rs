@@ -75,10 +75,17 @@ where
                         self.get_field_expression_for_sort(&table_alias, &field_name);
 
                     // Handle case sensitivity
-                    let final_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
+                    let temp_field = if sort_option.is_case_sensitive_sorting.unwrap_or(false) {
                         field_expression
                     } else {
                         format!("LOWER({})", field_expression)
+                    };
+
+                    // Handle casting of date fields so it would not alphabetically/lexicographically sort
+                    let final_field = if field_name.ends_with("_date") {
+                        format!("{}::DATE", temp_field)
+                    } else {
+                        temp_field
                     };
 
                     // When GROUP BY is present, ORDER BY must be in GROUP BY or wrapped in an aggregate
@@ -180,7 +187,7 @@ where
             let field_expression = self.get_field_expression_for_sort(&table_alias, &field_name);
 
             // Handle case sensitivity
-            let final_field = if self
+            let temp_field = if self
                 .request_body
                 .get_is_case_sensitive_sorting()
                 .unwrap_or(false)
@@ -188,6 +195,13 @@ where
                 field_expression
             } else {
                 format!("LOWER({})", field_expression)
+            };
+
+            // Handle casting of date fields so it would not alphabetically/lexicographically sort
+            let final_field = if field_name.ends_with("_date") {
+                format!("{}::DATE", temp_field)
+            } else {
+                temp_field
             };
 
             // When GROUP BY is present, ORDER BY columns must be in GROUP BY or wrapped in an aggregate
