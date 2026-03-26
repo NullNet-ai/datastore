@@ -5,11 +5,11 @@ use crate::{
     utils::helpers::parse_command_args,
 };
 use log::{debug, error, info, warn};
+use metrics_exporter_prometheus::PrometheusBuilder;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
-use metrics_exporter_prometheus::PrometheusBuilder;
 // tokio_metrics integration via metrics-rs is optional; we will sample runtime metrics manually
 
 /// Runtime health status

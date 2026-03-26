@@ -1,6 +1,6 @@
-use actix_web::{HttpMessage, HttpRequest, Responder, HttpResponse};
-use reqwest;
 use crate::config::core::EnvConfig;
+use actix_web::{HttpMessage, HttpRequest, HttpResponse, Responder};
+use reqwest;
 use serde_json::Value;
 
 fn extract_and_store_type(req: HttpRequest) -> HttpRequest {
@@ -263,7 +263,12 @@ pub async fn root_prometheus_queries() -> impl Responder {
 async fn query_prometheus_sum(base_url: &str, query: &str) -> Option<f64> {
     let url = format!("{}/api/v1/query", base_url);
     let client = reqwest::Client::new();
-    let resp = client.get(url).query(&[("query", query)]).send().await.ok()?;
+    let resp = client
+        .get(url)
+        .query(&[("query", query)])
+        .send()
+        .await
+        .ok()?;
     let json: serde_json::Value = resp.json().await.ok()?;
     let result = json.get("data")?.get("result")?;
     let mut sum = 0.0;
@@ -295,7 +300,11 @@ async fn query_prometheus_group_sum(
     let mut map = std::collections::BTreeMap::new();
     if let Ok(resp) = client.get(url).query(&[("query", query)]).send().await {
         if let Ok(json) = resp.json::<serde_json::Value>().await {
-            if let Some(arr) = json.get("data").and_then(|d| d.get("result")).and_then(|r| r.as_array()) {
+            if let Some(arr) = json
+                .get("data")
+                .and_then(|d| d.get("result"))
+                .and_then(|r| r.as_array())
+            {
                 for item in arr {
                     let key = item
                         .get("metric")

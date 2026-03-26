@@ -19,6 +19,7 @@ use crate::structs::core::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
     QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
+use crate::structs::core::{FilterCriteria, FilterOperator, LogicalOperator};
 use crate::utils::helpers::{
     ensure_root_access, format_diesel_error, normalize_date_format, require_unsafe_query_raw,
     table_exists, validate_identifier,
@@ -28,7 +29,6 @@ use crate::utils::sql_sanitizer::{
     strip_strings_and_comments, validate_execute_payloads, validate_query_safety,
     validate_select_limits, validate_update_has_where,
 };
-use crate::structs::core::{FilterCriteria, FilterOperator, LogicalOperator};
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
@@ -44,9 +44,9 @@ use ulid::Ulid;
 // use std::collections::HashMap;
 // use diesel::prelude::*;
 use chrono::Local;
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fmt;
-use sha2::{Digest, Sha256};
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
 // use diesel::sql_types::*;
@@ -1267,8 +1267,10 @@ pub async fn get_by_filter(
                     Err(_) => false,
                 };
                 if mv_exists {
-                    let final_query =
-                        format!("SELECT row_to_json(t) FROM (SELECT * FROM {}) t", candidate_name);
+                    let final_query = format!(
+                        "SELECT row_to_json(t) FROM (SELECT * FROM {}) t",
+                        candidate_name
+                    );
                     let mut conn = db::get_async_connection().await;
                     let results = match diesel::dsl::sql_query(&final_query)
                         .load::<DynamicResult>(&mut conn)
@@ -1347,10 +1349,7 @@ pub async fn get_by_filter(
     let mut mv_name = String::new();
     if let Some(mv) = parameters_for_debug.materialized_view.clone() {
         let candidate_name = precomputed_mv_name.clone().unwrap_or_else(|| {
-            let base_name = mv
-                .name
-                .clone()
-                .unwrap_or_else(|| format!("mv_{}", table));
+            let base_name = mv.name.clone().unwrap_or_else(|| format!("mv_{}", table));
             let mut hash_src = parameters_for_debug.clone();
             hash_src.materialized_view = None;
             let input = serde_json::to_string(&hash_src).unwrap_or_default();
@@ -1396,13 +1395,12 @@ pub async fn get_by_filter(
                                 let _ = sql_query("CREATE EXTENSION IF NOT EXISTS pg_cron;")
                                     .execute(&mut conn_for_ops)
                                     .await;
-                                let proc_name = if let Some((schema, rel)) =
-                                    candidate_name.split_once('.')
-                                {
-                                    format!("{}.udp_refresh_{}", schema, rel)
-                                } else {
-                                    format!("udp_refresh_{}", candidate_name)
-                                };
+                                let proc_name =
+                                    if let Some((schema, rel)) = candidate_name.split_once('.') {
+                                        format!("{}.udp_refresh_{}", schema, rel)
+                                    } else {
+                                        format!("udp_refresh_{}", candidate_name)
+                                    };
                                 if validate_identifier(&proc_name, true) {
                                     let proc_sql = format!(
                                         "CREATE OR REPLACE PROCEDURE {}() LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; END; $$;",
@@ -1422,7 +1420,8 @@ pub async fn get_by_filter(
                         }
                         "trigger" | "incremental" => {
                             let base_fn = format!("fn_trg_refresh_{}", Ulid::new());
-                            let fn_name = if let Some((schema, _)) = candidate_name.split_once('.') {
+                            let fn_name = if let Some((schema, _)) = candidate_name.split_once('.')
+                            {
                                 format!("{}.{}", schema, base_fn)
                             } else {
                                 base_fn.clone()
@@ -1439,12 +1438,20 @@ pub async fn get_by_filter(
                                 let level = trig.level.unwrap_or_else(|| "STATEMENT".to_string());
                                 let events = trig
                                     .events
-                                    .unwrap_or_else(|| vec!["INSERT".to_string(), "UPDATE".to_string(), "DELETE".to_string()])
+                                    .unwrap_or_else(|| {
+                                        vec![
+                                            "INSERT".to_string(),
+                                            "UPDATE".to_string(),
+                                            "DELETE".to_string(),
+                                        ]
+                                    })
                                     .join(" OR ");
                                 let trig_name = trig
                                     .name
                                     .unwrap_or_else(|| format!("trg_refresh_{}", Ulid::new()));
-                                if validate_identifier(&trig_name, false) && validate_identifier(&trig.table, true) {
+                                if validate_identifier(&trig_name, false)
+                                    && validate_identifier(&trig.table, true)
+                                {
                                     let trig_sql = format!(
                                         "CREATE OR REPLACE TRIGGER {} {} {} ON {} FOR EACH {} EXECUTE FUNCTION {}();",
                                         trig_name, timing, events, trig.table, level, fn_name
@@ -1463,9 +1470,16 @@ pub async fn get_by_filter(
                             let name_part = s[..paren_start].trim();
                             let cols_part = &s[paren_start..=paren_end];
                             if validate_identifier(name_part, false)
-                                && cols_part
-                                    .chars()
-                                    .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '"' || c == ' ' || c == ',' || c == '(' || c == ')' || c == '.')
+                                && cols_part.chars().all(|c| {
+                                    c.is_ascii_alphanumeric()
+                                        || c == '_'
+                                        || c == '"'
+                                        || c == ' '
+                                        || c == ','
+                                        || c == '('
+                                        || c == ')'
+                                        || c == '.'
+                                })
                             {
                                 let idx_sql = format!(
                                     "CREATE UNIQUE INDEX IF NOT EXISTS {} ON {} {}",
@@ -3829,7 +3843,8 @@ pub async fn create_materialized_view(
                             let _ = sql_query("CREATE EXTENSION IF NOT EXISTS pg_cron;")
                                 .execute(&mut conn)
                                 .await;
-                            let proc_name = if let Some((schema, rel)) = table_name.split_once('.') {
+                            let proc_name = if let Some((schema, rel)) = table_name.split_once('.')
+                            {
                                 format!("{}.udp_refresh_{}", schema, rel)
                             } else {
                                 format!("udp_refresh_{}", table_name)
@@ -3840,8 +3855,7 @@ pub async fn create_materialized_view(
                                     proc_name, table_name
                                 );
                                 let _ = sql_query(&proc_sql).execute(&mut conn).await;
-                                let job_name =
-                                    format!("refresh_{}", table_name.replace('.', "_"));
+                                let job_name = format!("refresh_{}", table_name.replace('.', "_"));
                                 let schedule_sql = format!(
                                     "SELECT cron.schedule('{}', '{}', $$ CALL {}(); $$);",
                                     job_name, cron, proc_name
@@ -3881,7 +3895,11 @@ pub async fn create_materialized_view(
                                     .filter_map(|v| v.as_str().map(|s| s.to_string()))
                                     .collect()
                             } else {
-                                vec!["INSERT".to_string(), "UPDATE".to_string(), "DELETE".to_string()]
+                                vec![
+                                    "INSERT".to_string(),
+                                    "UPDATE".to_string(),
+                                    "DELETE".to_string(),
+                                ]
                             };
                             let events = if events_vec.is_empty() {
                                 "INSERT OR UPDATE OR DELETE".to_string()
@@ -3898,7 +3916,9 @@ pub async fn create_materialized_view(
                                 .and_then(|v| v.as_str())
                                 .unwrap_or("")
                                 .to_string();
-                            if validate_identifier(&trig_name, false) && validate_identifier(&target_table, true) {
+                            if validate_identifier(&trig_name, false)
+                                && validate_identifier(&target_table, true)
+                            {
                                 let trig_sql = format!(
                                     "CREATE OR REPLACE TRIGGER {} {} {} ON {} FOR EACH {} EXECUTE FUNCTION {}();",
                                     trig_name, timing, events, target_table, level, fn_name

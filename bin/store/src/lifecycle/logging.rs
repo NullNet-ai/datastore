@@ -1,4 +1,5 @@
 use log::{debug, error, info, warn, LevelFilter};
+use metrics;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::env;
@@ -7,7 +8,6 @@ use std::time::SystemTime;
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
 use tokio::sync::RwLock;
-use metrics;
 
 /// Log levels for lifecycle events
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -313,26 +313,74 @@ impl LifecycleLogger {
                             c.increment(1);
                         } else {
                             match entry.level {
-                                LogLevel::Trace => metrics::counter!("logs_written_total_trace").increment(1),
-                                LogLevel::Debug => metrics::counter!("logs_written_total_debug").increment(1),
-                                LogLevel::Info => metrics::counter!("logs_written_total_info").increment(1),
-                                LogLevel::Warn => metrics::counter!("logs_written_total_warn").increment(1),
-                                LogLevel::Error => metrics::counter!("logs_written_total_error").increment(1),
-                                LogLevel::Critical => metrics::counter!("logs_written_total_critical").increment(1),
+                                LogLevel::Trace => {
+                                    metrics::counter!("logs_written_total_trace").increment(1)
+                                }
+                                LogLevel::Debug => {
+                                    metrics::counter!("logs_written_total_debug").increment(1)
+                                }
+                                LogLevel::Info => {
+                                    metrics::counter!("logs_written_total_info").increment(1)
+                                }
+                                LogLevel::Warn => {
+                                    metrics::counter!("logs_written_total_warn").increment(1)
+                                }
+                                LogLevel::Error => {
+                                    metrics::counter!("logs_written_total_error").increment(1)
+                                }
+                                LogLevel::Critical => {
+                                    metrics::counter!("logs_written_total_critical").increment(1)
+                                }
                             }
                             match &entry.category {
-                                LogCategory::Lifecycle => metrics::counter!("logs_written_total_category_lifecycle").increment(1),
-                                LogCategory::Startup => metrics::counter!("logs_written_total_category_startup").increment(1),
-                                LogCategory::Runtime => metrics::counter!("logs_written_total_category_runtime").increment(1),
-                                LogCategory::Shutdown => metrics::counter!("logs_written_total_category_shutdown").increment(1),
-                                LogCategory::Health => metrics::counter!("logs_written_total_category_health").increment(1),
-                                LogCategory::Monitoring => metrics::counter!("logs_written_total_category_monitoring").increment(1),
-                                LogCategory::State => metrics::counter!("logs_written_total_category_state").increment(1),
-                                LogCategory::Database => metrics::counter!("logs_written_total_category_database").increment(1),
-                                LogCategory::Network => metrics::counter!("logs_written_total_category_network").increment(1),
-                                LogCategory::Security => metrics::counter!("logs_written_total_category_security").increment(1),
-                                LogCategory::Performance => metrics::counter!("logs_written_total_category_performance").increment(1),
-                                LogCategory::Custom(_) => metrics::counter!("logs_written_total_category_custom").increment(1),
+                                LogCategory::Lifecycle => {
+                                    metrics::counter!("logs_written_total_category_lifecycle")
+                                        .increment(1)
+                                }
+                                LogCategory::Startup => {
+                                    metrics::counter!("logs_written_total_category_startup")
+                                        .increment(1)
+                                }
+                                LogCategory::Runtime => {
+                                    metrics::counter!("logs_written_total_category_runtime")
+                                        .increment(1)
+                                }
+                                LogCategory::Shutdown => {
+                                    metrics::counter!("logs_written_total_category_shutdown")
+                                        .increment(1)
+                                }
+                                LogCategory::Health => {
+                                    metrics::counter!("logs_written_total_category_health")
+                                        .increment(1)
+                                }
+                                LogCategory::Monitoring => {
+                                    metrics::counter!("logs_written_total_category_monitoring")
+                                        .increment(1)
+                                }
+                                LogCategory::State => {
+                                    metrics::counter!("logs_written_total_category_state")
+                                        .increment(1)
+                                }
+                                LogCategory::Database => {
+                                    metrics::counter!("logs_written_total_category_database")
+                                        .increment(1)
+                                }
+                                LogCategory::Network => {
+                                    metrics::counter!("logs_written_total_category_network")
+                                        .increment(1)
+                                }
+                                LogCategory::Security => {
+                                    metrics::counter!("logs_written_total_category_security")
+                                        .increment(1)
+                                }
+                                LogCategory::Performance => {
+                                    metrics::counter!("logs_written_total_category_performance")
+                                        .increment(1)
+                                }
+                                LogCategory::Custom(_) => {
+                                    metrics::counter!("logs_written_total_category_custom")
+                                        .increment(1)
+                                }
                             }
                             if let Ok(metadata) = tokio::fs::metadata(&full_path).await {
                                 let size = metadata.len() as f64;

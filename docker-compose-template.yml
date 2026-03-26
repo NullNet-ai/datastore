@@ -7,16 +7,26 @@ networks:
 services:
   # TimescaleDB database
   timescaledb:
-    image: timescale/timescaledb:latest-pg15
+    build:
+      context: .
+      dockerfile: databases/timescaledb/Dockerfile
     container_name: timescaledb
     ports:
       - "0.0.0.0:5440:5432"
     networks:
       - internal
+    env_file:
+      - .env-store
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=timescaledb,pg_cron
+      - -c
+      - cron.database_name=${POSTGRES_DB}
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
     restart: always

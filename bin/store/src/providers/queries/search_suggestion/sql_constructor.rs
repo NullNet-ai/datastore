@@ -478,7 +478,13 @@ impl<T: QuerySearchSuggestion + QueryFilter + Clone> SQLConstructor<T> {
             return field_query;
         } else {
             // Construct group by
-            let group_by = self.construct_group_by(&entity, &field, entity_field, concatenated_expressions, Some(parse_as));
+            let group_by = self.construct_group_by(
+                &entity,
+                &field,
+                entity_field,
+                concatenated_expressions,
+                Some(parse_as),
+            );
             field_query.push_str(&group_by);
             // Construct offset
             let offset = self.sql_constructor.construct_offset();
