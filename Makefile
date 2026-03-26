@@ -13,7 +13,7 @@
         pm2-start pm2-stop pm2-restart pm2-status pm2-logs pm2-delete \
         docker-build-ubuntu docker-build-ubuntu-clean docker-build-ubuntu-fresh docker-build-centos docker-build-arch docker-build-all \
 docker-run-ubuntu docker-run-centos docker-run-arch docker-run-all docker-ubuntu-memory-optimized \
-        docker-compose-up docker-compose-down docker-compose-restart docker-compose-logs docker-compose-ps
+        docker-compose-up docker-compose-down docker-compose-restart docker-compose-logs docker-compose-ps docker-prune
 
 # Default target
 all: dev
@@ -88,6 +88,7 @@ help:
 	@echo "  counter-service-test-integration - Run counter-service integration tests (requires Redis)"
 	@echo "  counter-service-test-all - Flush Redis, run all counter-service tests (unit + integration)"
 	@echo "  remove-schema-table-macros - Remove table macros from schema.rs based on tables dir"
+	@echo "  docker-prune            - Prune Docker system data and builder caches"
 	@echo "  help                    - Show this help message"
 
 # =============================================================================
@@ -647,6 +648,12 @@ docker-diagnose:
 	@echo ""
 	@echo "🔧 Docker buildx instances:"
 	@docker buildx ls || true
+
+docker-prune:
+	@echo "🧹 Pruning Docker system and builder caches..."
+	@docker system prune -f || true
+	@docker builder prune -af || true
+	@echo "✅ Docker system and builder caches cleaned"
 
 # Clean builder caches and pull fresh base image to fix containerd/blob errors
 store-build-linux-clean:
