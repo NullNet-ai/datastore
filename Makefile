@@ -834,6 +834,11 @@ remove-schema-table-macros:
 	@echo "🗑️  Removing orphaned table macros from schema.rs based on migration files..."
 	@cd bin/store && mkdir -p target && rustc src/script/remove_orphaned_schema_macros.rs -o target/remove_orphaned_schema_macros && ./target/remove_orphaned_schema_macros
 
+# Run the store update_counters binary
+update-counters:
+	@echo "🔄  Updating counters..."
+	@cd bin/store && cargo run --bin update_counters -- $(ARGS)
+
 # =============================================================================
 # Database migration targets
 # =============================================================================
