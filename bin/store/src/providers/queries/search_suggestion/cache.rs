@@ -7,11 +7,13 @@ use crate::providers::queries::search_suggestion::structs::SearchSuggestionCache
 use crate::providers::storage::cache::cache;
 
 impl SearchSuggestionCache {
+    #[allow(dead_code)] // Not used as Search Suggestion will be using Materialized View instead of caching the query results
     pub fn get_cache_by_key(key: &str) -> Option<Value> {
         let cached_data = cache.get(&key);
         cached_data
     }
 
+    #[allow(dead_code)] // Not used as Search Suggestion will be using Materialized View instead of caching the query results
     pub fn set_cache(key: &str, value: Value) {
         let expiry_ms: u64 = env::var("SEARCH_SUGGESTION_CACHE_TTL_MS")
             .unwrap_or_else(|_| "30000".to_string()) // Default 30 seconds
