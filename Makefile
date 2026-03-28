@@ -1,7 +1,7 @@
 # Makefile for CRDT workspace
 
 # PHONY targets (targets that don't create files)
-.PHONY: all dev clean help install verify-install install-macos install-linux install-windows \
+.PHONY: all dev clean help install install-seeding verify-install install-macos install-linux install-windows \
         server store store-clean-setup store-watch store-build \
         store-prod store-build-linux store-build-linux-bx store-build-linux-clean store-build-linux-zig store-build-docker store-build-docker-legacy store-build-docker-nocache store-build-docker-memsafe store-build-docker-memsafe-legacy store-build-docker-auth docker-diagnose \
         store-build-debian-amd64 store-build-debian-arm64 \
@@ -22,6 +22,7 @@ all: dev
 help:
 	@echo "Available targets:"
 	@echo "  install                 - Install all dependencies and setup the project (auto-detects OS)"
+	@echo "  install-seeding         - Install all dependencies and finalize setup with seeding (auto-detects OS)"
 	@echo "  install-macos           - Install dependencies specifically for macOS"
 	@echo "  install-linux           - Install dependencies specifically for Linux"
 	@echo "  install-windows         - Install dependencies specifically for Windows"
@@ -197,6 +198,31 @@ finalize-setup:
 # One-command installer for seamless project setup
 install:
 	@echo "🚀 Setting up CRDT Workspace - One-command installer"
+	@make setup-env
+	@echo "📋 Detecting operating system..."
+	@if [ "$$(uname)" = "Darwin" ]; then \
+		echo "🍎 macOS detected"; \
+		make install-macos-deps; \
+	elif [ "$$(uname)" = "Linux" ]; then \
+		echo "🐧 Linux detected"; \
+		make install-linux-deps; \
+	elif [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
+		echo "🪟 Windows detected"; \
+		make install-windows-deps; \
+	else \
+		echo "❌ Unsupported operating system: $$(uname)"; \
+		echo "Please install dependencies manually:"; \
+		echo "  - Rust 1.91.1 (https://rustup.rs/)"; \
+		echo "  - PostgreSQL"; \
+		echo "  - Protocol Buffers (protoc)"; \
+		echo "  - cargo-make, cargo-watch, diesel_cli"; \
+		exit 1; \
+	fi
+	@make install-rust
+	@make install-rust-tools
+	
+install-seeding:
+	@echo "🚀 Setting up CRDT Workspace - One-command installer (with seeding)"
 	@make setup-env
 	@echo "📋 Detecting operating system..."
 	@if [ "$$(uname)" = "Darwin" ]; then \
@@ -807,6 +833,11 @@ store-generator-all:
 remove-schema-table-macros:
 	@echo "🗑️  Removing orphaned table macros from schema.rs based on migration files..."
 	@cd bin/store && mkdir -p target && rustc src/script/remove_orphaned_schema_macros.rs -o target/remove_orphaned_schema_macros && ./target/remove_orphaned_schema_macros
+
+# Run the store update_counters binary
+update-counters:
+	@echo "🔄  Updating counters..."
+	@cd bin/store && cargo run --bin update_counters -- $(ARGS)
 
 # =============================================================================
 # Database migration targets

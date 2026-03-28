@@ -5,6 +5,20 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.63
+
+### Author
+Jean
+
+### Added
+  - ***Redis counters maintenance script***:
+    - `src/script/update_counters.rs`
+      - Add a standalone store script that connects to Redis and increments all keys matching a pattern by a configurable amount.
+      - Redis URL resolution order: CLI argument `redis://...` (first arg) → `REDIS_CONNECTION_COUNTER` env → fallback `redis://127.0.0.1:6379/0`.
+      - Increment amount resolution order: CLI argument (third position) → `REDIS_COUNTER_INCREMENT` env → default `1000`.
+    - `Cargo.toml`
+      - Register the script as a binary target `update_counters` so it can be invoked via `cargo run --bin update_counters -- ...`.
+
 ## 0.2.62
 
 ### Author

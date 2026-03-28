@@ -1,8 +1,9 @@
 [package]
 name = "store"
-version = "0.2.62"
+version = "0.2.63"
 edition = "2021"
 rust-version = "1.91.1"
+default-run = "store"
 
 authors = [
     "Kashan Ali Khalid <kashankhalid@dnamicro.com>",
@@ -93,3 +94,7 @@ panic = "unwind"
 [profile.release]
 lto = false
 codegen-units = 16
+
+[[bin]]
+name = "update_counters"
+path = "src/script/update_counters.rs"
