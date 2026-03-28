@@ -5,6 +5,23 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.64
+
+### Author
+Jean
+
+### Changed
+  - ***Search suggestions — materialized view lookup by deterministic params hash***:
+    - `src/controllers/store_controller.rs`
+      - Compute a stable SHA1 over sorted JSON parameters and use it to derive a materialized view name (`mv_ss_{sha1}`).
+      - If the materialized view exists, select and return its `results.data` payload early.
+      - Create materialized views with unique indexes for concurrent refresh
+      - Schedule automatic refresh of materialized views in background tasks
+
+  - ***Search suggestions — caching***:
+    - `src/providers/queries/search_suggestion/cache.rs`
+      - Mark previous cache methods as deprecated with dead code annotations
+
 ## 0.2.63
 
 ### Author
