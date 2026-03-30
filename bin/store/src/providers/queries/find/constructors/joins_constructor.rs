@@ -311,6 +311,9 @@ impl JoinsConstructor {
         if !join.field_relation.to.filters.is_empty() {
             match build_infix_expression(&join.field_relation.to.filters) {
                 Ok(filter_expression) if !filter_expression.is_empty() => {
+                    let filter_expression = filter_expression
+                        .replace(&format!("\"{}\".", to_alias), &format!("\"{}\".", lateral_alias))
+                        .replace(&format!("{}.", to_alias), &format!("{}.", lateral_alias));
                     where_conditions.push(filter_expression);
                 }
                 Err(_) => {
