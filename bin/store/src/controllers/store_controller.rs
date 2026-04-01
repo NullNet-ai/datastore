@@ -2906,6 +2906,14 @@ pub async fn search_suggestions(
         timezone: body_timezone,
         ..
     } = &parameters;
+
+    // Prefer body timezone over header for consistency across find, count, aggregation, and search suggestion
+    let timezone = match (header_timezone.clone(), body_timezone) {
+        (_, Some(tz)) => Some(tz.to_string()),
+        (Some(tz), None) => Some(tz.to_string()),
+        (None, None) => None,
+    };
+
     // Convert parameters to stringified JSON object
     match serde_json::to_string_pretty(&parameters.clone()) {
         Ok(params_json) => {
@@ -2948,10 +2956,33 @@ pub async fn search_suggestions(
         }
     };
 
-    let query_sha = SearchSuggestionCache::hash_string(&json_params_string);
-    let matview_name_prefix = format!("mv_ss_");
-    let mv_name = format!("{}{}", matview_name_prefix, &query_sha);
-        
+    let mv_hash = SearchSuggestionCache::hash_string(&json_params_string);
+    let mv_name = format!("mv_ss_{}", &mv_hash);
+
+    if let Some(cached_value) = SearchSuggestionCache::get_mv_results(&mv_hash) {
+        let data: Vec<Value> = cached_value.as_array().cloned().unwrap_or_default();
+        if SearchSuggestionCache::set_mv_refresh_trigger_if_absent(&mv_hash) {
+            let mv_name = mv_name.clone();
+            tokio::spawn(async move {
+                if let Err(e) = refresh_materialized_view_once(mv_name).await {
+                    log::warn!("MV refresh failed: {}", e.message);
+                }
+            });
+        }
+
+        log::debug!(
+            "Search Suggestion: Redis cached data found from matview: {}",
+            mv_name
+        );
+
+        return HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: format!("Search suggestions operation completed for table: {}", &table),
+            count: data.len() as i32,
+            data,
+        });
+    }
+
     if let Ok(client) = create_connection().await {
         if let Ok(rows) = client
             .query(
@@ -2980,6 +3011,9 @@ pub async fn search_suggestions(
                         })
                         .filter(|item| !item.is_null())
                         .collect();
+
+                    SearchSuggestionCache::set_mv_results(&mv_hash, Value::Array(data.clone()));
+                    SearchSuggestionCache::set_mv_refresh_trigger_if_absent(&mv_hash);
 
                     log::debug!(
                         "Search Suggestion: Materialized View data found from matview: {}",
@@ -3087,12 +3121,6 @@ pub async fn search_suggestions(
         formatted_advance_filters = _formatted_advance_filters;
     }
 
-    // Prefer body timezone over header for consistency across find, count, aggregation, and search suggestion
-    let timezone = match (header_timezone.clone(), body_timezone) {
-        (_, Some(tz)) => Some(tz.to_string()), // Body takes precedence
-        (Some(tz), None) => Some(tz.to_string()), // Header fallback
-        (None, None) => None,
-    };
     // generate concatenated fields
     let concatenated_expressions = generate_concatenated_expressions(
         concatenate_fields.clone(),
@@ -3132,13 +3160,11 @@ pub async fn search_suggestions(
     }
 
     log::debug!("Search Suggestion Query: {}", query);
-    if let Err(e) =
-        ensure_materialized_view_and_schedule_refresh(mv_name.clone(), query.clone()).await
-    {
+    if let Err(e) = ensure_materialized_view(mv_name.clone(), query.clone()).await {
         log::warn!(
-            "Materialized view setup/refresh scheduling failed for {}: {}",
+            "Materialized view setup failed for {}: {}",
             mv_name,
-            e
+            e.message
         );
     }
 
@@ -3172,6 +3198,9 @@ pub async fn search_suggestions(
         })
         .filter(|item| !item.is_null())
         .collect();
+
+    SearchSuggestionCache::set_mv_results(&mv_hash, Value::Array(data.clone()));
+    SearchSuggestionCache::set_mv_refresh_trigger_if_absent(&mv_hash);
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -3237,10 +3266,7 @@ async fn write_query_to_debug_log(
 static ACTIVE_MV_REFRESH: Lazy<Mutex<HashSet<String>>> =
     Lazy::new(|| Mutex::new(HashSet::new()));
 
-async fn ensure_materialized_view_and_schedule_refresh(
-    mv_name: String,
-    base_query: String,
-) -> Result<(), ApiError> {
+async fn ensure_materialized_view(mv_name: String, base_query: String) -> Result<(), ApiError> {
     let mut conn = db::get_async_connection().await;
     let create_mv_sql = format!(
         r#"CREATE MATERIALIZED VIEW IF NOT EXISTS "{}" AS
@@ -3267,34 +3293,33 @@ async fn ensure_materialized_view_and_schedule_refresh(
         );
     }
 
+    Ok(())
+}
+
+async fn refresh_materialized_view_once(mv_name: String) -> Result<(), ApiError> {
     {
         let mut set = ACTIVE_MV_REFRESH.lock().unwrap();
-        if set.insert(mv_name.clone()) {
-            tokio::spawn(async move {
-                let refresh_sql =
-                    format!(r#"REFRESH MATERIALIZED VIEW CONCURRENTLY "{}""#, mv_name);
-                let mut interval =
-                    tokio::time::interval(tokio::time::Duration::from_secs(60));
-                loop {
-                    interval.tick().await;
-                    let mut conn = db::get_async_connection().await;
-                    match sql_query(&refresh_sql).execute(&mut conn).await {
-                        Ok(_) => {
-                            log::debug!("Refreshed materialized view {}", mv_name)
-                        }
-                        Err(e) => {
-                            log::error!(
-                                "Failed to refresh materialized view {}: {}",
-                                mv_name,
-                                e
-                            )
-                        }
-                    }
-                }
-            });
+        if !set.insert(mv_name.clone()) {
+            return Ok(());
         }
     }
-    Ok(())
+
+    let refresh_sql = format!(r#"REFRESH MATERIALIZED VIEW CONCURRENTLY "{}""#, mv_name);
+    let mut conn = db::get_async_connection().await;
+    let result = sql_query(&refresh_sql).execute(&mut conn).await;
+
+    {
+        let mut set = ACTIVE_MV_REFRESH.lock().unwrap();
+        set.remove(&mv_name);
+    }
+
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => Err(ApiError {
+            message: format!("Failed to refresh materialized view {}: {}", mv_name, e),
+            status: 500,
+        }),
+    }
 }
 /// Schema verification endpoint
 /// Verifies that a table exists and optionally checks if specified fields exist in the table
