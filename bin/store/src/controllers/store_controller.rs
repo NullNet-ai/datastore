@@ -2986,7 +2986,7 @@ pub async fn search_suggestions(
     if let Ok(client) = create_connection().await {
         if let Ok(rows) = client
             .query(
-                "SELECT matviewname, schemaname, matviewowner FROM pg_matviews WHERE matviewname = $1 ORDER BY matviewname",
+                "SELECT matviewname, schemaname, matviewowner FROM pg_matviews WHERE matviewname = $1",
                 &[&mv_name.as_str()],
             )
             .await
