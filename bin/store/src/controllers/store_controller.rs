@@ -2960,6 +2960,7 @@ pub async fn search_suggestions(
     let mv_name = format!("mv_ss_{}", &mv_hash);
 
     if let Some(cached_value) = SearchSuggestionCache::get_mv_results(&mv_hash) {
+        let started_at = std::time::Instant::now();
         let data: Vec<Value> = cached_value.as_array().cloned().unwrap_or_default();
         if SearchSuggestionCache::set_mv_refresh_trigger_if_absent(&mv_hash) {
             let mv_name = mv_name.clone();
@@ -2969,9 +2970,11 @@ pub async fn search_suggestions(
                 }
             });
         }
-
+        
+        let took_ms = started_at.elapsed().as_millis();
         log::debug!(
-            "Search Suggestion: Redis cached data found from matview: {}",
+            "Search Suggestion: Redis cached response took {}ms (matview: {})",
+            took_ms,
             mv_name
         );
 

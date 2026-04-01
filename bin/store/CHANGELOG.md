@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.67
+
+### Author
+Jean
+
+### Changed
+  - ***Redis cache — performance logging and key serialization***:
+    - `src/providers/storage/cache/redis_cache.rs`
+      - Refactor RedisCache to centralize key serialization and improve error logging.
+      - Add performance logging for Redis cache hits in search suggestions.
+
 ## 0.2.66
 
 ### Author
