@@ -5,6 +5,21 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.66
+
+### Author
+Jean
+
+### Changed
+  - ***Search suggestions — materialized views + Redis caching***:
+    - `src/controllers/store_controller.rs`
+      - Derive a deterministic SHA1 hash from normalized search suggestion parameters and reuse it as both the materialized view name suffix and the Redis cache key.
+      - Prefer Redis-cached materialized view results when present, scheduling a background refresh of the materialized view via async task when a refresh trigger is not yet set.
+      - When no cached value exists, check for an existing materialized view or create one via `ensure_materialized_view`, read its `results.data` payload, and persist the results back to Redis for subsequent requests.
+    - `src/providers/queries/search_suggestion/cache.rs`
+      - Add helpers for materialized view result keys and refresh-trigger keys with configurable TTLs via `SEARCH_SUGGESTION_MV_RESULTS_TTL_SECS` and `SEARCH_SUGGESTION_MV_REFRESH_TRIGGER_TTL_SECS` environment variables (with sensible defaults).
+      - Cache materialized view results and refresh triggers in Redis using coordinated TTLs so suggestion result sets remain available while refresh triggers throttle how often background refreshes run.
+
 ## 0.2.65
 
 ### Author
