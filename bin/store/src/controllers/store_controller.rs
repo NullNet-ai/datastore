@@ -2977,7 +2977,10 @@ pub async fn search_suggestions(
 
         return HttpResponse::Ok().json(ApiResponse {
             success: true,
-            message: format!("Search suggestions operation completed for table: {}", &table),
+            message: format!(
+                "[Redis]: Search suggestions operation completed for table: {}",
+                &table
+            ),
             count: data.len() as i32,
             data,
         });
@@ -2986,7 +2989,7 @@ pub async fn search_suggestions(
     if let Ok(client) = create_connection().await {
         if let Ok(rows) = client
             .query(
-                "SELECT matviewname, schemaname, matviewowner FROM pg_matviews WHERE matviewname = $1 ORDER BY matviewname",
+                "SELECT matviewname, schemaname, matviewowner FROM pg_matviews WHERE matviewname = $1",
                 &[&mv_name.as_str()],
             )
             .await
@@ -3022,7 +3025,7 @@ pub async fn search_suggestions(
                     return HttpResponse::Ok().json(ApiResponse {
                         success: true,
                         message: format!(
-                            "Search suggestions operation completed for table: {}",
+                            "[Materialized View]: Search suggestions operation completed for table: {}",
                             &table
                         ),
                         count: data.len() as i32,
@@ -3263,8 +3266,7 @@ async fn write_query_to_debug_log(
 
     Ok(())
 }
-static ACTIVE_MV_REFRESH: Lazy<Mutex<HashSet<String>>> =
-    Lazy::new(|| Mutex::new(HashSet::new()));
+static ACTIVE_MV_REFRESH: Lazy<Mutex<HashSet<String>>> = Lazy::new(|| Mutex::new(HashSet::new()));
 
 async fn ensure_materialized_view(mv_name: String, base_query: String) -> Result<(), ApiError> {
     let mut conn = db::get_async_connection().await;
