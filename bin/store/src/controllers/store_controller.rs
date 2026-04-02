@@ -17,9 +17,9 @@ use crate::providers::storage::get_valid_bucket_name;
 use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::core::{
     AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
-    QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
+    LogicalOperator, QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest,
+    UpsertRequestBody, FilterCriteria, FilterOperator,
 };
-use crate::structs::core::{FilterCriteria, FilterOperator, LogicalOperator};
 use crate::utils::helpers::{
     ensure_root_access, format_diesel_error, normalize_date_format, require_unsafe_query_raw,
     table_exists, validate_identifier,
@@ -53,6 +53,9 @@ use tokio::io::AsyncWriteExt;
 // use diesel::QueryableByName;
 use diesel::sql_query;
 use diesel_async::RunQueryDsl;
+use once_cell::sync::Lazy;
+use std::collections::HashSet;
+use std::sync::Mutex;
 
 use super::common_controller::{perform_upsert, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
@@ -3640,6 +3643,14 @@ pub async fn search_suggestions(
         timezone: body_timezone,
         ..
     } = &parameters;
+
+    // Prefer body timezone over header for consistency across find, count, aggregation, and search suggestion
+    let timezone = match (header_timezone.clone(), body_timezone) {
+        (_, Some(tz)) => Some(tz.to_string()),
+        (Some(tz), None) => Some(tz.to_string()),
+        (None, None) => None,
+    };
+
     // Convert parameters to stringified JSON object
     match serde_json::to_string_pretty(&parameters.clone()) {
         Ok(params_json) => {
@@ -3682,30 +3693,89 @@ pub async fn search_suggestions(
         }
     };
 
-    let query_sha = SearchSuggestionCache::hash_string(&json_params_string);
-    let cached_data = SearchSuggestionCache::get_cache_by_key(&query_sha);
+    let mv_hash = SearchSuggestionCache::hash_string(&json_params_string);
+    let mv_name = format!("mv_ss_{}", &mv_hash);
 
-    if let Some(cached_value) = cached_data {
-        log::debug!("Search Suggestion: Cached data found.");
-        let data = if let Some(arr) = cached_value.as_array() {
-            if let Some(first_value) = arr.get(0) {
-                vec![first_value.clone()]
-            } else {
-                Vec::new()
-            }
-        } else {
-            Vec::new()
-        };
+    if let Some(cached_value) = SearchSuggestionCache::get_mv_results(&mv_hash) {
+        let started_at = std::time::Instant::now();
+        let data: Vec<Value> = cached_value.as_array().cloned().unwrap_or_default();
+        if SearchSuggestionCache::set_mv_refresh_trigger_if_absent(&mv_hash) {
+            let mv_name = mv_name.clone();
+            tokio::spawn(async move {
+                if let Err(e) = refresh_materialized_view_once(mv_name).await {
+                    log::warn!("MV refresh failed: {}", e.message);
+                }
+            });
+        }
+        
+        let took_ms = started_at.elapsed().as_millis();
+        log::debug!(
+            "Search Suggestion: Redis cached response took {}ms (matview: {})",
+            took_ms,
+            mv_name
+        );
+
         return HttpResponse::Ok().json(ApiResponse {
             success: true,
             message: format!(
-                "Search suggestions operation completed for table: {}",
+                "[Redis]: Search suggestions operation completed for table: {}",
                 &table
             ),
             count: data.len() as i32,
             data,
         });
     }
+
+    if let Ok(client) = create_connection().await {
+        if let Ok(rows) = client
+            .query(
+                "SELECT matviewname, schemaname, matviewowner FROM pg_matviews WHERE matviewname = $1",
+                &[&mv_name.as_str()],
+            )
+            .await
+        {
+            if let Some(row) = rows.get(0) {
+                let matviewname: String = row.get(0);
+                let schemaname: String = row.get(1);
+                let final_query =
+                    format!("SELECT row_to_json(t) FROM {}.{} t", schemaname, matviewname);
+                if let Ok(res_rows) = client.query(final_query.as_str(), &[]).await {
+                    let data: Vec<serde_json::Value> = res_rows
+                        .into_iter()
+                        .map(|rr| {
+                            let data: Value = rr.get(0);
+                            let data = data.get("row_to_json").cloned().unwrap_or(data);
+
+                            if let Some(data) = data.get("results").and_then(|v| v.get("data")) {
+                                data.clone()
+                            } else {
+                                data
+                            }
+                        })
+                        .filter(|item| !item.is_null())
+                        .collect();
+
+                    SearchSuggestionCache::set_mv_results(&mv_hash, Value::Array(data.clone()));
+                    SearchSuggestionCache::set_mv_refresh_trigger_if_absent(&mv_hash);
+
+                    log::debug!(
+                        "Search Suggestion: Materialized View data found from matview: {}",
+                        matviewname
+                    );
+                    return HttpResponse::Ok().json(ApiResponse {
+                        success: true,
+                        message: format!(
+                            "[Materialized View]: Search suggestions operation completed for table: {}",
+                            &table
+                        ),
+                        count: data.len() as i32,
+                        data,
+                    });
+                }
+            }
+        }
+    }
+
     // get the aliased entities
     let mut aliased_joined_entities = Vec::new();
 
@@ -3794,12 +3864,6 @@ pub async fn search_suggestions(
         formatted_advance_filters = _formatted_advance_filters;
     }
 
-    // Prefer body timezone over header for consistency across find, count, aggregation, and search suggestion
-    let timezone = match (header_timezone.clone(), body_timezone) {
-        (_, Some(tz)) => Some(tz.to_string()), // Body takes precedence
-        (Some(tz), None) => Some(tz.to_string()), // Header fallback
-        (None, None) => None,
-    };
     // generate concatenated fields
     let concatenated_expressions = generate_concatenated_expressions(
         concatenate_fields.clone(),
@@ -3839,7 +3903,15 @@ pub async fn search_suggestions(
     }
 
     log::debug!("Search Suggestion Query: {}", query);
-    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    if let Err(e) = ensure_materialized_view(mv_name.clone(), query.clone()).await {
+        log::warn!(
+            "Materialized view setup failed for {}: {}",
+            mv_name,
+            e.message
+        );
+    }
+
+    let final_query = format!("SELECT row_to_json FROM \"{}\"", mv_name);
 
     // execute query
     let results = match diesel::dsl::sql_query(&final_query)
@@ -3870,7 +3942,8 @@ pub async fn search_suggestions(
         .filter(|item| !item.is_null())
         .collect();
 
-    let _ = SearchSuggestionCache::set_cache(&query_sha, serde_json::Value::Array(data.clone()));
+    SearchSuggestionCache::set_mv_results(&mv_hash, Value::Array(data.clone()));
+    SearchSuggestionCache::set_mv_refresh_trigger_if_absent(&mv_hash);
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -3932,6 +4005,63 @@ async fn write_query_to_debug_log(
     file.flush().await?;
 
     Ok(())
+}
+static ACTIVE_MV_REFRESH: Lazy<Mutex<HashSet<String>>> = Lazy::new(|| Mutex::new(HashSet::new()));
+
+async fn ensure_materialized_view(mv_name: String, base_query: String) -> Result<(), ApiError> {
+    let mut conn = db::get_async_connection().await;
+    let create_mv_sql = format!(
+        r#"CREATE MATERIALIZED VIEW IF NOT EXISTS "{}" AS
+           SELECT
+             (md5(row_to_json(t)::text) || ':' || (row_number() OVER ())::text) AS row_key,
+             row_to_json(t) AS row_to_json
+           FROM ({}) t"#,
+        mv_name, base_query
+    );
+    if let Err(e) = sql_query(&create_mv_sql).execute(&mut conn).await {
+        log::warn!("Failed to create materialized view {}: {}", mv_name, e);
+    }
+
+    // Ensure a unique index exists to allow CONCURRENTLY refresh
+    let create_idx_sql = format!(
+        r#"CREATE UNIQUE INDEX IF NOT EXISTS "{}_uix_row_key" ON "{}" (row_key)"#,
+        mv_name, mv_name
+    );
+    if let Err(e) = sql_query(&create_idx_sql).execute(&mut conn).await {
+        log::warn!(
+            "Failed to create unique index for materialized view {}: {}",
+            mv_name,
+            e
+        );
+    }
+
+    Ok(())
+}
+
+async fn refresh_materialized_view_once(mv_name: String) -> Result<(), ApiError> {
+    {
+        let mut set = ACTIVE_MV_REFRESH.lock().unwrap();
+        if !set.insert(mv_name.clone()) {
+            return Ok(());
+        }
+    }
+
+    let refresh_sql = format!(r#"REFRESH MATERIALIZED VIEW CONCURRENTLY "{}""#, mv_name);
+    let mut conn = db::get_async_connection().await;
+    let result = sql_query(&refresh_sql).execute(&mut conn).await;
+
+    {
+        let mut set = ACTIVE_MV_REFRESH.lock().unwrap();
+        set.remove(&mv_name);
+    }
+
+    match result {
+        Ok(_) => Ok(()),
+        Err(e) => Err(ApiError {
+            message: format!("Failed to refresh materialized view {}: {}", mv_name, e),
+            status: 500,
+        }),
+    }
 }
 /// Schema verification endpoint
 /// Verifies that a table exists and optionally checks if specified fields exist in the table

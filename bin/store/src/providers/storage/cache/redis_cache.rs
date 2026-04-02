@@ -39,6 +39,16 @@ where
     K: Eq + Hash + Clone + Debug + Send + Sync + Serialize,
     V: Clone + Send + Sync + Serialize + DeserializeOwned,
 {
+    fn encode_key(key: &K) -> Result<String, RedisCacheError> {
+        let key_json = serde_json::to_string(key).map_err(|e| {
+            RedisCacheError::SerializationError(format!("Failed to serialize key: {}", e))
+        })?;
+
+        match serde_json::from_str::<String>(&key_json) {
+            Ok(s) => Ok(s),
+            Err(_) => Ok(key_json),
+        }
+    }
     /// Create a new Redis cache with the specified connection string
     pub fn new(
         connection_string: String,
@@ -98,9 +108,7 @@ where
         let mut pooled_conn = self.connection_pool.get_connection()?;
         let conn = pooled_conn.connection();
 
-        let key_str = serde_json::to_string(&key).map_err(|e| {
-            RedisCacheError::SerializationError(format!("Failed to serialize key: {}", e))
-        })?;
+        let key_str = Self::encode_key(&key)?;
         let value_str = serde_json::to_string(&value).map_err(|e| {
             RedisCacheError::SerializationError(format!("Failed to serialize value: {}", e))
         })?;
@@ -125,10 +133,10 @@ where
         };
         let conn = pooled_conn.connection();
 
-        let key_str = match serde_json::to_string(key) {
+        let key_str = match Self::encode_key(key) {
             Ok(s) => s,
             Err(e) => {
-                log::error!("Failed to serialize key: {}", e);
+                log::error!("{}", e);
                 return None;
             }
         };
@@ -159,10 +167,10 @@ where
         };
         let conn = pooled_conn.connection();
 
-        let key_str = match serde_json::to_string(&key) {
+        let key_str = match Self::encode_key(&key) {
             Ok(s) => s,
             Err(e) => {
-                log::error!("Failed to serialize key for insert: {}", e);
+                log::error!("{}", e);
                 return;
             }
         };
@@ -196,10 +204,10 @@ where
         };
         let conn = pooled_conn.connection();
 
-        let key_str = match serde_json::to_string(&key) {
+        let key_str = match Self::encode_key(&key) {
             Ok(s) => s,
             Err(e) => {
-                log::error!("Failed to serialize key for insert_with_ttl: {}", e);
+                log::error!("{}", e);
                 return;
             }
         };
@@ -227,10 +235,10 @@ where
         };
         let conn = pooled_conn.connection();
 
-        let key_str = match serde_json::to_string(key) {
+        let key_str = match Self::encode_key(key) {
             Ok(s) => s,
             Err(e) => {
-                log::error!("Failed to serialize key for removal: {}", e);
+                log::error!("{}", e);
                 return None;
             }
         };
@@ -297,10 +305,10 @@ where
         };
         let conn = pooled_conn.connection();
 
-        let key_str = match serde_json::to_string(key) {
+        let key_str = match Self::encode_key(key) {
             Ok(s) => s,
             Err(e) => {
-                log::error!("Failed to serialize key for contains_key: {}", e);
+                log::error!("{}", e);
                 return false;
             }
         };

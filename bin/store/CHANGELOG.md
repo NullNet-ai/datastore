@@ -5,6 +5,59 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.67
+
+### Author
+Jean
+
+### Changed
+  - ***Redis cache — performance logging and key serialization***:
+    - `src/providers/storage/cache/redis_cache.rs`
+      - Refactor RedisCache to centralize key serialization and improve error logging.
+      - Add performance logging for Redis cache hits in search suggestions.
+
+## 0.2.66
+
+### Author
+Jean
+
+### Changed
+  - ***Search suggestions — materialized views + Redis caching***:
+    - `src/controllers/store_controller.rs`
+      - Derive a deterministic SHA1 hash from normalized search suggestion parameters and reuse it as both the materialized view name suffix and the Redis cache key.
+      - Prefer Redis-cached materialized view results when present, scheduling a background refresh of the materialized view via async task when a refresh trigger is not yet set.
+      - When no cached value exists, check for an existing materialized view or create one via `ensure_materialized_view`, read its `results.data` payload, and persist the results back to Redis for subsequent requests.
+    - `src/providers/queries/search_suggestion/cache.rs`
+      - Add helpers for materialized view result keys and refresh-trigger keys with configurable TTLs via `SEARCH_SUGGESTION_MV_RESULTS_TTL_SECS` and `SEARCH_SUGGESTION_MV_REFRESH_TRIGGER_TTL_SECS` environment variables (with sensible defaults).
+      - Cache materialized view results and refresh triggers in Redis using coordinated TTLs so suggestion result sets remain available while refresh triggers throttle how often background refreshes run.
+
+## 0.2.65
+
+### Author
+Jean
+
+### Changed
+  - ***LATERAL join filters — replace table alias in lateral join filter expressions***:
+    - `src/providers/queries/find/constructors/joins_constructor.rs`
+      - The filter expression generated for lateral joins was referencing the original table alias instead of the lateral alias, causing SQL errors. This change ensures that all references to the original table alias are properly replaced with the lateral alias in the filter expression.
+
+## 0.2.64
+
+### Author
+Jean
+
+### Changed
+  - ***Search suggestions — materialized view lookup by deterministic params hash***:
+    - `src/controllers/store_controller.rs`
+      - Compute a stable SHA1 over sorted JSON parameters and use it to derive a materialized view name (`mv_ss_{sha1}`).
+      - If the materialized view exists, select and return its `results.data` payload early.
+      - Create materialized views with unique indexes for concurrent refresh
+      - Schedule automatic refresh of materialized views in background tasks
+
+  - ***Search suggestions — caching***:
+    - `src/providers/queries/search_suggestion/cache.rs`
+      - Mark previous cache methods as deprecated with dead code annotations
+
 ## 0.2.63
 
 ### Author
