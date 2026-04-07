@@ -2,7 +2,7 @@
 
 # PHONY targets (targets that don't create files)
 .PHONY: all dev clean help install install-seeding verify-install install-macos install-linux install-windows \
-        server store store-clean-setup store-watch store-build \
+        server store store-clean-setup store-clean-setup-lm store-watch store-build \
         store-prod store-build-linux store-build-linux-bx store-build-linux-clean store-build-linux-zig store-build-docker store-build-docker-legacy store-build-docker-nocache store-build-docker-memsafe store-build-docker-memsafe-legacy store-build-docker-auth docker-diagnose \
         store-build-debian-amd64 store-build-debian-arm64 \
         redis-flush counter-service counter-service-test counter-service-test-integration counter-service-test-all \
@@ -31,6 +31,7 @@ help:
 	@echo "  server                  - Run the server"
 	@echo "  store                   - Run the store"
 	@echo "  store-clean-setup       - Run store clean setup"
+	@echo "  store-clean-setup-lm    - Run store clean setup with minimal memory"
 	@echo "  store-watch             - Run store in watch mode with debug"
 	@echo "  store-build             - Build store in release mode"
 	@echo "  store-prod              - Run store compiled store binary (target/release/store) in production mode"
@@ -542,6 +543,18 @@ store-clean-setup:
 		exit 1; \
 	fi; \
 	cd bin/store && RUST_LOG=info cargo run -- --cleanup --init-db
+
+store-clean-setup-lm:
+	@echo "🧹 Starting store clean setup (low memory, --init-db)..."
+	@export PATH="/usr/local/cargo/bin:/root/.cargo/bin:$$HOME/.cargo/bin:$$PATH"; \
+	if ! command -v cargo >/dev/null 2>&1; then \
+		echo "❌ Cargo not found. Please run 'make install' first."; \
+		exit 1; \
+	fi; \
+	cd bin/store && \
+	RUSTFLAGS="-C debuginfo=0 -C codegen-units=1" \
+	cargo build -j 1 && \
+	RUST_LOG=info ./target/debug/store --cleanup --init-db
 
 # Run the store in watch mode
 store-watch:
