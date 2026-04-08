@@ -2956,7 +2956,11 @@ pub async fn search_suggestions(
         }
     };
 
-    let mv_hash = SearchSuggestionCache::hash_string(&json_params_string);
+    let mv_hash_input = {
+        let org_key = organization_id.as_deref().unwrap_or("no_org");
+        format!("is_root:{}|org:{}|{}", is_root, org_key, json_params_string)
+    };
+    let mv_hash = SearchSuggestionCache::hash_string(&mv_hash_input);
     let mv_name = format!("mv_ss_{}", &mv_hash);
 
     if let Some(cached_value) = SearchSuggestionCache::get_mv_results(&mv_hash) {
@@ -3166,15 +3170,23 @@ pub async fn search_suggestions(
     }
 
     log::debug!("Search Suggestion Query: {}", query);
-    if let Err(e) = ensure_materialized_view(mv_name.clone(), query.clone()).await {
-        log::warn!(
-            "Materialized view setup failed for {}: {}",
-            mv_name,
-            e.message
-        );
-    }
+    let mv_ready = match ensure_materialized_view(mv_name.clone(), query.clone()).await {
+        Ok(_) => true,
+        Err(e) => {
+            log::warn!(
+                "Materialized view setup failed for {}: {}",
+                mv_name,
+                e.message
+            );
+            false
+        }
+    };
 
-    let final_query = format!("SELECT row_to_json FROM \"{}\"", mv_name);
+    let final_query = if mv_ready {
+        format!("SELECT row_to_json FROM \"{}\"", mv_name)
+    } else {
+        format!("SELECT row_to_json(t) AS row_to_json FROM ({}) t", query)
+    };
 
     // execute query
     let results = match diesel::dsl::sql_query(&final_query)
@@ -3283,6 +3295,10 @@ async fn ensure_materialized_view(mv_name: String, base_query: String) -> Result
     );
     if let Err(e) = sql_query(&create_mv_sql).execute(&mut conn).await {
         log::warn!("Failed to create materialized view {}: {}", mv_name, e);
+        return Err(ApiError {
+            message: format!("Failed to create materialized view {}: {}", mv_name, e),
+            status: 500,
+        });
     }
 
     // Ensure a unique index exists to allow CONCURRENTLY refresh
@@ -3296,6 +3312,7 @@ async fn ensure_materialized_view(mv_name: String, base_query: String) -> Result
             mv_name,
             e
         );
+        return Ok(());
     }
 
     Ok(())

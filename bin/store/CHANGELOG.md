@@ -5,6 +5,18 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.68
+
+### Author
+Jean
+
+### Changed
+  - ***Controllers — Search Suggestions***:
+    - `src/controllers/store_controller.rs`
+      - Handle materialized view creation failure gracefully
+        - When materialized view creation fails, fall back to direct query execution instead of returning an error. This ensures search suggestions remain available even when MV setup encounters issues. 
+        - Also include organization context in cache key to prevent cross-org cache contamination.
+      
 ## 0.2.67
 
 ### Author
