@@ -544,7 +544,7 @@ store-clean-setup:
 	fi; \
 	cd bin/store && RUST_LOG=info cargo run -- --cleanup --init-db
 
-store-clean-setup-lm:
+ 	:
 	@echo "🧹 Starting store clean setup (low memory, --init-db)..."
 	@export PATH="/usr/local/cargo/bin:/root/.cargo/bin:$$HOME/.cargo/bin:$$PATH"; \
 	if ! command -v cargo >/dev/null 2>&1; then \
