@@ -14,8 +14,6 @@ use crate::providers::queries::search_suggestion::{
     utils::{format_filters, generate_concatenated_expressions},
 };
 use crate::providers::storage::cache::cache;
-use crate::providers::storage::cache::cache_factory::CacheType;
-use crate::providers::storage::cache::CacheConfig;
 use crate::providers::storage::get_valid_bucket_name;
 use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::core::{
