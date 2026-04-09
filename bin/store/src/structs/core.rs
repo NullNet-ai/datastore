@@ -881,6 +881,8 @@ pub enum FilterOperator {
     IsNotEmpty,
     #[serde(rename = "like")]
     Like,
+    #[serde(rename = "not_like")]
+    NotLike,
     #[serde(rename = "has_no_value")]
     HasNoValue,
 }

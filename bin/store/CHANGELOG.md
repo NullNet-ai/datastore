@@ -5,6 +5,22 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.69
+
+### Author
+Jean
+
+### Changed
+  - ***Find Constructors — Where Constructor***:
+    - `src/providers/queries/find/constructors/where_constructor.rs`
+      - Refactor array field handling for equality/inequality operators to use array literals instead of ANY() for more accurate semantics, affected operators: equal, not_equal, contains, not_contains
+
+### Added
+  - ***Find Constructors — NotLike Operator***:
+    - `src/providers/queries/find/constructors/where_constructor.rs`
+      - Add NotLike operator to the query construction pipeline, mapping it to the SQL NOT LIKE operator with proper pattern matching and case sensitivity.
+      - Add enum variant in core structs, map it in gRPC converter, and update SQL constructors to handle the new operator with proper pattern matching and case sensitivity.
+
 ## 0.2.68
 
 ### Author
