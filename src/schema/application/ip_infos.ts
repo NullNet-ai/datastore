@@ -1,4 +1,4 @@
-import { pgTable, text } from 'drizzle-orm/pg-core';
+import { pgTable, text, index } from 'drizzle-orm/pg-core';
 import {
   getConfigDefaults,
   system_fields,
@@ -7,6 +7,7 @@ import { primaryKey } from 'drizzle-orm/pg-core';
 const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
   ...getConfigDefaults.defaultIndexes('ip_infos', table),
+  ip_infos_ip_idx: index('ip_infos_ip_idx').on(table.ip),
 });
 export const table = pgTable(
   'ip_infos',

@@ -508,6 +508,13 @@ export class InitializerService {
       .catch(() => this.logger.debug(`Encryption extension already exists`));
   }
 
+  async enableTrgm() {
+    await this.db
+      .execute(`CREATE EXTENSION IF NOT EXISTS pg_trgm;`)
+      .then(() => this.logger.debug(`pg_trgm extension enabled`))
+      .catch(() => this.logger.debug(`pg_trgm extension already exists`));
+  }
+
   async createDefaultDataPermissions() {
     // TODO: create entities
     // await this.db

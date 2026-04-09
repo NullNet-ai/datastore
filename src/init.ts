@@ -27,6 +27,7 @@ export async function initializers(app) {
   const organization = app.get(OrganizationsService);
   const initializer: InitializerService = app.get(InitializerService);
   initializer.createEncryption();
+  initializer.enableTrgm();
 
   // create own default organization here
   // await organization.initialize({
