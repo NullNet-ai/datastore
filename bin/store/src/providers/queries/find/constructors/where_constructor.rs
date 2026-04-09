@@ -151,12 +151,16 @@ impl<'a> WhereConstructor<'a> {
                     concatenate_fields,
                     time_format,
                 );
+                let default_match_pattern = MatchPattern::Contains;
+                let effective_match_pattern =
+                    match_pattern.as_ref().or(Some(&default_match_pattern));
+
                 let final_statement = self.format_condition_with_case_sensitivity_and_pattern(
                     &field_name,
                     operator,
                     values,
                     *case_sensitive,
-                    match_pattern.as_ref(),
+                    effective_match_pattern,
                 );
                 return Ok(final_statement);
             }
@@ -212,12 +216,16 @@ impl<'a> WhereConstructor<'a> {
                         concatenate_fields,
                         time_format,
                     );
+                    let default_match_pattern = MatchPattern::Contains;
+                    let effective_match_pattern =
+                        match_pattern.as_ref().or(Some(&default_match_pattern));
+
                     let condition = self.format_condition_with_case_sensitivity_and_pattern(
                         &field_name,
                         operator,
                         values,
                         *case_sensitive,
-                        match_pattern.as_ref(),
+                        effective_match_pattern,
                     );
                     tokens.push(Token::Condition(condition));
                     i += 1;
@@ -555,7 +563,10 @@ impl<'a> WhereConstructor<'a> {
         // Determine if this operator uses LIKE patterns (needs wildcard escaping)
         let is_like_operator = matches!(
             operator,
-            FilterOperator::Contains | FilterOperator::NotContains | FilterOperator::Like
+            FilterOperator::Contains
+                | FilterOperator::NotContains
+                | FilterOperator::Like
+                | FilterOperator::NotLike
         );
 
         // Sanitize values using the SQL sanitizer module
@@ -600,15 +611,9 @@ impl<'a> WhereConstructor<'a> {
         match operator {
             FilterOperator::Equal => {
                 if is_array_field && !is_json_field {
-                    if values_str.len() == 1 {
-                        format!("{} = ANY({})", values_str[0], base_field)
-                    } else {
-                        let conditions: Vec<String> = values_str
-                            .iter()
-                            .map(|v| format!("{} = ANY({})", v, base_field))
-                            .collect();
-                        format!("({})", conditions.join(" OR "))
-                    }
+                    // Field array must match to the exact value
+                    let array_literal = format!("ARRAY[{}]", values_str.join(", "));
+                    format!("{} = {}", base_field, array_literal)
                 } else if is_json_field {
                     if values_str.len() == 1 {
                         format!("{} @> [{}]::jsonb", base_field, values_str[0])
@@ -629,14 +634,12 @@ impl<'a> WhereConstructor<'a> {
             }
             FilterOperator::NotEqual => {
                 if is_array_field && !is_json_field {
+                    // Field does NOT contain value[0] or value[1] anywhere in the array
                     if values_str.len() == 1 {
                         format!("NOT ({} = ANY({}))", values_str[0], base_field)
                     } else {
-                        let conditions: Vec<String> = values_str
-                            .iter()
-                            .map(|v| format!("NOT ({} = ANY({}))", v, base_field))
-                            .collect();
-                        format!("({})", conditions.join(" AND "))
+                        let array_literal = format!("ARRAY[{}]", values_str.join(", "));
+                        format!("NOT ({} && {})", base_field, array_literal)
                     }
                 } else if is_json_field {
                     if values_str.len() == 1 {
@@ -680,16 +683,17 @@ impl<'a> WhereConstructor<'a> {
                     } else {
                         return format!("{} @> [{}]::jsonb", base_field, values_str[0]);
                     }
-                } else if is_array_field {
-                    if values_str.len() > 1 {
-                        let conditions: Vec<String> = values_str
-                            .iter()
-                            .map(|v| format!("{} = ANY({})", v, base_field))
-                            .collect();
-                        return format!("({})", conditions.join(" OR "));
-                    } else {
-                        return format!("{} = ANY({})", values_str[0], base_field);
-                    }
+                // Commented as array fields will be parsed as text
+                // } else if is_array_field {
+                //     if values_str.len() > 1 {
+                //         let conditions: Vec<String> = values_str
+                //             .iter()
+                //             .map(|v| format!("{} = ANY({})", v, base_field))
+                //             .collect();
+                //         return format!("({})", conditions.join(" OR "));
+                //     } else {
+                //         return format!("{} = ANY({})", values_str[0], base_field);
+                //     }
                 } else {
                     let like_op = if case_sensitive.unwrap_or(true) {
                         "LIKE"
@@ -739,16 +743,17 @@ impl<'a> WhereConstructor<'a> {
                     } else {
                         return format!("NOT ({} @> [{}]::jsonb)", base_field, values_str[0]);
                     }
-                } else if is_array_field {
-                    if values_str.len() > 1 {
-                        let conditions: Vec<String> = values_str
-                            .iter()
-                            .map(|v| format!("NOT ({} = ANY({}))", v, base_field))
-                            .collect();
-                        return format!("({})", conditions.join(" AND "));
-                    } else {
-                        return format!("NOT ({} = ANY({}))", values_str[0], base_field);
-                    }
+                // Commented as array fields will be parsed as text
+                // } else if is_array_field {
+                //     if values_str.len() > 1 {
+                //         let conditions: Vec<String> = values_str
+                //             .iter()
+                //             .map(|v| format!("NOT ({} = ANY({}))", v, base_field))
+                //             .collect();
+                //         return format!("({})", conditions.join(" AND "));
+                //     } else {
+                //         return format!("NOT ({} = ANY({}))", values_str[0], base_field);
+                //     }
                 } else {
                     let like_op = if case_sensitive.unwrap_or(true) {
                         "NOT LIKE"
@@ -836,6 +841,47 @@ impl<'a> WhereConstructor<'a> {
                         })
                         .collect();
                     return format!("({})", conditions.join(" OR "));
+                } else {
+                    let pattern = self.build_like_pattern(&values_str[0], match_pattern);
+                    if is_plural {
+                        let expr = if field_with_table.contains("::text") {
+                            field_with_table.clone()
+                        } else {
+                            format!("{}::text", field_with_table)
+                        };
+                        return format!("{} {} {}", expr, like_op, pattern);
+                    }
+                    format!("{} {} {}", field_with_table, like_op, pattern)
+                }
+            }
+            FilterOperator::NotLike => {
+                let like_op = if case_sensitive.unwrap_or(true) {
+                    "NOT LIKE"
+                } else {
+                    "NOT ILIKE"
+                };
+
+                if values_str.len() > 1 {
+                    let patterns: Vec<String> = values_str
+                        .iter()
+                        .map(|v| self.build_like_pattern(v, match_pattern))
+                        .collect();
+                    let conditions: Vec<String> = patterns
+                        .iter()
+                        .map(|p| {
+                            if is_plural {
+                                let expr = if field_with_table.contains("::text") {
+                                    field_with_table.clone()
+                                } else {
+                                    format!("{}::text", field_with_table)
+                                };
+                                format!("{} {} {}", expr, like_op, p)
+                            } else {
+                                format!("{} {} {}", field_with_table, like_op, p)
+                            }
+                        })
+                        .collect();
+                    return format!("({})", conditions.join(" AND "));
                 } else {
                     let pattern = self.build_like_pattern(&values_str[0], match_pattern);
                     if is_plural {
@@ -1023,7 +1069,8 @@ mod tests {
         let expr = wc
             .build_infix_expression(&filters, &[], "YYYY-mm-dd", "HH24:MI:SS")
             .expect("build_infix_expression should succeed");
-        assert_eq!(expr, "'Root' = ANY(\"samples\".\"categories\")");
+
+        assert_eq!(expr, "\"samples\".\"categories\" = ARRAY['Root']");
     }
 
     #[test]
