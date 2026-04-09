@@ -1069,7 +1069,8 @@ mod tests {
         let expr = wc
             .build_infix_expression(&filters, &[], "YYYY-mm-dd", "HH24:MI:SS")
             .expect("build_infix_expression should succeed");
-        assert_eq!(expr, "'Root' = ANY(\"samples\".\"categories\")");
+
+        assert_eq!(expr, "\"samples\".\"categories\" = ARRAY['Root']");
     }
 
     #[test]
