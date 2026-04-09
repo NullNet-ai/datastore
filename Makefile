@@ -1248,6 +1248,11 @@ store-initialize-device:
 	@sleep 1
 	@echo "🏁 Exiting store-initialize-device"
 
+# Publish store-generator to dnamicro registry
+publish-store-generator:
+	@echo "📦 Publishing store-generator to 'dnamicro' registry..."
+	@cd bin/store-generator && cargo publish --registry dnamicro
+
 
 code-eval: 
 	@echo "Running code evaluation..."
