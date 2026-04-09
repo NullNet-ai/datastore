@@ -13,6 +13,9 @@ use crate::providers::queries::search_suggestion::{
     structs::{AliasedJoinedEntity, FormatFilterResponse, SearchSuggestionCache},
     utils::{format_filters, generate_concatenated_expressions},
 };
+use crate::providers::storage::cache::cache;
+use crate::providers::storage::cache::cache_factory::CacheType;
+use crate::providers::storage::cache::CacheConfig;
 use crate::providers::storage::get_valid_bucket_name;
 use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::core::{
@@ -33,6 +36,7 @@ use diesel::result::Error as DieselError;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
+use sha1::{Digest, Sha1};
 use ulid::Ulid;
 // use std::collections::HashMap;
 // use diesel::prelude::*;
@@ -52,6 +56,7 @@ use std::sync::Mutex;
 use super::common_controller::{perform_upsert, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
 use mime_guess; // For MIME type detection from file extensions
+use redis;
 #[derive(Serialize, Debug)]
 pub struct ApiError {
     pub message: String,
@@ -204,7 +209,10 @@ pub async fn update_record(
     )
     .await
     {
-        Ok(response) => HttpResponse::Ok().json(response),
+        Ok(response) => {
+            invalidate_table_cache_prefix(&table_name);
+            HttpResponse::Ok().json(response)
+        }
         Err(error) => {
             log::error!(
                 "Error updating record in table '{}' with ID '{}': {:?}",
@@ -338,7 +346,10 @@ pub async fn create_record(
     )
     .await
     {
-        Ok(response) => HttpResponse::Ok().json(response),
+        Ok(response) => {
+            invalidate_table_cache_prefix(&table_name);
+            HttpResponse::Ok().json(response)
+        }
         Err(error) => {
             log::error!(
                 "Error creating record in table '{}': {:?}",
@@ -628,6 +639,7 @@ pub async fn batch_insert_records(
         data: processed_records, // Include the processed records in the response
     };
 
+    invalidate_table_cache_prefix(&table_name);
     HttpResponse::Ok().json(response)
 }
 
@@ -778,12 +790,15 @@ pub async fn batch_update_records(
             let mut conn = db::get_async_connection().await;
 
             match diesel::sql_query(&sql_query).execute(&mut conn).await {
-                Ok(count) => HttpResponse::Ok().json(ApiResponse {
-                    success: true,
-                    message: format!("Updated {} records in '{}'", count, table_name),
-                    count: count as i32,
-                    data: vec![],
-                }),
+                Ok(count) => {
+                    invalidate_table_cache_prefix(&table_name);
+                    HttpResponse::Ok().json(ApiResponse {
+                        success: true,
+                        message: format!("Updated {} records in '{}'", count, table_name),
+                        count: count as i32,
+                        data: vec![],
+                    })
+                }
                 Err(e) => {
                     log::error!(
                         "Error executing batch update in table '{}': {}",
@@ -905,12 +920,15 @@ pub async fn batch_delete_records(
             let mut conn = db::get_async_connection().await;
 
             match diesel::sql_query(&sql_query).execute(&mut conn).await {
-                Ok(count) => HttpResponse::Ok().json(ApiResponse {
-                    success: true,
-                    message: format!("Deleted {} records in '{}'", count, table_name),
-                    count: count as i32,
-                    data: vec![],
-                }),
+                Ok(count) => {
+                    invalidate_table_cache_prefix(&table_name);
+                    HttpResponse::Ok().json(ApiResponse {
+                        success: true,
+                        message: format!("Deleted {} records in '{}'", count, table_name),
+                        count: count as i32,
+                        data: vec![],
+                    })
+                }
                 Err(e) => {
                     log::error!(
                         "Error executing batch delete in table '{}': {}",
@@ -1123,6 +1141,7 @@ pub async fn delete_record(
                     record_id, table_name
                 ));
             }
+            invalidate_table_cache_prefix(&table_name);
             HttpResponse::Ok().json(response_value)
         }
         Err(error) => {
@@ -1216,6 +1235,30 @@ pub async fn get_by_filter(
     // Clone parameters for debug logging (since they will be moved to SQLConstructor)
     let parameters_for_debug = parameters.clone();
 
+    let filter_key_payload = serde_json::json!({
+        "params": &parameters_for_debug,
+        "org": &organization_id,
+        "tz": &timezone,
+        "is_root": is_root
+    });
+    let filter_str = serde_json::to_string(&filter_key_payload).unwrap_or_default();
+    let mut hasher = Sha1::new();
+    hasher.update(filter_str.as_bytes());
+    let filter_hash = format!("{:x}", hasher.finalize());
+    let cache_key = format!("{}_cache_{}", table, filter_hash);
+
+    if let Some(cached) = cache.get(&cache_key) {
+        if let Some(arr) = cached.as_array() {
+            let data: Vec<Value> = arr.clone();
+            return HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: format!("Filter operation completed for table: {} (from cache)", &table),
+                count: data.len() as i32,
+                data,
+            });
+        }
+    }
+
     // Create SQLConstructor with organization_id if available
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root, timezone);
     if let Some(org_id) = organization_id {
@@ -1282,6 +1325,12 @@ pub async fn get_by_filter(
         .filter_map(|result| result.row_to_json)
         .collect();
 
+    cache.insert_with_ttl(
+        cache_key,
+        serde_json::Value::Array(data.clone()),
+        std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
+    );
+
     HttpResponse::Ok().json(ApiResponse {
         success: true,
         message: format!("Filter operation completed for table: {}", &table),
@@ -1290,6 +1339,31 @@ pub async fn get_by_filter(
     })
 }
 
+fn invalidate_table_cache_prefix(table: &str) {
+    let cfg = CacheConfig::global().clone();
+    match cfg.cache_type {
+        CacheType::Redis => {
+            if let Some(conn_str) = cfg.redis_connection {
+                if let Ok(client) = redis::Client::open(conn_str.as_str()) {
+                    if let Ok(mut con) = client.get_connection() {
+                        let pattern = format!("{}_cache_*", table);
+                        let keys: Vec<String> = redis::cmd("KEYS")
+                            .arg(&pattern)
+                            .query(&mut con)
+                            .unwrap_or_default();
+                        if !keys.is_empty() {
+                            let _: Result<(), _> =
+                                redis::cmd("DEL").arg(keys).query(&mut con);
+                        }
+                    }
+                }
+            }
+        }
+        _ => {
+            log::warn!("Cache invalidation by prefix requires Redis cache");
+        }
+    }
+}
 /// Count route: POST /api/store/{table}/count
 /// Uses the same filter parsing as get_by_filter and aggregation_filter.
 /// Returns count of distinct rows matching the filters.
@@ -1338,6 +1412,38 @@ pub async fn count_by_filter(
 
     parameters.date_format = normalize_date_format(&parameters.date_format);
 
+    // Build a stable cache key based on filter params, org, tz, and root flag
+    let parameters_for_debug = parameters.clone();
+    let filter_key_payload = serde_json::json!({
+        "params": &parameters_for_debug,
+        "org": &organization_id,
+        "tz": &timezone,
+        "is_root": is_root
+    });
+    let filter_str = serde_json::to_string(&filter_key_payload).unwrap_or_default();
+    let mut hasher = Sha1::new();
+    hasher.update(filter_str.as_bytes());
+    let filter_hash = format!("{:x}", hasher.finalize());
+    let cache_key = format!("{}_cache_count_{}", table, filter_hash);
+
+    if let Some(cached) = cache.get(&cache_key) {
+        let cached_count = if let Some(n) = cached.as_i64() {
+            Some(n)
+        } else {
+            cached
+                .get("count")
+                .and_then(|v| v.as_i64())
+        };
+        if let Some(n) = cached_count {
+            return HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: format!("Count completed for table: {} (from cache)", &table),
+                count: n as i32,
+                data: vec![serde_json::json!({ "count": n })],
+            });
+        }
+    }
+
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root, timezone);
     if let Some(org_id) = organization_id {
         sql_constructor = sql_constructor.with_organization_id(org_id);
@@ -1381,6 +1487,12 @@ pub async fn count_by_filter(
         .and_then(|j| j.get("count"))
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
+
+    cache.insert_with_ttl(
+        cache_key,
+        serde_json::json!(count_value),
+        std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
+    );
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -1553,7 +1665,7 @@ pub async fn get_file_by_id(
 
     // Extract organization_id from auth_data
     let organization_id = Some(auth_data.organization_id.as_str());
-    log::info!("@@@@Extracted organization_id: {:?}", organization_id);
+    log::debug!("@@@@Extracted organization_id: {:?}", organization_id);
     // Use the common controller to get file metadata from database
     match process_and_get_record_by_id(
         "files",

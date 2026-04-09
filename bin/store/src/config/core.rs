@@ -63,6 +63,7 @@ pub struct EnvConfig {
     // Search suggestion
     pub default_search_pattern: String,
     pub search_suggestion_cache_ttl_ms: u64,
+    pub find_cache_ttl_ms: u64,
 
     // Log
     pub log_file_path: String,
@@ -236,6 +237,10 @@ impl Default for EnvConfig {
                 .unwrap_or_else(|_| "30000".to_string())
                 .parse()
                 .unwrap_or(30000),
+            find_cache_ttl_ms: std::env::var("FIND_CACHE_TTL_MS")
+                .unwrap_or_else(|_| "300000".to_string())
+                .parse()
+                .unwrap_or(300000),
 
             // Log
             log_file_path: std::env::var("LOG_FILE_PATH")

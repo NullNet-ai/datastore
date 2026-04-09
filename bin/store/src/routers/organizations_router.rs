@@ -1,12 +1,12 @@
 use crate::controllers::organization_controller::OrganizationsController;
-use crate::middlewares::session_middleware::SessionMiddleware;
+// use crate::middlewares::session_middleware::SessionMiddleware;
 use actix_web::web;
 use actix_web::web::ServiceConfig;
 
 pub fn configure_organizations_routes(cfg: &mut ServiceConfig) {
     cfg.service(
         web::scope("/api/organizations")
-            .wrap(SessionMiddleware)
+            // .wrap(SessionMiddleware)
             .route(
                 "/register",
                 web::post().to(OrganizationsController::register),
@@ -35,12 +35,14 @@ pub fn configure_organizations_routes(cfg: &mut ServiceConfig) {
 pub fn configure_token_routes(cfg: &mut ServiceConfig) {
     cfg.service(
         web::scope("/api/token")
-            .wrap(SessionMiddleware::default())
+            // .wrap(SessionMiddleware::default())
             .route(
                 "/verify",
                 web::post().to(OrganizationsController::verify_token),
             )
-            .service(web::scope("/api/password").wrap(SessionMiddleware).route(
+            .service(web::scope("/api/password")
+            // .wrap(SessionMiddleware)
+            .route(
                 "/verify",
                 web::post().to(OrganizationsController::verify_password),
             )),

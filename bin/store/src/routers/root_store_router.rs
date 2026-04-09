@@ -6,7 +6,7 @@ use crate::controllers::root_controller::{
     root_upsert, root_verify_schema,
 };
 use crate::middlewares::auth_middleware::Authentication;
-use crate::middlewares::session_middleware::SessionMiddleware;
+// use crate::middlewares::session_middleware::SessionMiddleware;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use actix_web::web;
 use actix_web::web::ServiceConfig;
@@ -16,7 +16,7 @@ pub fn configure_root_store_routes(cfg: &mut ServiceConfig) {
         web::scope("/api/store/root")
             .wrap(ShutdownGuard)
             .wrap(Authentication)
-            .wrap(SessionMiddleware::default())
+            // .wrap(SessionMiddleware::default())
             .route(
                 "/accounts/password/{account_id}",
                 web::patch().to(root_update_account_password),
