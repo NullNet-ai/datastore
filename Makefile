@@ -554,7 +554,7 @@ store-clean-setup-lm:
 	cd bin/store && \
 	RUSTFLAGS="-C debuginfo=0 -C codegen-units=1" \
 	cargo build -j 1 && \
-	RUST_LOG=info ./target/debug/store --cleanup --init-db
+	RUST_LOG=info ../../target/debug/store --cleanup --init-db
 
 # Run the store in watch mode
 store-watch:
