@@ -38,15 +38,11 @@ use serde::Serialize;
 use serde_json::Value;
 use sha1::{Digest, Sha1};
 use ulid::Ulid;
-// use std::collections::HashMap;
-// use diesel::prelude::*;
 use chrono::Local;
 use std::collections::BTreeMap;
 use std::fmt;
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
-// use diesel::sql_types::*;
-// use diesel::QueryableByName;
 use diesel::sql_query;
 use diesel_async::RunQueryDsl;
 use once_cell::sync::Lazy;
@@ -56,7 +52,6 @@ use std::sync::Mutex;
 use super::common_controller::{perform_upsert, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
 use mime_guess; // For MIME type detection from file extensions
-use redis;
 #[derive(Serialize, Debug)]
 pub struct ApiError {
     pub message: String,
@@ -1329,10 +1324,11 @@ pub async fn get_by_filter(
         .collect();
 
     cache.insert_with_ttl(
-        cache_key,
+        cache_key.clone(),
         serde_json::Value::Array(data.clone()),
         std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
     );
+    cache.add_index_key(&format!("{}_cache_", table), &cache_key);
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -1343,28 +1339,7 @@ pub async fn get_by_filter(
 }
 
 fn invalidate_table_cache_prefix(table: &str) {
-    let cfg = CacheConfig::global().clone();
-    match cfg.cache_type {
-        CacheType::Redis => {
-            if let Some(conn_str) = cfg.redis_connection {
-                if let Ok(client) = redis::Client::open(conn_str.as_str()) {
-                    if let Ok(mut con) = client.get_connection() {
-                        let pattern = format!("{}_cache_*", table);
-                        let keys: Vec<String> = redis::cmd("KEYS")
-                            .arg(&pattern)
-                            .query(&mut con)
-                            .unwrap_or_default();
-                        if !keys.is_empty() {
-                            let _: Result<(), _> = redis::cmd("DEL").arg(keys).query(&mut con);
-                        }
-                    }
-                }
-            }
-        }
-        _ => {
-            log::warn!("Cache invalidation by prefix requires Redis cache");
-        }
-    }
+    cache.remove_by_prefix(&format!("{}_cache_", table));
 }
 /// Count route: POST /api/store/{table}/count
 /// Uses the same filter parsing as get_by_filter and aggregation_filter.
@@ -1489,10 +1464,11 @@ pub async fn count_by_filter(
         .unwrap_or(0);
 
     cache.insert_with_ttl(
-        cache_key,
+        cache_key.clone(),
         serde_json::json!(count_value),
         std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
     );
+    cache.add_index_key(&format!("{}_cache_", table), &cache_key);
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -1501,6 +1477,8 @@ pub async fn count_by_filter(
         data: vec![serde_json::json!({ "count": count_value })],
     })
 }
+
+// Removed helper in favor of centralized cache methods
 
 //aggregation filter
 
