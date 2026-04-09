@@ -2974,7 +2974,7 @@ pub async fn search_suggestions(
                 }
             });
         }
-        
+
         let took_ms = started_at.elapsed().as_millis();
         log::debug!(
             "Search Suggestion: Redis cached response took {}ms (matview: {})",
