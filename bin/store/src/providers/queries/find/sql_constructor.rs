@@ -938,12 +938,16 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                     false,
                     self.request_body.get_time_format(),
                 );
+                let default_match_pattern = MatchPattern::Contains;
+                let effective_match_pattern =
+                    match_pattern.as_ref().or(Some(&default_match_pattern));
+
                 let final_statement = self.format_condition_with_case_sensitivity_and_pattern(
                     &field_name,
                     operator,
                     values,
                     *case_sensitive,
-                    match_pattern.as_ref(),
+                    effective_match_pattern,
                 );
                 return Ok(final_statement);
             }
@@ -990,12 +994,16 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                         false,
                         self.request_body.get_time_format(),
                     );
+                    let default_match_pattern = MatchPattern::Contains;
+                    let effective_match_pattern =
+                        match_pattern.as_ref().or(Some(&default_match_pattern));
+
                     let condition = self.format_condition_with_case_sensitivity_and_pattern(
                         &field_name,
                         operator,
                         values,
                         *case_sensitive,
-                        match_pattern.as_ref(),
+                        effective_match_pattern,
                     );
                     tokens.push(Token::Condition(condition));
                     i += 1;
@@ -1274,6 +1282,23 @@ impl<T: QueryFilter + Clone> SQLConstructor<T> {
                     "LIKE"
                 } else {
                     "ILIKE"
+                };
+                let pattern = self.build_like_pattern(&values_str[0], match_pattern);
+                if is_plural {
+                    let expr = if field_with_table.contains("::text") {
+                        field_with_table.clone()
+                    } else {
+                        format!("{}::text", field_with_table)
+                    };
+                    return format!("{} {} {}", expr, like_op, pattern);
+                }
+                format!("{} {} {}", field_with_table, like_op, pattern)
+            }
+            FilterOperator::NotLike => {
+                let like_op = if case_sensitive.unwrap_or(true) {
+                    "NOT LIKE"
+                } else {
+                    "NOT ILIKE"
                 };
                 let pattern = self.build_like_pattern(&values_str[0], match_pattern);
                 if is_plural {
