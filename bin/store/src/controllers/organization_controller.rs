@@ -726,9 +726,7 @@ impl OrganizationsController {
         let mut account_id = session_option
             .as_ref()
             .and_then(|s| s.user_account_id.clone());
-        let mut is_root = session_option
-            .as_ref()
-            .and_then(|s| s.user_is_root_user);
+        let mut is_root = session_option.as_ref().and_then(|s| s.user_is_root_user);
         let mut session_id = session_option.as_ref().and_then(|s| s.id.clone());
 
         let auth_header = req

@@ -1252,7 +1252,10 @@ pub async fn get_by_filter(
             let data: Vec<Value> = arr.clone();
             return HttpResponse::Ok().json(ApiResponse {
                 success: true,
-                message: format!("Filter operation completed for table: {} (from cache)", &table),
+                message: format!(
+                    "Filter operation completed for table: {} (from cache)",
+                    &table
+                ),
                 count: data.len() as i32,
                 data,
             });
@@ -1352,8 +1355,7 @@ fn invalidate_table_cache_prefix(table: &str) {
                             .query(&mut con)
                             .unwrap_or_default();
                         if !keys.is_empty() {
-                            let _: Result<(), _> =
-                                redis::cmd("DEL").arg(keys).query(&mut con);
+                            let _: Result<(), _> = redis::cmd("DEL").arg(keys).query(&mut con);
                         }
                     }
                 }
@@ -1430,9 +1432,7 @@ pub async fn count_by_filter(
         let cached_count = if let Some(n) = cached.as_i64() {
             Some(n)
         } else {
-            cached
-                .get("count")
-                .and_then(|v| v.as_i64())
+            cached.get("count").and_then(|v| v.as_i64())
         };
         if let Some(n) = cached_count {
             return HttpResponse::Ok().json(ApiResponse {
