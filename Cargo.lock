@@ -5013,7 +5013,7 @@ dependencies = [
  "sha1",
  "sha2",
  "socketioxide",
- "store-generator 0.1.20",
+ "store-generator 0.1.21 (sparse+https://crates.dnamicro.net/api/v1/crates/)",
  "thiserror 1.0.69",
  "time 0.3.47",
  "tokio",
@@ -5030,24 +5030,6 @@ dependencies = [
 
 [[package]]
 name = "store-generator"
-version = "0.1.20"
-source = "sparse+https://crates.dnamicro.net/api/v1/crates/"
-checksum = "89e596e84ae5650c7b139c3ad8d884bd0f9b9b9d2905035c9f4a539422895076"
-dependencies = [
- "chrono 0.4.44",
- "env_logger 0.11.10",
- "lazy_static 1.5.0",
- "log",
- "once_cell",
- "regex",
- "serde",
- "serde_json",
- "singularize",
- "toml 0.8.23",
-]
-
-[[package]]
-name = "store-generator"
 version = "0.1.21"
 dependencies = [
  "chrono 0.4.44",
@@ -5060,6 +5042,24 @@ dependencies = [
  "serde_json",
  "singularize",
  "tempfile",
+ "toml 0.8.23",
+]
+
+[[package]]
+name = "store-generator"
+version = "0.1.21"
+source = "sparse+https://crates.dnamicro.net/api/v1/crates/"
+checksum = "05453b33e5e84e8bf829d73045196502414c28a78d7331b428bdb2c8852e6483"
+dependencies = [
+ "chrono 0.4.44",
+ "env_logger 0.11.10",
+ "lazy_static 1.5.0",
+ "log",
+ "once_cell",
+ "regex",
+ "serde",
+ "serde_json",
+ "singularize",
  "toml 0.8.23",
 ]
 
