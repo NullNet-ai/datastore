@@ -250,11 +250,8 @@ impl SchemaGenerator {
                 // definition in the current schema. Two indexes are considered equivalent if
                 // they target the same table with the same columns, index type, uniqueness,
                 // and WHERE predicate (regardless of index name or naming convention).
-                if Self::is_index_overridden_by_current_def(
-                    &table_def.name,
-                    &existing_sql,
-                    indexes,
-                ) {
+                if Self::is_index_overridden_by_current_def(&table_def.name, &existing_sql, indexes)
+                {
                     changes.push(SchemaChange {
                         table_name: table_def.name.clone(),
                         change_type: SchemaChangeType::RemovedIndex,
@@ -565,7 +562,10 @@ impl SchemaGenerator {
                 .into_owned();
         }
         // Strip index name token between INDEX and ON "table"
-        let pattern = format!(r#"index\s+(?:if not exists\s+)?\"[^\"]+\"\s+on\s+\"{}\""#, table_name.to_lowercase());
+        let pattern = format!(
+            r#"index\s+(?:if not exists\s+)?\"[^\"]+\"\s+on\s+\"{}\""#,
+            table_name.to_lowercase()
+        );
         if let Ok(re) = regex::Regex::new(&pattern) {
             s = re
                 .replace(&s, format!("index on \"{}\"", table_name.to_lowercase()))
@@ -600,7 +600,8 @@ impl SchemaGenerator {
                 *is_unique,
             );
             if let Ok(expected_sql) = expected {
-                let expected_norm = Self::normalize_index_sql_for_equivalence(&expected_sql, table_name);
+                let expected_norm =
+                    Self::normalize_index_sql_for_equivalence(&expected_sql, table_name);
                 if expected_norm == existing_norm {
                     return true;
                 }
@@ -608,7 +609,6 @@ impl SchemaGenerator {
         }
         false
     }
-
 
     /// For reserved keywords, use a different Rust identifier and #[sql_name] to avoid clashes.
     fn format_schema_column(field_name: &str, field_type: &str) -> String {

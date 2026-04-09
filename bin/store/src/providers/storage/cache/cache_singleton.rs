@@ -101,7 +101,8 @@ impl Cache {
                                 cursor = res.0;
                                 let keys = res.1;
                                 if !keys.is_empty() {
-                                    let _: Result<(), _> = redis::cmd("DEL").arg(keys).query(&mut con);
+                                    let _: Result<(), _> =
+                                        redis::cmd("DEL").arg(keys).query(&mut con);
                                 }
                                 if cursor == 0 {
                                     break;
