@@ -48,7 +48,7 @@ const config = (table) => ({
   }, {}),
   connections_device_id_timestamp_idx: index('connections_device_id_timestamp_idx').on(table.device_id, table.timestamp),
   connections_device_id_source_ip_timestamp_idx: index('connections_device_id_source_ip_timestamp_idx').on(table.device_id, table.source_ip, table.timestamp),
-  connections_source_ip_trgm_idx: index('connections_source_ip_trgm_idx').using('gin').on(sql`(${table.source_ip}::text) gin_trgm_ops`),
+  connections_source_ip_trgm_idx: index('connections_source_ip_trgm_idx').using('gin', sql`(${table.source_ip}::text) gin_trgm_ops`),
 });
 
 export const table = pgTable(
