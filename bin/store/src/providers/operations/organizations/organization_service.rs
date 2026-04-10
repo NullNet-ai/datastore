@@ -245,18 +245,17 @@ pub async fn register(
             .await?;
         }
     } else {
-
         let existing_account_org = account_organizations::table
-        .filter(account_organizations::id.eq(&default_account_organization_id))
-        .first::<AccountOrganizationModel>(&mut conn)
-        .await
-        .optional()?;
+            .filter(account_organizations::id.eq(&default_account_organization_id))
+            .first::<AccountOrganizationModel>(&mut conn)
+            .await
+            .optional()?;
 
         existing_account_org_contact_id = existing_account_org
             .as_ref()
             .and_then(|ao| ao.contact_id.clone())
             .and_then(|id| if id.trim().is_empty() { None } else { Some(id) });
-            
+
         if existing_account_org.is_none() {
             log::info!("existing_account_org is None, create a default account_organization");
 
