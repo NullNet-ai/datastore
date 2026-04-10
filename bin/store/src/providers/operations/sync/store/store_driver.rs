@@ -73,10 +73,19 @@ pub async fn apply(
             log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
             Box::new(e) as Box<dyn std::error::Error>
         })?;
-        json_obj.insert(
-            "timestamp".to_string(),
-            json!(timestamp.with_timezone(&Utc)),
-        );
+        // Insert the timestamp in a format that matches the table column type:
+        // - If the DB column is timestamptz, keep RFC3339 with timezone (DateTime<Utc>)
+        // - If the DB column is timestamp (without tz), use NaiveDateTime (no timezone)
+        let ts_field_info = field_type_in_table(dataset, "timestamp");
+        let is_timestamptz = ts_field_info.map(|i| i.is_timestamptz).unwrap_or(false);
+        if is_timestamptz {
+            json_obj.insert(
+                "timestamp".to_string(),
+                json!(timestamp.with_timezone(&Utc)),
+            );
+        } else {
+            json_obj.insert("timestamp".to_string(), json!(timestamp.naive_utc()));
+        }
 
         let json_values = serde_json::Value::Object(json_obj);
 
