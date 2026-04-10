@@ -6,14 +6,11 @@ use crate::generated::models::account_organization_model::AccountOrganizationMod
 use crate::generated::models::account_profile_model::AccountProfileModel;
 use crate::generated::models::contact_email_model::ContactEmailModel;
 use crate::generated::models::contact_model::ContactModel;
-use crate::generated::models::counter_model::CounterModel;
 use crate::generated::models::device_model::DeviceModel;
 use crate::generated::models::organization_account_model::OrganizationAccountModel;
 use crate::generated::models::organization_model::OrganizationModel;
 use crate::generated::schema::account_organizations;
 use crate::generated::schema::accounts;
-use crate::generated::schema::contact_emails;
-use crate::generated::schema::counters;
 use crate::generated::schema::devices;
 use crate::generated::schema::organizations;
 use crate::providers::operations::auth::auth_service;
