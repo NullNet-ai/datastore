@@ -222,8 +222,13 @@ make store-clean-setup
 make store
 ```
 ## Getting Started (Manual Setup)
+## High‑Load and Backpressure Guide
+- For how the system behaves under pressure, where backpressure is applied, and how to tune environment variables for stable high‑throughput operation, see:
+  - docs/High-Load-Resilience.md
+
 
 1. Clone the repository:
+
 
    ```bash
    git clone <your-repository-url>

@@ -5,11 +5,14 @@ use crate::{
     utils::helpers::parse_command_args,
 };
 use log::{debug, error, info, warn};
-use metrics_exporter_prometheus::PrometheusBuilder;
+use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
+use once_cell::sync::OnceCell;
+
+static PROM_HANDLE: OnceCell<PrometheusHandle> = OnceCell::new();
 // tokio_metrics integration via metrics-rs is optional; we will sample runtime metrics manually
 
 /// Runtime health status
@@ -49,6 +52,9 @@ pub struct RuntimeManager {
 }
 
 impl RuntimeManager {
+    pub fn get_prometheus_handle() -> Option<&'static PrometheusHandle> {
+        PROM_HANDLE.get()
+    }
     /// Create a new runtime manager
     pub fn new(config: Arc<EnvConfig>) -> Self {
         info!("[RUNTIME] Initializing runtime manager");
@@ -138,8 +144,11 @@ impl RuntimeManager {
                 PrometheusBuilder::new()
             }
         };
-        match builder.install() {
-            Ok(()) => info!("[RUNTIME] Prometheus exporter installed"),
+        match builder.install_recorder() {
+            Ok(handle) => {
+                let _ = PROM_HANDLE.set(handle);
+                info!("[RUNTIME] Prometheus exporter installed")
+            }
             Err(e) => error!("[RUNTIME] Failed to install Prometheus exporter: {}", e),
         }
 
@@ -239,9 +248,13 @@ impl RuntimeManager {
 
     /// Perform comprehensive health check
     async fn perform_health_check() -> HealthStatus {
-        // Check database connectivity
         if let Err(e) = Self::check_database_health().await {
-            return HealthStatus::Unhealthy(format!("Database connectivity issue: {}", e));
+            let msg = format!("Database connectivity issue: {}", e);
+            if msg.to_lowercase().contains("timed out") {
+                return HealthStatus::Degraded(msg);
+            } else {
+                return HealthStatus::Unhealthy(msg);
+            }
         }
 
         // Check cache system
@@ -573,7 +586,10 @@ impl RuntimeManager {
                     }
                     Err(e) => {
                         error!("[RUNTIME] HTTP server task join error: {}", e);
-                        return Err(Box::new(e));
+                        return Err(Box::new(std::io::Error::new(
+                            std::io::ErrorKind::Other,
+                            format!("HTTP server task join error: {}", e)
+                        )));
                     }
                 }
             },
@@ -615,7 +631,7 @@ impl RuntimeManager {
             return Err(format!("Invalid bind address format: {}", bind_address).into());
         }
 
-        let server = HttpServer::new(move || {
+        let server_builder = HttpServer::new(move || {
             let app_state = AppState {
                 s3_client: s3_client.clone(),
                 bucket_name: bucket_name.clone(),
@@ -648,8 +664,16 @@ impl RuntimeManager {
             }
 
             app
-        })
-        .workers(1)
+        });
+
+        let server_builder = if let Some(w) = self.config.server_workers {
+            server_builder.workers(w)
+        } else {
+            server_builder
+        };
+
+        let server = server_builder
+        .keep_alive(std::time::Duration::from_secs(self.config.server_keep_alive_secs))
         .disable_signals()
         .bind(&bind_address)
         .map_err(|e| {

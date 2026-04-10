@@ -18,6 +18,8 @@ use diesel::result::Error as DieselError;
 use merkle::MerkleTree;
 use serde::Serialize;
 use ulid::Ulid;
+use std::sync::OnceLock;
+use std::sync::mpsc::{SyncSender, Receiver, sync_channel};
 
 #[derive(Serialize)]
 struct ApiError {
@@ -59,7 +61,49 @@ impl From<DieselError> for ApiError {
     }
 }
 
-// ... existing code ...
+struct BgInsertTask {
+    messages: Vec<NewCrdtClientMessage>,
+}
+
+static BG_INSERT_SENDER: OnceLock<SyncSender<BgInsertTask>> = OnceLock::new();
+
+pub fn init_bg_insert_worker() {
+    BG_INSERT_SENDER.get_or_init(|| {
+        let capacity = std::env::var("INSERT_QUEUE_CAPACITY")
+            .ok()
+            .and_then(|v| v.parse::<usize>().ok())
+            .unwrap_or(100);
+        let (tx, rx): (SyncSender<BgInsertTask>, Receiver<BgInsertTask>) = sync_channel(capacity);
+        std::thread::spawn(move || {
+            let mut bg_conn = db::db::get_connection();
+            loop {
+                match rx.recv() {
+                    Ok(task) => {
+                        const BATCH_SIZE: usize = 10_000;
+                        for chunk in task.messages.chunks(BATCH_SIZE) {
+                            let _ = diesel::insert_into(crdt_client_messages)
+                                .values(chunk)
+                                .on_conflict(record_id)
+                                .do_nothing()
+                                .execute(&mut bg_conn);
+                        }
+                    }
+                    Err(_) => break,
+                }
+            }
+        });
+        tx
+    });
+}
+
+fn try_enqueue_bg_insert(cid: String, messages: Vec<NewCrdtClientMessage>) -> Result<(), ()> {
+    if let Some(sender) = BG_INSERT_SENDER.get() {
+        let _ = cid;
+        sender.try_send(BgInsertTask { messages }).map_err(|_| ())
+    } else {
+        Err(())
+    }
+}
 
 pub async fn delete_chunk(
     pool: web::Data<db::db::DbPool>,
@@ -328,166 +372,87 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
         req_client_id,
         req_messages.len()
     );
-    let mut conn = db::db::get_connection();
-    let result_trie: Result<MerkleTree, DieselError> = conn.transaction(|tx| {
-        Ok(crdt_service::add_messages(
-            tx,
-            req_group_id.clone(),
-            req_client_id.clone(),
-            req_messages.clone(),
-        ))
-    });
-    let trie = match result_trie {
-        Ok(trie) => trie,
-        Err(_) => {
+    let req_group_id_db = req_group_id.clone();
+    let req_client_id_db = req_client_id.clone();
+    let req_messages_db = req_messages.clone();
+    let req_client_merkle_db = req_client_merkle.clone();
+    let db_result = web::block(move || -> Result<(MerkleTree, Vec<CrdtMessage>), ApiError> {
+        let mut conn = db::db::get_connection();
+        let trie_result: Result<MerkleTree, DieselError> = conn.transaction(|tx| {
+            Ok(crdt_service::add_messages(
+                tx,
+                req_group_id_db.clone(),
+                req_client_id_db.clone(),
+                req_messages_db.clone(),
+            ))
+        });
+        let trie = trie_result.map_err(ApiError::from)?;
+        let mut new_messages: Vec<CrdtMessage> = vec![];
+        let client_merkle_empty_or_missing = req_client_merkle_db
+            .as_ref()
+            .map(|m| m.trim().is_empty() || m.trim() == "{}")
+            .unwrap_or(true);
+        if client_merkle_empty_or_missing {
+            match get_all_messages_from_timestamp(&mut conn, "", &req_group_id_db, &req_client_id_db)
+            {
+                Ok(messages) => {
+                    new_messages = messages;
+                }
+                Err(_) => {}
+            }
+        } else if let Some(merkle) = req_client_merkle_db.clone() {
+            if !merkle.trim().is_empty() && merkle.trim() != "{}" {
+                let parsed_client_merkle = match MerkleTree::deserialize(&merkle) {
+                    Ok(tree) => tree,
+                    Err(_) => return Err(ApiError::new(http::StatusCode::BAD_REQUEST, "invalid merkle")),
+                };
+                let diff_time = trie.find_differences(&parsed_client_merkle);
+                if !diff_time.is_empty() {
+                    let (_, server_node, client_node) = &diff_time[0];
+                    let min_timestamp_str = if server_node.value <= client_node.value {
+                        &server_node.value
+                    } else {
+                        &client_node.value
+                    };
+                    if server_node.value != client_node.value {
+                        match get_all_messages_from_timestamp(
+                            &mut conn,
+                            min_timestamp_str,
+                            &req_group_id_db,
+                            &req_client_id_db,
+                        ) {
+                            Ok(messages) => {
+                                new_messages = messages;
+                            }
+                            Err(_) => {}
+                        }
+                    }
+                }
+            }
+        }
+        Ok((trie, new_messages))
+    })
+    .await;
+    let (trie, mut new_messages) = match db_result {
+        Ok(Ok(pair)) => pair,
+        Ok(Err(err)) => {
             let response = serde_json::json!({
                 "status": "error",
-                "message": "Internal server error"
+                "message": err.message
+            });
+            return actix_web::HttpResponse::InternalServerError().json(response);
+        }
+        Err(err) => {
+            let api_err = ApiError::from(err);
+            let response = serde_json::json!({
+                "status": "error",
+                "message": api_err.message
             });
             return actix_web::HttpResponse::InternalServerError().json(response);
         }
     };
     log::info!("[NEW_CLIENT_CATCHUP] Step 1: Server merkle updated (add_messages done)");
-    // ! check for release the connection to the pool afterwards
     let mut incomplete = 0;
-    let mut new_messages: Vec<CrdtMessage> = vec![];
-    let client_merkle_empty_or_missing = req_client_merkle
-        .as_ref()
-        .map(|m| m.trim().is_empty() || m.trim() == "{}")
-        .unwrap_or(true);
-    if client_merkle_empty_or_missing {
-        // Bootstrap: client has no / empty merkle — send all messages from server so client can catch up
-        log::info!(
-            "[NEW_CLIENT_CATCHUP] Step 2b: Path BOOTSTRAP (client merkle empty) client_id={}",
-            req_client_id
-        );
-        match get_all_messages_from_timestamp(&mut conn, "", &req_group_id, &req_client_id) {
-            Ok(messages) => {
-                log::info!(
-                    "Bootstrap: sending {} messages to client_id={}",
-                    messages.len(),
-                    req_client_id
-                );
-                new_messages = messages;
-            }
-            Err(err) => {
-                log::error!("Bootstrap: error retrieving messages: {:?}", err);
-            }
-        }
-    } else if let Some(merkle) = req_client_merkle.clone() {
-        if !merkle.trim().is_empty() && merkle.trim() != "{}" {
-            log::info!(
-                "[NEW_CLIENT_CATCHUP] Step 2a: Path MERKLE_DIFF (client has non-empty merkle) client_id={}",
-                req_client_id
-            );
-            log::info!(
-                "Sync catch-up: client_id={} has non-empty merkle, computing diff",
-                req_client_id
-            );
-            let client_merkle = match req_client_merkle {
-                Some(merkle) => merkle,
-                None => {
-                    log::error!("Client merkle is None despite previous check");
-                    let response = serde_json::json!({
-                        "status": "error",
-                        "message": "Invalid client merkle data"
-                    });
-                    return actix_web::HttpResponse::BadRequest().json(response);
-                }
-            };
-
-            let parsed_client_merkle = match MerkleTree::deserialize(&client_merkle) {
-                Ok(tree) => tree,
-                Err(err) => {
-                    log::error!("Failed to deserialize client merkle tree: {:?}", err);
-                    let response = serde_json::json!({
-                        "status": "error",
-                        "message": "Failed to parse client merkle tree"
-                    });
-                    return actix_web::HttpResponse::BadRequest().json(response);
-                }
-            };
-
-            // Log both trees and the diff for debugging
-            let server_root = trie
-                .root
-                .as_ref()
-                .map(|n| format!("hash={} value={}", n.hash, n.value))
-                .unwrap_or_else(|| "None".to_string());
-            let client_root = parsed_client_merkle
-                .root
-                .as_ref()
-                .map(|n| format!("hash={} value={}", n.hash, n.value))
-                .unwrap_or_else(|| "None".to_string());
-            log::info!(
-                "[MERKLE_TREES] client_id={} server_root=[{}] client_root=[{}]",
-                req_client_id,
-                server_root,
-                client_root
-            );
-            let diff_time = trie.find_differences(&parsed_client_merkle);
-            for (idx, (path, server_node, client_node)) in diff_time.iter().enumerate() {
-                log::info!(
-                    "[MERKLE_DIFF] client_id={} diff[{}] path={} server_value={} client_value={} server_hash={} client_hash={}",
-                    req_client_id,
-                    idx,
-                    path,
-                    server_node.value,
-                    client_node.value,
-                    server_node.hash,
-                    client_node.hash
-                );
-            }
-            log::info!(
-                "Sync catch-up: client_id={} merkle diff size={}",
-                req_client_id,
-                diff_time.len()
-            );
-
-            if !diff_time.is_empty() {
-                let (_, server_node, client_node) = &diff_time[0];
-
-                let min_timestamp_str = if server_node.value <= client_node.value {
-                    &server_node.value
-                } else {
-                    &client_node.value
-                };
-                // Check if both timestamps are equal
-                if server_node.value != client_node.value {
-                    log::debug!(
-                        "Lag detected - Using timestamp: {}, client_id: {}",
-                        min_timestamp_str,
-                        req_client_id
-                    );
-                    // Parse the full timestamp for further use if needed
-                    // let timestamp = Timestamp::parse(min_timestamp_str.to_string());
-                    match get_all_messages_from_timestamp(
-                        &mut conn,
-                        min_timestamp_str,
-                        &req_group_id,
-                        &req_client_id,
-                    ) {
-                        Ok(messages) => {
-                            log::debug!("Retrieved {} messages", messages.len());
-                            new_messages = messages;
-                        }
-                        Err(err) => {
-                            log::error!("Error retrieving messages: {:?}", err);
-                            // Handle the error appropriately
-                        }
-                    }
-                } else {
-                    log::debug!("No lag detected for client_id: {}", req_client_id);
-                }
-                log::debug!(
-                    "Server timestamp: {}, Client timestamp: {}, Using: {}",
-                    server_node.value,
-                    client_node.value,
-                    min_timestamp_str
-                );
-            }
-        }
-    }
 
     log::info!(
         "[NEW_CLIENT_CATCHUP] Step 3: Decision new_messages.len()={} outgoing_limit={} will_store_and_return_incomplete={}",
@@ -541,43 +506,17 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
 
         let stored_total = client_messages.len();
 
-        // Respond immediately — client will poll /chunk/status until count == total.
-        // The actual DB inserts happen in a background thread so this handler returns right away.
-        let client_id_for_thread = req_client_id.clone();
-        std::thread::spawn(move || {
-            const BATCH_SIZE: usize = 10_000;
-            let mut bg_conn = db::db::get_connection();
-            for (batch_idx, chunk) in client_messages.chunks(BATCH_SIZE).enumerate() {
-                match diesel::insert_into(crdt_client_messages)
-                    .values(chunk)
-                    .on_conflict(record_id)
-                    .do_nothing()
-                    .execute(&mut bg_conn)
-                {
-                    Ok(rows) => {
-                        log::debug!(
-                            "BG insert: batch {} ({} rows) for client_id={}",
-                            batch_idx,
-                            rows,
-                            client_id_for_thread
-                        );
-                    }
-                    Err(err) => {
-                        log::error!(
-                            "BG insert: error on batch {} for client_id={}: {}",
-                            batch_idx,
-                            client_id_for_thread,
-                            err
-                        );
-                    }
-                }
+        init_bg_insert_worker();
+        match try_enqueue_bg_insert(req_client_id.clone(), client_messages) {
+            Ok(()) => {}
+            Err(()) => {
+                let response = serde_json::json!({
+                    "status": "error",
+                    "message": "server_busy"
+                });
+                return actix_web::HttpResponse::ServiceUnavailable().json(response);
             }
-            log::info!(
-                "BG insert complete: {} rows stored for client_id={}",
-                stored_total,
-                client_id_for_thread
-            );
-        });
+        }
 
         incomplete = 1;
         log::info!(

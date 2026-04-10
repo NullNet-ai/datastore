@@ -23,6 +23,7 @@ pub fn configure_health_routes(cfg: &mut ServiceConfig) {
     cfg.service(
         web::scope("/api")
             .route("/health", web::get().to(HealthController::health_check))
+            .route("/metrics", web::get().to(HealthController::metrics))
             .route(
                 "/health/detailed",
                 web::get().to(HealthController::detailed_health_check),

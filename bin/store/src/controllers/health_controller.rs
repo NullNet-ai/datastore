@@ -318,6 +318,16 @@ impl HealthController {
         }
     }
 
+    pub async fn metrics() -> impl Responder {
+        if let Some(handle) = crate::lifecycle::runtime::RuntimeManager::get_prometheus_handle() {
+            HttpResponse::Ok()
+                .content_type("text/plain; version=0.0.4")
+                .body(handle.render())
+        } else {
+            HttpResponse::ServiceUnavailable().finish()
+        }
+    }
+
     /// Kubernetes-style readiness probe
     /// Returns 200 if the service is ready to accept traffic
     pub async fn readiness_probe(health_service: web::Data<Arc<HealthService>>) -> impl Responder {

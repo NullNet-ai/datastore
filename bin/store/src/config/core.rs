@@ -99,6 +99,9 @@ pub struct EnvConfig {
     // Test
     pub strict_validation: bool,
     pub prometheus_base_url: String,
+    pub server_keep_alive_secs: u64,
+    pub server_workers: Option<usize>,
+    pub insert_queue_capacity: usize,
 }
 
 impl Default for EnvConfig {
@@ -319,6 +322,15 @@ impl Default for EnvConfig {
                 .unwrap_or(false),
             prometheus_base_url: std::env::var("PROMETHEUS_BASE_URL")
                 .unwrap_or_else(|_| "http://prometheus:9090".to_string()),
+            server_keep_alive_secs: std::env::var("KEEP_ALIVE_SECS")
+                .unwrap_or_else(|_| "30".to_string())
+                .parse()
+                .unwrap_or(30),
+            server_workers: std::env::var("WORKERS").ok().and_then(|s| s.parse::<usize>().ok()),
+            insert_queue_capacity: std::env::var("INSERT_QUEUE_CAPACITY")
+                .unwrap_or_else(|_| "100".to_string())
+                .parse()
+                .unwrap_or(100),
         }
     }
 }
