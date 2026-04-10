@@ -47,7 +47,11 @@ async fn main() -> std::io::Result<()> {
                 .route("/ping", web::get().to(|| async { "pong" })),
         )
     });
-    let http = if let Some(w) = workers { http.workers(w) } else { http };
+    let http = if let Some(w) = workers {
+        http.workers(w)
+    } else {
+        http
+    };
     let http = http.keep_alive(Duration::from_secs(keep_alive_secs));
     http.bind(server_url)?.run().await
 }

@@ -17,9 +17,9 @@ use diesel::prelude::*;
 use diesel::result::Error as DieselError;
 use merkle::MerkleTree;
 use serde::Serialize;
-use ulid::Ulid;
+use std::sync::mpsc::{sync_channel, Receiver, SyncSender};
 use std::sync::OnceLock;
-use std::sync::mpsc::{SyncSender, Receiver, sync_channel};
+use ulid::Ulid;
 
 #[derive(Serialize)]
 struct ApiError {
@@ -376,62 +376,73 @@ pub async fn sync(request: web::Json<SyncRequestBody>) -> impl Responder {
     let req_client_id_db = req_client_id.clone();
     let req_messages_db = req_messages.clone();
     let req_client_merkle_db = req_client_merkle.clone();
-    let db_result = web::block(move || -> Result<(MerkleTree, Vec<CrdtMessage>), ApiError> {
-        let mut conn = db::db::get_connection();
-        let trie_result: Result<MerkleTree, DieselError> = conn.transaction(|tx| {
-            Ok(crdt_service::add_messages(
-                tx,
-                req_group_id_db.clone(),
-                req_client_id_db.clone(),
-                req_messages_db.clone(),
-            ))
-        });
-        let trie = trie_result.map_err(ApiError::from)?;
-        let mut new_messages: Vec<CrdtMessage> = vec![];
-        let client_merkle_empty_or_missing = req_client_merkle_db
-            .as_ref()
-            .map(|m| m.trim().is_empty() || m.trim() == "{}")
-            .unwrap_or(true);
-        if client_merkle_empty_or_missing {
-            match get_all_messages_from_timestamp(&mut conn, "", &req_group_id_db, &req_client_id_db)
-            {
-                Ok(messages) => {
-                    new_messages = messages;
+    let db_result = web::block(
+        move || -> Result<(MerkleTree, Vec<CrdtMessage>), ApiError> {
+            let mut conn = db::db::get_connection();
+            let trie_result: Result<MerkleTree, DieselError> = conn.transaction(|tx| {
+                Ok(crdt_service::add_messages(
+                    tx,
+                    req_group_id_db.clone(),
+                    req_client_id_db.clone(),
+                    req_messages_db.clone(),
+                ))
+            });
+            let trie = trie_result.map_err(ApiError::from)?;
+            let mut new_messages: Vec<CrdtMessage> = vec![];
+            let client_merkle_empty_or_missing = req_client_merkle_db
+                .as_ref()
+                .map(|m| m.trim().is_empty() || m.trim() == "{}")
+                .unwrap_or(true);
+            if client_merkle_empty_or_missing {
+                match get_all_messages_from_timestamp(
+                    &mut conn,
+                    "",
+                    &req_group_id_db,
+                    &req_client_id_db,
+                ) {
+                    Ok(messages) => {
+                        new_messages = messages;
+                    }
+                    Err(_) => {}
                 }
-                Err(_) => {}
-            }
-        } else if let Some(merkle) = req_client_merkle_db.clone() {
-            if !merkle.trim().is_empty() && merkle.trim() != "{}" {
-                let parsed_client_merkle = match MerkleTree::deserialize(&merkle) {
-                    Ok(tree) => tree,
-                    Err(_) => return Err(ApiError::new(http::StatusCode::BAD_REQUEST, "invalid merkle")),
-                };
-                let diff_time = trie.find_differences(&parsed_client_merkle);
-                if !diff_time.is_empty() {
-                    let (_, server_node, client_node) = &diff_time[0];
-                    let min_timestamp_str = if server_node.value <= client_node.value {
-                        &server_node.value
-                    } else {
-                        &client_node.value
+            } else if let Some(merkle) = req_client_merkle_db.clone() {
+                if !merkle.trim().is_empty() && merkle.trim() != "{}" {
+                    let parsed_client_merkle = match MerkleTree::deserialize(&merkle) {
+                        Ok(tree) => tree,
+                        Err(_) => {
+                            return Err(ApiError::new(
+                                http::StatusCode::BAD_REQUEST,
+                                "invalid merkle",
+                            ))
+                        }
                     };
-                    if server_node.value != client_node.value {
-                        match get_all_messages_from_timestamp(
-                            &mut conn,
-                            min_timestamp_str,
-                            &req_group_id_db,
-                            &req_client_id_db,
-                        ) {
-                            Ok(messages) => {
-                                new_messages = messages;
+                    let diff_time = trie.find_differences(&parsed_client_merkle);
+                    if !diff_time.is_empty() {
+                        let (_, server_node, client_node) = &diff_time[0];
+                        let min_timestamp_str = if server_node.value <= client_node.value {
+                            &server_node.value
+                        } else {
+                            &client_node.value
+                        };
+                        if server_node.value != client_node.value {
+                            match get_all_messages_from_timestamp(
+                                &mut conn,
+                                min_timestamp_str,
+                                &req_group_id_db,
+                                &req_client_id_db,
+                            ) {
+                                Ok(messages) => {
+                                    new_messages = messages;
+                                }
+                                Err(_) => {}
                             }
-                            Err(_) => {}
                         }
                     }
                 }
             }
-        }
-        Ok((trie, new_messages))
-    })
+            Ok((trie, new_messages))
+        },
+    )
     .await;
     let (trie, mut new_messages) = match db_result {
         Ok(Ok(pair)) => pair,

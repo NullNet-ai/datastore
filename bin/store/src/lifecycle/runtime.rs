@@ -6,11 +6,11 @@ use crate::{
 };
 use log::{debug, error, info, warn};
 use metrics_exporter_prometheus::{PrometheusBuilder, PrometheusHandle};
+use once_cell::sync::OnceCell;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 use tokio::signal::unix::{signal, SignalKind};
 use tokio::sync::RwLock;
-use once_cell::sync::OnceCell;
 
 static PROM_HANDLE: OnceCell<PrometheusHandle> = OnceCell::new();
 // tokio_metrics integration via metrics-rs is optional; we will sample runtime metrics manually
@@ -673,17 +673,19 @@ impl RuntimeManager {
         };
 
         let server = server_builder
-        .keep_alive(std::time::Duration::from_secs(self.config.server_keep_alive_secs))
-        .disable_signals()
-        .bind(&bind_address)
-        .map_err(|e| {
-            error!(
-                "[RUNTIME] Failed to bind HTTP server to {}: {}",
-                bind_address, e
-            );
-            e
-        })?
-        .run();
+            .keep_alive(std::time::Duration::from_secs(
+                self.config.server_keep_alive_secs,
+            ))
+            .disable_signals()
+            .bind(&bind_address)
+            .map_err(|e| {
+                error!(
+                    "[RUNTIME] Failed to bind HTTP server to {}: {}",
+                    bind_address, e
+                );
+                e
+            })?
+            .run();
 
         info!(
             "[RUNTIME] HTTP server configured and ready to start on {}",

@@ -326,7 +326,9 @@ impl Default for EnvConfig {
                 .unwrap_or_else(|_| "30".to_string())
                 .parse()
                 .unwrap_or(30),
-            server_workers: std::env::var("WORKERS").ok().and_then(|s| s.parse::<usize>().ok()),
+            server_workers: std::env::var("WORKERS")
+                .ok()
+                .and_then(|s| s.parse::<usize>().ok()),
             insert_queue_capacity: std::env::var("INSERT_QUEUE_CAPACITY")
                 .unwrap_or_else(|_| "100".to_string())
                 .parse()
