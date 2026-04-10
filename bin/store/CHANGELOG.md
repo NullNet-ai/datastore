@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.70
+
+### Author
+Jean
+
+### Fixed
+  - ***Registration flow — account_organization/contact/device reuse and code generation***:
+    - `providers/operations/organizations/organization_service.rs`
+      - Reuse existing draft `account_organizations` records where present and generate `code` only when inserting initial rows, avoiding duplicate records and code churn.
+      - When re-registering a contact account that already has a draft `account_organization`, reuse its `contact_id` and update the contact instead of creating a new one, so contact/account links remain stable.
+      - Ensure device registration always generates a device code via the remote counter service and returns the team organization ID in the register response when the device already exists.
+      - Treat `account_organizations` writes in the non-contact path as updates rather than inserts so `created_*` fields are preserved and the response always returns the persisted `account_organization_id`.
+
 ## 0.2.69
 
 ### Author
