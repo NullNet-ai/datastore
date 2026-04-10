@@ -255,51 +255,6 @@ pub async fn create_record(
 
     let table_name = table.into_inner();
 
-    // If the request explicitly provides an 'id', route this call through the upsert path
-    // using 'id' as the conflict column to avoid duplicate key errors and ensure idempotency.
-    if body
-        .get("id")
-        .and_then(|v| v.as_str())
-        .map(|s| !s.trim().is_empty())
-        .unwrap_or(false)
-    {
-        let pluck_fields = if !query.pluck.is_empty() {
-            Some(
-                query
-                    .pluck
-                    .split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect(),
-            )
-        } else {
-            None
-        };
-        let data = body.into_inner();
-        let conflict_columns = vec!["id".to_string()];
-        match perform_upsert(
-            &table_name,
-            conflict_columns,
-            data,
-            pluck_fields,
-            &auth_data,
-            is_root_controller,
-        )
-        .await
-        {
-            Ok(response) => return HttpResponse::Ok().json(response),
-            Err(error) => {
-                let status_code = http::StatusCode::from_u16(error.status)
-                    .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
-                return HttpResponse::build(status_code).json(ApiResponse {
-                    success: false,
-                    message: error.message,
-                    count: 0,
-                    data: vec![],
-                });
-            }
-        }
-    }
-
     // Perform different operations based on controller type
     if is_root_controller {
         log::info!(
