@@ -455,11 +455,16 @@ impl SchemaGenerator {
         index_name: &str,
     ) -> Option<String> {
         let migrations_dir = paths::database::MIGRATIONS_DIR.as_str();
-        let entries = std::fs::read_dir(migrations_dir).ok()?;
-        for entry in entries.flatten() {
-            let up_sql =
-                std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE)).ok()?;
-            // Match full line: CREATE [UNIQUE] INDEX "index_name" ON "table_name" ... ;
+        // Collect migration entries and sort by directory name (Diesel timestamp prefix ensures lexical = chronological)
+        let mut entries: Vec<_> = std::fs::read_dir(migrations_dir)
+            .ok()?
+            .flatten()
+            .collect();
+        entries.sort_by_key(|e| e.file_name());
+        // Iterate from newest to oldest to pick the latest definition for this index
+        for entry in entries.iter().rev() {
+            let up_path = entry.path().join(paths::database::UP_SQL_FILE);
+            let up_sql = std::fs::read_to_string(&up_path).ok()?;
             let on_table = format!("ON \"{}\"", table_name);
             if !up_sql.contains(&on_table) {
                 continue;
@@ -471,7 +476,6 @@ impl SchemaGenerator {
                     && line.contains(&format!("\"{}\"", index_name))
                     && line.contains(&on_table)
                 {
-                    // Strip Diesel/statement-breakpoint comment (e.g. ";--> statement-breakpoint") so comparison matches generator output
                     let sql = if let Some(comment_start) = line.find("-->") {
                         line[..comment_start].trim_end().trim_end_matches(';')
                     } else {
@@ -529,19 +533,30 @@ impl SchemaGenerator {
     /// btree(tombstone) and btree("tombstone") from migrations are treated as equal.
     fn normalize_index_sql_for_compare(sql: &str) -> String {
         let s = sql.trim().trim_end_matches(';');
-        let s = s.to_lowercase();
-        let s = s.split_whitespace().collect::<Vec<_>>().join(" ");
+        let mut s = s.to_lowercase();
+        s = s.split_whitespace().collect::<Vec<_>>().join(" ");
+        // If no explicit USING is present, assume PostgreSQL default btree for comparison purposes.
+        if !s.contains(" using ") {
+            if let Ok(re) = regex::Regex::new(r#"on\s+"([^"]+)"\s*\("#) {
+                s = re
+                    .replace_all(&s, |caps: &regex::Captures<'_>| {
+                        let table = &caps[1];
+                        format!("on \"{}\" using btree(", table)
+                    })
+                    .into_owned();
+            }
+        }
         // Normalize column list: ("col") or (col) -> (col) so existing migrations match generator output
         if let Ok(re) = regex::Regex::new(r"using btree\(([^)]+)\)") {
-            let s = re.replace_all(&s, |caps: &regex::Captures<'_>| {
-                let inner = &caps[1];
-                let unquoted = inner.replace('"', "");
-                format!("using btree({})", unquoted)
-            });
-            s.into_owned()
-        } else {
-            s
+            s = re
+                .replace_all(&s, |caps: &regex::Captures<'_>| {
+                    let inner = &caps[1];
+                    let unquoted = inner.replace('"', "");
+                    format!("using btree({})", unquoted)
+                })
+                .into_owned();
         }
+        s
     }
 
     /// Normalize CREATE INDEX SQL to ignore index name differences for equivalence checks.
