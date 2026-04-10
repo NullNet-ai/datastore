@@ -8,6 +8,7 @@ const config = (table) => ({
   pk: primaryKey({ columns: [table.id] }),
   ...getConfigDefaults.defaultIndexes('ip_infos', table),
   ip_infos_ip_idx: index('ip_infos_ip_idx').on(table.ip),
+  ip_infos_country_idx: index('ip_infos_country_idx').on(table.country),
 });
 export const table = pgTable(
   'ip_infos',
