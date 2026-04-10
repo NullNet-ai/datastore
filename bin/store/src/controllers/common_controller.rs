@@ -38,21 +38,21 @@ impl From<tokio_postgres::Error> for AppError {
     }
 }
 
-/// Check if a table physically exists in the database by querying information_schema.
-pub async fn temp_table_exists_in_db(table_name: &str) -> Result<bool, AppError> {
-    let client = db::create_connection()
-        .await
-        .map_err(|e| AppError::DbConnection(e.to_string()))?;
-    let row = client
-        .query_one(
-            "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = $1)",
-            &[&table_name],
-        )
-        .await
-        .map_err(|e| AppError::DbConnection(e.to_string()))?;
-    let exists: bool = row.get(0);
-    Ok(exists)
-}
+// /// Check if a table physically exists in the database by querying information_schema.
+// pub async fn temp_table_exists_in_db(table_name: &str) -> Result<bool, AppError> {
+//     let client = db::create_connection()
+//         .await
+//         .map_err(|e| AppError::DbConnection(e.to_string()))?;
+//     let row = client
+//         .query_one(
+//             "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = $1)",
+//             &[&table_name],
+//         )
+//         .await
+//         .map_err(|e| AppError::DbConnection(e.to_string()))?;
+//     let exists: bool = row.get(0);
+//     Ok(exists)
+// }
 
 pub fn migration_mode_enabled() -> bool {
     env::var("MIGRATION_MODE")
