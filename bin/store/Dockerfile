@@ -93,4 +93,5 @@ WORKDIR /
 # Default environment
 ENV RUST_LOG=info TZ=UTC
 # Run migrations then start the store
-CMD ["sh", "-c", "until diesel migration run --migration-dir /bin/store/migrations; do echo \"waiting for database...\"; sleep 2; done; exec /store"]
+# CMD ["sh", "-c", "until diesel migration run --migration-dir /bin/store/migrations; do echo \"waiting for database...\"; sleep 2; done; exec /store"]
+CMD ["/store"]
