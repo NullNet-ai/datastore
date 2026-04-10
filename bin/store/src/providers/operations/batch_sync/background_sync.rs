@@ -148,13 +148,21 @@ impl BackgroundSyncService {
                                 );
 
                                 if let Err(e) = client.execute(&update_query, &[&id]).await {
-                                    log::error!("[batch_sync] table={} Error updating record status: {}", table_name, e);
+                                    log::error!(
+                                        "[batch_sync] table={} Error updating record status: {}",
+                                        table_name,
+                                        e
+                                    );
                                 } else {
                                     synced_in_batch += 1;
                                 }
                             }
                             Err(e) => {
-                                log::error!("[batch_sync] table={} Error syncing record: {}", table_name, e);
+                                log::error!(
+                                    "[batch_sync] table={} Error syncing record: {}",
+                                    table_name,
+                                    e
+                                );
                             }
                         }
                     }
@@ -285,7 +293,11 @@ impl BackgroundSyncService {
         match DatabaseTypeConverter::row_to_json(row) {
             Ok(json_value) => json_value,
             Err(e) => {
-                log::error!("[batch_sync] table={} Failed to convert row to JSON: {}", table_name, e);
+                log::error!(
+                    "[batch_sync] table={} Failed to convert row to JSON: {}",
+                    table_name,
+                    e
+                );
                 // Return empty object as fallback
                 json!({})
             }

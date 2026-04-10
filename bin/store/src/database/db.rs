@@ -348,10 +348,9 @@ impl DatabaseTypeConverter {
                 .map(|v| json!(v)),
 
             // JSON types — deserialize directly as serde_json::Value (not String)
-            &Type::JSON | &Type::JSONB => {
-                row.try_get::<_, Option<Value>>(column_index)
-                    .map_err(|e| e.to_string())?
-            }
+            &Type::JSON | &Type::JSONB => row
+                .try_get::<_, Option<Value>>(column_index)
+                .map_err(|e| e.to_string())?,
 
             // UUID type
             &Type::UUID => row
