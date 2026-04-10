@@ -278,8 +278,9 @@ impl RuntimeManager {
 
         debug!("[RUNTIME] Checking database health");
 
-        // Perform actual database health check with timeout using pooled connection
-        match tokio::time::timeout(Duration::from_secs(5), async {
+        // Timeout long enough to wait for a free pool connection under load (default pool can be busy)
+        const HEALTH_CHECK_TIMEOUT_SECS: u64 = 15;
+        match tokio::time::timeout(Duration::from_secs(HEALTH_CHECK_TIMEOUT_SECS), async {
             let mut conn = get_async_connection().await;
             diesel::sql_query("SELECT 1 as health_check")
                 .execute(&mut *conn)
@@ -299,9 +300,12 @@ impl RuntimeManager {
                 Err(e)
             }
             Err(_) => {
-                let error_msg = "Database health check timed out after 5 seconds";
+                let error_msg = format!(
+                    "Database health check timed out after {} seconds (pool may be busy; consider increasing DATABASE_POOL_SIZE)",
+                    HEALTH_CHECK_TIMEOUT_SECS
+                );
                 error!("[RUNTIME] {}", error_msg);
-                Err(error_msg.to_string())
+                Err(error_msg)
             }
         }
     }

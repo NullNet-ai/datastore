@@ -1,7 +1,7 @@
 use crate::config::core::EnvConfig;
 use crate::controllers::common_controller::{
-    convert_json_to_csv, execute_copy, process_and_get_record_by_id, process_and_insert_record,
-    process_and_update_record, process_records,
+    convert_json_to_csv, execute_copy, migration_mode_enabled, process_and_get_record_by_id,
+    process_and_insert_record, process_and_update_record, process_records,
 };
 use crate::database::db::create_connection;
 use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
@@ -22,7 +22,7 @@ use crate::structs::core::{
     UpsertRequestBody,
 };
 use crate::structs::core::{FilterCriteria, FilterOperator};
-use crate::utils::helpers::{normalize_date_format, table_exists};
+use crate::utils::helpers::normalize_date_format;
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
@@ -497,22 +497,57 @@ pub async fn batch_insert_records(
         );
         // Add any simple controller-specific logic here
     }
-    let temp_table = format!("temp_{}", table_name);
-    match table_exists(&temp_table) {
-        Ok(_table) => {
-            // Table exists, proceed with your logic using the table
-        }
-        Err(_error) => {
-            // Table doesn't exist, return an error response
-            return HttpResponse::BadRequest().json(ApiResponse {
+    // Create a single DB connection upfront — reused for temp table check and COPY
+    let client = match create_connection().await {
+        Ok(client) => client,
+        Err(e) => {
+            log::error!(
+                "Error creating database connection for batch insert in table '{}': {:?}",
+                table_name,
+                e
+            );
+            return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
-                message: format!(
-                    "Error checking table existence: temp table for {} is missing",
-                    table_name
-                ),
+                message: format!("Error creating database connection: {:?}", e),
                 count: 0,
                 data: vec![],
             });
+        }
+    };
+
+    // In migration mode, skip the temp table check — it was created in the migration's Phase 1.
+    if !migration_mode_enabled() {
+        let temp_table = format!("temp_{}", table_name);
+        let check_result = client
+            .query_one(
+                "SELECT EXISTS (SELECT 1 FROM pg_class WHERE relname = $1 AND relkind = 'r')",
+                &[&temp_table],
+            )
+            .await;
+        match check_result {
+            Ok(row) => {
+                let exists: bool = row.get(0);
+                if !exists {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: format!(
+                            "Error checking table existence: temp table for {} is missing",
+                            table_name
+                        ),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+            Err(e) => {
+                log::error!("Error checking temp table existence: {}", e);
+                return HttpResponse::InternalServerError().json(ApiResponse {
+                    success: false,
+                    message: format!("Error checking temp table existence: {}", e),
+                    count: 0,
+                    data: vec![],
+                });
+            }
         }
     }
 
@@ -550,7 +585,7 @@ pub async fn batch_insert_records(
         }
     };
 
-    let csv_data = match convert_json_to_csv(&processed_records, &columns) {
+    let csv_data = match convert_json_to_csv(&processed_records, &columns, &table_name) {
         Ok(data) => data,
         Err(e) => {
             log::error!(
@@ -561,23 +596,6 @@ pub async fn batch_insert_records(
             return HttpResponse::BadRequest().json(ApiResponse {
                 success: false,
                 message: format!("Error converting records to CSV: {:?}", e),
-                count: 0,
-                data: vec![],
-            });
-        }
-    };
-
-    let client = match create_connection().await {
-        Ok(client) => client,
-        Err(e) => {
-            log::error!(
-                "Error creating database connection for batch insert in table '{}': {:?}",
-                table_name,
-                e
-            );
-            return HttpResponse::InternalServerError().json(ApiResponse {
-                success: false,
-                message: format!("Error creating database connection: {:?}", e),
                 count: 0,
                 data: vec![],
             });
@@ -605,18 +623,20 @@ pub async fn batch_insert_records(
 
     // Convert JSON array to CSV in-memor
 
-    for record in processed_records.iter() {
-        if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
-            if let Err(e) = BatchSyncService::send_code_assignment_message(
-                table_clone.clone(),
-                id.to_string(),
-                "".to_string(),
-                auth_data.clone(),
-                true,
-            )
-            .await
-            {
-                log::error!("Code assignment error with id {id}: {e}");
+    if !migration_mode_enabled() {
+        for record in processed_records.iter() {
+            if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
+                if let Err(e) = BatchSyncService::send_code_assignment_message(
+                    table_clone.clone(),
+                    id.to_string(),
+                    "".to_string(),
+                    auth_data.clone(),
+                    true,
+                )
+                .await
+                {
+                    log::error!("Code assignment error with id {id}: {e}");
+                }
             }
         }
     }

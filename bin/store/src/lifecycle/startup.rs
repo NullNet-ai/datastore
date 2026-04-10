@@ -541,10 +541,10 @@ impl StartupManager {
             // Validate batch sync type
             if !self.config.batch_sync_type.is_empty() {
                 match self.config.batch_sync_type.as_str() {
-                    "round-robin" | "weighted-round-robin" => {}
+                    "round-robin" | "weighted-round-robin" | "ordered" => {}
                     _ => {
                         validation.errors.push(
-                            "BATCH_SYNC_TYPE must be 'round-robin' or 'weighted-round-robin'"
+                            "BATCH_SYNC_TYPE must be 'round-robin', 'weighted-round-robin', or 'ordered'"
                                 .to_string(),
                         );
                         validation.is_valid = false;

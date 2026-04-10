@@ -38,7 +38,23 @@ impl From<tokio_postgres::Error> for AppError {
     }
 }
 
-fn migration_mode_enabled() -> bool {
+/// Check if a table physically exists in the database by querying information_schema.
+pub async fn temp_table_exists_in_db(table_name: &str) -> Result<bool, AppError> {
+    let client = db::create_connection()
+        .await
+        .map_err(|e| AppError::DbConnection(e.to_string()))?;
+    let row = client
+        .query_one(
+            "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = $1)",
+            &[&table_name],
+        )
+        .await
+        .map_err(|e| AppError::DbConnection(e.to_string()))?;
+    let exists: bool = row.get(0);
+    Ok(exists)
+}
+
+pub fn migration_mode_enabled() -> bool {
     env::var("MIGRATION_MODE")
         .ok()
         .map(|v| {
@@ -56,17 +72,19 @@ pub async fn execute_copy(
 ) -> Result<(), AppError> {
     let temp_table_name = format!("temp_{}", table_name);
 
+    // Quote column names to handle reserved keywords (e.g. "order")
+    let quoted_columns: Vec<String> = columns.iter().map(|c| format!("\"{}\"", c)).collect();
+    let columns_str = quoted_columns.join(",");
+
     // Create statements for both tables
     let stmt = format!(
         "COPY {} ({}) FROM STDIN WITH (FORMAT csv)",
-        table_name,
-        columns.join(",")
+        table_name, columns_str
     );
 
     let temp_stmt = format!(
         "COPY {} ({}) FROM STDIN WITH (FORMAT csv)",
-        temp_table_name,
-        columns.join(",")
+        temp_table_name, columns_str
     );
 
     // Clone the client and data for parallel operations
@@ -161,7 +179,25 @@ fn extract_columns_owned(records: &[Value]) -> Result<Vec<String>, String> {
         .ok_or_else(|| "Invalid record format".to_string())
 }
 
-pub fn convert_json_to_csv(records: &[Value], columns: &[String]) -> Result<Vec<u8>, AppError> {
+pub fn convert_json_to_csv(
+    records: &[Value],
+    columns: &[String],
+    table_name: &str,
+) -> Result<Vec<u8>, AppError> {
+    use crate::database::schema::verify::field_type_in_table;
+    use std::collections::HashSet;
+
+    // Build a set of columns that are JSON/JSONB so we can serialize them properly
+    let json_columns: HashSet<&str> = columns
+        .iter()
+        .filter(|col| {
+            field_type_in_table(table_name, col)
+                .map(|info| info.is_json)
+                .unwrap_or(false)
+        })
+        .map(|s| s.as_str())
+        .collect();
+
     let mut wtr = WriterBuilder::new().has_headers(false).from_writer(vec![]);
 
     for record in records {
@@ -171,7 +207,18 @@ pub fn convert_json_to_csv(records: &[Value], columns: &[String]) -> Result<Vec<
 
         let row: Vec<String> = columns
             .iter()
-            .map(|col| serialize_value(obj.get(col).unwrap_or(&Value::Null)))
+            .map(|col| {
+                let val = obj.get(col.as_str()).unwrap_or(&Value::Null);
+                if json_columns.contains(col.as_str()) {
+                    // For JSON/JSONB columns, always output valid JSON
+                    match val {
+                        Value::Null => String::new(),
+                        _ => serde_json::to_string(val).unwrap_or_default(),
+                    }
+                } else {
+                    serialize_value(val)
+                }
+            })
             .collect();
 
         wtr.write_record(&row)
@@ -188,13 +235,24 @@ fn serialize_value(value: &Value) -> String {
         Value::Null => String::new(),
         Value::Number(n) => n.to_string(),
         Value::Bool(b) => b.to_string(),
-        Value::Array(arr) => format!(
-            "{{{}}}",
-            arr.iter()
-                .map(serialize_value)
-                .collect::<Vec<_>>()
-                .join(",")
-        ),
+        Value::Array(arr) => {
+            // If any element is an object or nested array, treat the whole thing as JSON
+            let is_json_array = arr
+                .iter()
+                .any(|v| matches!(v, Value::Object(_) | Value::Array(_)));
+            if is_json_array {
+                serde_json::to_string(value).unwrap_or_default()
+            } else {
+                // Simple Postgres array literal for scalar arrays (text[], int[], etc.)
+                format!(
+                    "{{{}}}",
+                    arr.iter()
+                        .map(serialize_value)
+                        .collect::<Vec<_>>()
+                        .join(",")
+                )
+            }
+        }
         Value::Object(_) => serde_json::to_string(value).unwrap_or_default(),
     }
 }
