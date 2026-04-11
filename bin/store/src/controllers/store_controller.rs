@@ -21,8 +21,12 @@ use crate::structs::core::{
     LogicalOperator, QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest,
     UpsertRequestBody,
 };
+<<<<<<< HEAD
 use crate::structs::core::{FilterCriteria, FilterOperator};
+use crate::utils::helpers::{normalize_date_format, table_exists};
+=======
 use crate::utils::helpers::normalize_date_format;
+>>>>>>> d9015378 (update/batch_sync)
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
