@@ -45,7 +45,7 @@ impl From<csv::Error> for AppError {
 
 impl From<tokio_postgres::Error> for AppError {
     fn from(e: tokio_postgres::Error) -> Self {
-        AppError::DbConnection(e.to_string())
+        AppError::DbConnection(format_pg_error(&e))
     }
 }
 
@@ -75,6 +75,57 @@ pub fn migration_mode_enabled() -> bool {
         .unwrap_or(false)
 }
 
+/// Extract the actual PostgreSQL error details from a tokio_postgres::Error.
+/// The Display impl of tokio_postgres::Error just prints "db error" for database
+/// errors — the real message (constraint violation, type mismatch, etc.) is inside
+/// the DbError returned by .as_db_error().
+fn format_pg_error(e: &tokio_postgres::Error) -> String {
+    // First try to get structured DB error details
+    if let Some(db_err) = e.as_db_error() {
+        let mut msg = format!("{} ({})", db_err.message(), db_err.code().code());
+        if let Some(detail) = db_err.detail() {
+            msg.push_str(&format!(", detail: {}", detail));
+        }
+        if let Some(column) = db_err.column() {
+            msg.push_str(&format!(", column: {}", column));
+        }
+        if let Some(constraint) = db_err.constraint() {
+            msg.push_str(&format!(", constraint: {}", constraint));
+        }
+        if let Some(table) = db_err.table() {
+            msg.push_str(&format!(", table: {}", table));
+        }
+        return msg;
+    }
+
+    // For COPY sink errors, as_db_error() returns None because the error is
+    // wrapped through the futures Sink trait. Walk the source chain to find
+    // the underlying DbError.
+    let mut source = std::error::Error::source(&e);
+    while let Some(err) = source {
+        if let Some(pg_err) = err.downcast_ref::<tokio_postgres::error::DbError>() {
+            let mut msg = format!("{} ({})", pg_err.message(), pg_err.code().code());
+            if let Some(detail) = pg_err.detail() {
+                msg.push_str(&format!(", detail: {}", detail));
+            }
+            if let Some(column) = pg_err.column() {
+                msg.push_str(&format!(", column: {}", column));
+            }
+            if let Some(constraint) = pg_err.constraint() {
+                msg.push_str(&format!(", constraint: {}", constraint));
+            }
+            if let Some(table) = pg_err.table() {
+                msg.push_str(&format!(", table: {}", table));
+            }
+            return msg;
+        }
+        source = err.source();
+    }
+
+    // Last resort: Debug format shows the full error chain
+    format!("{:?}", e)
+}
+
 pub async fn execute_copy(
     client: &Client,
     table_name: &str,
@@ -98,42 +149,63 @@ pub async fn execute_copy(
     );
 
     // Wrap both COPYs in a single transaction so they both succeed or both roll back.
-    client
-        .execute("BEGIN", &[])
-        .await
-        .map_err(|e| AppError::DbConnection(format!("BEGIN transaction for table '{}': {}", table_name, e)))?;
+    client.execute("BEGIN", &[]).await.map_err(|e| {
+        AppError::DbConnection(format!(
+            "BEGIN transaction for table '{}': {}",
+            table_name,
+            format_pg_error(&e)
+        ))
+    })?;
 
     // COPY into main table
-    let sink = client
-        .copy_in(&stmt)
-        .await
-        .map_err(|e| AppError::CopyCommand(format!("table '{}': {}", table_name, e)))?;
-    pin_mut!(sink);
-    sink.send(Bytes::from(csv_data.clone()))
-        .await
-        .map_err(|e| AppError::DataSend(format!("table '{}': {}", table_name, e)))?;
-    sink.close()
-        .await
-        .map_err(|e| AppError::DataSend(format!("table '{}' closing COPY stream: {}", table_name, e)))?;
+    let result: Result<(), AppError> = async {
+        let sink = client
+            .copy_in(&stmt)
+            .await
+            .map_err(|e| AppError::CopyCommand(format!("table '{}': {}", table_name, format_pg_error(&e))))?;
+        pin_mut!(sink);
+        sink.send(Bytes::from(csv_data.clone()))
+            .await
+            .map_err(|e| AppError::DataSend(format!("table '{}': {}", table_name, format_pg_error(&e))))?;
+        sink.close().await.map_err(|e| {
+            AppError::DataSend(format!("table '{}' closing COPY stream: {}", table_name, format_pg_error(&e)))
+        })?;
 
-    // COPY into temp table
-    let sink = client
-        .copy_in(&temp_stmt)
-        .await
-        .map_err(|e| AppError::CopyCommand(format!("temp table '{}': {}", temp_table_name, e)))?;
-    pin_mut!(sink);
-    sink.send(Bytes::from(csv_data))
-        .await
-        .map_err(|e| AppError::DataSend(format!("temp table '{}': {}", temp_table_name, e)))?;
-    sink.close()
-        .await
-        .map_err(|e| AppError::DataSend(format!("temp table '{}' closing COPY stream: {}", temp_table_name, e)))?;
+        // COPY into temp table
+        let sink = client
+            .copy_in(&temp_stmt)
+            .await
+            .map_err(|e| AppError::CopyCommand(format!("temp table '{}': {}", temp_table_name, format_pg_error(&e))))?;
+        pin_mut!(sink);
+        sink.send(Bytes::from(csv_data))
+            .await
+            .map_err(|e| AppError::DataSend(format!("temp table '{}': {}", temp_table_name, format_pg_error(&e))))?;
+        sink.close().await.map_err(|e| {
+            AppError::DataSend(format!(
+                "temp table '{}' closing COPY stream: {}",
+                temp_table_name,
+                format_pg_error(&e)
+            ))
+        })?;
+
+        Ok(())
+    }
+    .await;
+
+    if let Err(e) = &result {
+        log::error!("COPY failed for table '{}', rolling back: {}", table_name, e);
+        let _ = client.execute("ROLLBACK", &[]).await;
+        return Err(result.unwrap_err());
+    }
 
     // Both succeeded — commit
-    client
-        .execute("COMMIT", &[])
-        .await
-        .map_err(|e| AppError::DbConnection(format!("COMMIT transaction for table '{}': {}", table_name, e)))?;
+    client.execute("COMMIT", &[]).await.map_err(|e| {
+        AppError::DbConnection(format!(
+            "COMMIT transaction for table '{}': {}",
+            table_name,
+            format_pg_error(&e)
+        ))
+    })?;
 
     Ok(())
 }

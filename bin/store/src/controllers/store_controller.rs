@@ -607,11 +607,7 @@ pub async fn batch_insert_records(
     match execute_copy(&client, &table_name, &column_refs, csv_data).await {
         Ok(_) => processed_records.clone(),
         Err(e) => {
-            log::error!(
-                "Batch insert failed for table '{}': {}",
-                table_name,
-                e
-            );
+            log::error!("Batch insert failed for table '{}': {}", table_name, e);
             return HttpResponse::InternalServerError().json(ApiResponse {
                 success: false,
                 message: format!("{}", e),
