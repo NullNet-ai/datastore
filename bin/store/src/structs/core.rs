@@ -134,8 +134,19 @@ impl RequestBody {
         // // Add common fields to the record
         self.add_common_fields(operation, auth, is_root_account, table);
 
-        // Normalize all timestamp/timestamptz fields to RFC3339 so model deserialization and sync succeed
-        self.normalize_timestamp_fields(table);
+        // Normalize all timestamp/timestamptz fields to RFC3339 so model deserialization and sync succeed.
+        // Skip in migration mode — data is already well-formed and this is expensive in bulk
+        // (calls field_type_in_table per field per record).
+        if !std::env::var("MIGRATION_MODE")
+            .ok()
+            .map(|v| {
+                let v = v.trim();
+                v.eq_ignore_ascii_case("true") || v == "1"
+            })
+            .unwrap_or(false)
+        {
+            self.normalize_timestamp_fields(table);
+        }
 
         if let Some(timestamp) = self.record.get_mut("timestamp") {
             if let Some(ts_str) = timestamp.as_str() {

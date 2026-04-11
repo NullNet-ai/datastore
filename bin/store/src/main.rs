@@ -1,5 +1,5 @@
 #![recursion_limit = "2056"]
-use dotenv::dotenv;
+use dotenv::{dotenv, from_path};
 mod code_service;
 mod config;
 mod constants;
@@ -85,9 +85,24 @@ async fn bootstrap_with_lifecycle() -> std::io::Result<()> {
     Ok(())
 }
 
+/// Load .env from the current directory first, then fall back to the
+/// directory where the binary lives. This way release binaries find the
+/// .env even when run from a different working directory.
+fn load_store_dotenv() {
+    let _ = dotenv().ok();
+    if let Ok(exe) = std::env::current_exe() {
+        if let Some(dir) = exe.parent() {
+            let path = dir.join(".env");
+            if path.exists() {
+                let _ = from_path(path).ok();
+            }
+        }
+    }
+}
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    dotenv().ok();
+    load_store_dotenv();
     // Parse configuration
     let args = parse_command_args();
     let _args: Vec<String> = env::args().collect();

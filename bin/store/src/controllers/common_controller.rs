@@ -26,6 +26,17 @@ pub enum AppError {
     DataSend(String),
 }
 
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::DbConnection(msg) => write!(f, "Database connection failed: {}", msg),
+            AppError::CopyCommand(msg) => write!(f, "COPY command failed: {}", msg),
+            AppError::CsvConversion(msg) => write!(f, "CSV conversion failed: {}", msg),
+            AppError::DataSend(msg) => write!(f, "Failed to send data to database: {}", msg),
+        }
+    }
+}
+
 impl From<csv::Error> for AppError {
     fn from(e: csv::Error) -> Self {
         AppError::CsvConversion(e.to_string())
@@ -76,7 +87,6 @@ pub async fn execute_copy(
     let quoted_columns: Vec<String> = columns.iter().map(|c| format!("\"{}\"", c)).collect();
     let columns_str = quoted_columns.join(",");
 
-    // Create statements for both tables
     let stmt = format!(
         "COPY {} ({}) FROM STDIN WITH (FORMAT csv)",
         table_name, columns_str
@@ -87,47 +97,43 @@ pub async fn execute_copy(
         temp_table_name, columns_str
     );
 
-    // Clone the client and data for parallel operations
-    let client_clone = client;
-    let csv_data_clone = csv_data.clone();
+    // Wrap both COPYs in a single transaction so they both succeed or both roll back.
+    client
+        .execute("BEGIN", &[])
+        .await
+        .map_err(|e| AppError::DbConnection(format!("BEGIN transaction for table '{}': {}", table_name, e)))?;
 
-    // Execute both copy operations in parallel
-    let (main_result, temp_result) = tokio::join!(
-        async {
-            let sink = client
-                .copy_in(&stmt)
-                .await
-                .map_err(|e| AppError::CopyCommand(e.to_string()))?;
+    // COPY into main table
+    let sink = client
+        .copy_in(&stmt)
+        .await
+        .map_err(|e| AppError::CopyCommand(format!("table '{}': {}", table_name, e)))?;
+    pin_mut!(sink);
+    sink.send(Bytes::from(csv_data.clone()))
+        .await
+        .map_err(|e| AppError::DataSend(format!("table '{}': {}", table_name, e)))?;
+    sink.close()
+        .await
+        .map_err(|e| AppError::DataSend(format!("table '{}' closing COPY stream: {}", table_name, e)))?;
 
-            pin_mut!(sink);
-            sink.send(Bytes::from(csv_data))
-                .await
-                .map_err(|e| AppError::DataSend(e.to_string()))?;
+    // COPY into temp table
+    let sink = client
+        .copy_in(&temp_stmt)
+        .await
+        .map_err(|e| AppError::CopyCommand(format!("temp table '{}': {}", temp_table_name, e)))?;
+    pin_mut!(sink);
+    sink.send(Bytes::from(csv_data))
+        .await
+        .map_err(|e| AppError::DataSend(format!("temp table '{}': {}", temp_table_name, e)))?;
+    sink.close()
+        .await
+        .map_err(|e| AppError::DataSend(format!("temp table '{}' closing COPY stream: {}", temp_table_name, e)))?;
 
-            sink.close()
-                .await
-                .map_err(|e| AppError::DataSend(e.to_string()))
-        },
-        async {
-            let sink = client_clone
-                .copy_in(&temp_stmt)
-                .await
-                .map_err(|e| AppError::CopyCommand(e.to_string()))?;
-
-            pin_mut!(sink);
-            sink.send(Bytes::from(csv_data_clone))
-                .await
-                .map_err(|e| AppError::DataSend(e.to_string()))?;
-
-            sink.close()
-                .await
-                .map_err(|e| AppError::DataSend(e.to_string()))
-        }
-    );
-
-    // Check results from both operations
-    main_result?;
-    temp_result?;
+    // Both succeeded — commit
+    client
+        .execute("COMMIT", &[])
+        .await
+        .map_err(|e| AppError::DbConnection(format!("COMMIT transaction for table '{}': {}", table_name, e)))?;
 
     Ok(())
 }
