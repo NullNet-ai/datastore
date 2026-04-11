@@ -456,10 +456,7 @@ impl SchemaGenerator {
     ) -> Option<String> {
         let migrations_dir = paths::database::MIGRATIONS_DIR.as_str();
         // Collect migration entries and sort by directory name (Diesel timestamp prefix ensures lexical = chronological)
-        let mut entries: Vec<_> = std::fs::read_dir(migrations_dir)
-            .ok()?
-            .flatten()
-            .collect();
+        let mut entries: Vec<_> = std::fs::read_dir(migrations_dir).ok()?.flatten().collect();
         entries.sort_by_key(|e| e.file_name());
         // Iterate from newest to oldest to pick the latest definition for this index
         for entry in entries.iter().rev() {
