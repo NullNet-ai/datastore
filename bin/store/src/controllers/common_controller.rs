@@ -159,27 +159,39 @@ pub async fn execute_copy(
 
     // COPY into main table
     let result: Result<(), AppError> = async {
-        let sink = client
-            .copy_in(&stmt)
-            .await
-            .map_err(|e| AppError::CopyCommand(format!("table '{}': {}", table_name, format_pg_error(&e))))?;
+        let sink = client.copy_in(&stmt).await.map_err(|e| {
+            AppError::CopyCommand(format!("table '{}': {}", table_name, format_pg_error(&e)))
+        })?;
         pin_mut!(sink);
         sink.send(Bytes::from(csv_data.clone()))
             .await
-            .map_err(|e| AppError::DataSend(format!("table '{}': {}", table_name, format_pg_error(&e))))?;
+            .map_err(|e| {
+                AppError::DataSend(format!("table '{}': {}", table_name, format_pg_error(&e)))
+            })?;
         sink.close().await.map_err(|e| {
-            AppError::DataSend(format!("table '{}' closing COPY stream: {}", table_name, format_pg_error(&e)))
+            AppError::DataSend(format!(
+                "table '{}' closing COPY stream: {}",
+                table_name,
+                format_pg_error(&e)
+            ))
         })?;
 
         // COPY into temp table
-        let sink = client
-            .copy_in(&temp_stmt)
-            .await
-            .map_err(|e| AppError::CopyCommand(format!("temp table '{}': {}", temp_table_name, format_pg_error(&e))))?;
+        let sink = client.copy_in(&temp_stmt).await.map_err(|e| {
+            AppError::CopyCommand(format!(
+                "temp table '{}': {}",
+                temp_table_name,
+                format_pg_error(&e)
+            ))
+        })?;
         pin_mut!(sink);
-        sink.send(Bytes::from(csv_data))
-            .await
-            .map_err(|e| AppError::DataSend(format!("temp table '{}': {}", temp_table_name, format_pg_error(&e))))?;
+        sink.send(Bytes::from(csv_data)).await.map_err(|e| {
+            AppError::DataSend(format!(
+                "temp table '{}': {}",
+                temp_table_name,
+                format_pg_error(&e)
+            ))
+        })?;
         sink.close().await.map_err(|e| {
             AppError::DataSend(format!(
                 "temp table '{}' closing COPY stream: {}",
@@ -193,7 +205,11 @@ pub async fn execute_copy(
     .await;
 
     if let Err(e) = &result {
-        log::error!("COPY failed for table '{}', rolling back: {}", table_name, e);
+        log::error!(
+            "COPY failed for table '{}', rolling back: {}",
+            table_name,
+            e
+        );
         let _ = client.execute("ROLLBACK", &[]).await;
         return Err(result.unwrap_err());
     }
