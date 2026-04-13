@@ -1,6 +1,8 @@
+use crate::controllers::common_controller::migration_mode_enabled;
 use crate::database::db::{self, DatabaseTypeConverter};
 use crate::providers::operations::sync::sync_service;
 use dotenv::dotenv;
+use futures::stream::{self, StreamExt};
 use log;
 use serde_json::{json, Value};
 use std::env;
@@ -14,6 +16,8 @@ pub struct BackgroundSyncService {
     batch_sync_size: usize,
     batch_sync_enabled: bool,
     batch_sync_type: String,
+    /// Number of records to process concurrently within a batch (migration mode)
+    batch_concurrency: usize,
 }
 
 impl BackgroundSyncService {
@@ -29,6 +33,10 @@ impl BackgroundSyncService {
             env::var("BATCH_SYNC_ENABLED").unwrap_or_else(|_| "false".to_string()) == "true";
         let batch_sync_type =
             env::var("BATCH_SYNC_TYPE").unwrap_or_else(|_| "round-robin".to_string());
+        let batch_concurrency = env::var("BATCH_SYNC_CONCURRENCY")
+            .unwrap_or_else(|_| "10".to_string())
+            .parse::<usize>()
+            .unwrap_or(10);
 
         // Get database connection
         let client = match db::create_connection().await {
@@ -44,6 +52,7 @@ impl BackgroundSyncService {
             batch_sync_size,
             batch_sync_enabled,
             batch_sync_type,
+            batch_concurrency,
         })
     }
 
@@ -70,12 +79,14 @@ impl BackgroundSyncService {
     }
     pub async fn batch_sync(&self) -> Result<(), String> {
         let mut batch_number = 1;
+        let is_migration = migration_mode_enabled();
 
         while self.batch_sync_enabled {
             log::debug!(
-                "Starting batch {}'s sync with batch size: {}",
+                "Starting batch {}'s sync with batch size: {}{}",
                 batch_number,
-                self.batch_sync_size
+                self.batch_sync_size,
+                if is_migration { " [migration mode]" } else { "" }
             );
             batch_number += 1;
 
@@ -99,92 +110,140 @@ impl BackgroundSyncService {
                 // For ordered mode, drain the entire table before moving to the next
                 let drain_fully = self.batch_sync_type == "ordered";
                 loop {
-                    let client = self.db_client.lock().await;
-
-                    // Query to get records with tombstone = 0
-                    let query = format!(
-                        "SELECT * FROM {} WHERE tombstone = 0 LIMIT {}",
-                        table_name, self.batch_sync_size
-                    );
-
-                    let rows = match client.query(query.as_str(), &[]).await {
-                        Ok(rows) => rows,
-                        Err(e) => {
-                            log::error!("Error querying table {}: {}", table_name, e);
-                            break;
+                    // 1. Fetch a batch of rows — hold the lock only for the SELECT
+                    let rows = {
+                        let client = self.db_client.lock().await;
+                        let query = format!(
+                            "SELECT * FROM {} WHERE tombstone = 0 LIMIT {}",
+                            table_name, self.batch_sync_size
+                        );
+                        match client.query(query.as_str(), &[]).await {
+                            Ok(rows) => rows,
+                            Err(e) => {
+                                log::error!("Error querying table {}: {}", table_name, e);
+                                break;
+                            }
                         }
-                    };
+                    }; // lock released here
 
                     if rows.is_empty() {
                         log::debug!("No more records to sync for table {}", table_name);
                         break;
                     }
 
-                    // Get the actual table name without temp_ prefix
                     let actual_table = table_name.replace("temp_", "");
-                    let mut synced_in_batch = 0u64;
 
-                    for row in &rows {
-                        let mut row_value = self.row_to_value(row, &table_name);
-
-                        // Format the row (remove null, undefined, empty arrays, empty objects)
-                        self.format(&mut row_value);
-
-                        // Insert the record
-                        match sync_service::insert(&actual_table, row_value.clone()).await {
-                            Ok(_) => {
-                                // Update the record to mark as synced
-                                let id = match row.try_get::<_, String>("id") {
-                                    Ok(id) => id,
-                                    Err(_) => {
-                                        log::error!("[batch_sync] table={} Record missing ID field or ID is not a string", table_name);
-                                        continue;
-                                    }
-                                };
-
-                                let update_query = format!(
-                                    "UPDATE {} SET tombstone = 1, status = 'Synced' WHERE id = $1",
-                                    table_name
-                                );
-
-                                if let Err(e) = client.execute(&update_query, &[&id]).await {
+                    // 2. Convert rows to (id, value) pairs upfront
+                    let records: Vec<(String, Value)> = rows
+                        .iter()
+                        .filter_map(|row| {
+                            let id = match row.try_get::<_, String>("id") {
+                                Ok(id) => id,
+                                Err(_) => {
                                     log::error!(
-                                        "[batch_sync] table={} Error updating record status: {}",
+                                        "[batch_sync] table={} Record missing ID field",
+                                        table_name
+                                    );
+                                    return None;
+                                }
+                            };
+                            let mut row_value = self.row_to_value(row, &table_name);
+                            self.format(&mut row_value);
+                            Some((id, row_value))
+                        })
+                        .collect();
+
+                    // 3. Process inserts — concurrent in migration mode, sequential otherwise
+                    let synced_ids: Vec<String> = if is_migration {
+                        let concurrency = self.batch_concurrency;
+                        let actual_table_owned = actual_table.clone();
+                        let results: Vec<Option<String>> = stream::iter(records.into_iter())
+                            .map(move |(id, row_value)| {
+                                let table = actual_table_owned.clone();
+                                async move {
+                                    match sync_service::insert(&table, row_value).await {
+                                        Ok(_) => Some(id),
+                                        Err(e) => {
+                                            log::error!(
+                                                "[batch_sync] table={} Error syncing record {}: {}",
+                                                table,
+                                                id,
+                                                e
+                                            );
+                                            None
+                                        }
+                                    }
+                                }
+                            })
+                            .buffer_unordered(concurrency)
+                            .collect()
+                            .await;
+                        results.into_iter().flatten().collect()
+                    } else {
+                        let mut ids = Vec::new();
+                        for (id, row_value) in &records {
+                            match sync_service::insert(&actual_table, row_value.clone()).await {
+                                Ok(_) => ids.push(id.clone()),
+                                Err(e) => {
+                                    log::error!(
+                                        "[batch_sync] table={} Error syncing record {}: {}",
                                         table_name,
+                                        id,
                                         e
                                     );
-                                } else {
-                                    synced_in_batch += 1;
                                 }
                             }
-                            Err(e) => {
-                                log::error!(
-                                    "[batch_sync] table={} Error syncing record: {}",
-                                    table_name,
-                                    e
-                                );
-                            }
+                        }
+                        ids
+                    };
+
+                    // 4. Batch-update all synced records in one query
+                    if !synced_ids.is_empty() {
+                        let client = self.db_client.lock().await;
+                        let update_query = format!(
+                            "UPDATE {} SET tombstone = 1, status = 'Synced' WHERE id = ANY($1)",
+                            table_name
+                        );
+                        if let Err(e) = client.execute(&update_query, &[&synced_ids]).await {
+                            log::error!(
+                                "[batch_sync] table={} Error batch-updating tombstone for {} records: {}",
+                                table_name,
+                                synced_ids.len(),
+                                e
+                            );
+                        } else {
+                            log::info!(
+                                "[batch_sync] table={} synced {} records",
+                                table_name,
+                                synced_ids.len()
+                            );
                         }
                     }
 
-                    // If no records were synced in this batch, move to next table to avoid infinite loop
-                    if synced_in_batch == 0 {
-                        log::warn!("[batch_sync] table={} No records synced in batch, moving to next table", table_name);
+                    // If no records were synced in this batch, move to next table
+                    if synced_ids.is_empty() {
+                        log::warn!(
+                            "[batch_sync] table={} No records synced in batch, moving to next table",
+                            table_name
+                        );
                         break;
                     }
 
-                    // If not draining fully, process one batch per table per cycle
                     if !drain_fully {
                         break;
                     }
-                    // Small delay between batches within the same table
-                    drop(client);
-                    sleep(Duration::from_millis(50)).await;
+
+                    // In migration mode, no delay between batches for max throughput
+                    if !is_migration {
+                        sleep(Duration::from_millis(50)).await;
+                    }
                 }
             }
 
-            // Add a small delay between batches
-            sleep(Duration::from_millis(100)).await;
+            // In migration mode, skip inter-cycle delay
+            if !is_migration {
+                sleep(Duration::from_millis(100)).await;
+            }
         }
 
         Ok(())
