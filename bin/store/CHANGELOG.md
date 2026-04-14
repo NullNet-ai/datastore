@@ -5,6 +5,42 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.72
+
+### Author
+Kashan
+
+### Changed
+  - ***Migration mode — batched field apply in sync service***:
+    - `src/providers/operations/sync/store/store_driver.rs`
+      - Add `apply_batch()` that collects all field validations and value parsing for a record, then performs a single upsert query instead of one per field. Preserves all per-field validation (`field_type_in_table`), value parsing (`parse_message_value_to_json`), quote cleaning, and hypertable timestamp handling.
+    - `src/providers/operations/sync/sync_service.rs`
+      - In `apply_messages()`, when `MIGRATION_MODE=true` and `from_local_insert`, call `apply_batch()` once instead of `apply()` per field. Reduces DB round trips from N (one per field) to 1 per record. HLC timestamp / merkle updates still run per message. Non-migration and server-sync paths are completely unchanged.
+
+## 0.2.71
+
+### Author
+Kashan
+
+### Fixed
+  - ***COPY error reporting — extract actual PostgreSQL error details***:
+    - `src/controllers/common_controller.rs`
+      - Add `format_pg_error()` helper that extracts real PostgreSQL error messages (message, code, detail, column, constraint, table) instead of showing generic "db error". Walks the error source chain for COPY sink errors where `as_db_error()` returns `None`. Falls back to Debug format.
+      - Fix `From<tokio_postgres::Error>` impl to use `format_pg_error` instead of lossy `.to_string()`.
+      - Add proper ROLLBACK on COPY transaction failure instead of leaving the connection in an aborted state.
+
+### Changed
+  - ***Migration mode — increase payload limit***:
+    - `src/lifecycle/runtime.rs`
+      - When `MIGRATION_MODE=true`, set `JsonConfig` and `PayloadConfig` to 20 MB (up from default 256 KB) to support large batch inserts during migration.
+
+  - ***Background sync — concurrent processing in migration mode***:
+    - `src/providers/operations/batch_sync/background_sync.rs`
+      - In migration mode with ordered sync, process inserts concurrently using `buffer_unordered(N)` instead of one-at-a-time. Controlled by `BATCH_SYNC_CONCURRENCY` env var (default: 10).
+      - Batch tombstone updates into a single `UPDATE ... WHERE id = ANY($1)` instead of one UPDATE per record.
+      - Release DB mutex lock during insert processing so it's only held for SELECT and tombstone UPDATE.
+      - Remove inter-batch and inter-cycle sleep delays in migration mode for maximum throughput.
+
 ## 0.2.70
 
 ### Author

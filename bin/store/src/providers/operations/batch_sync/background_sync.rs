@@ -86,7 +86,11 @@ impl BackgroundSyncService {
                 "Starting batch {}'s sync with batch size: {}{}",
                 batch_number,
                 self.batch_sync_size,
-                if is_migration { " [migration mode]" } else { "" }
+                if is_migration {
+                    " [migration mode]"
+                } else {
+                    ""
+                }
             );
             batch_number += 1;
 

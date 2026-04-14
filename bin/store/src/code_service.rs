@@ -49,10 +49,10 @@ pub mod code_service_client {
         dead_code,
         missing_docs,
         clippy::wildcard_imports,
-        clippy::let_unit_value
+        clippy::let_unit_value,
     )]
-    use tonic::codegen::http::Uri;
     use tonic::codegen::*;
+    use tonic::codegen::http::Uri;
     #[derive(Debug, Clone)]
     pub struct CodeServiceClient<T> {
         inner: tonic::client::Grpc<T>,
@@ -96,8 +96,9 @@ pub mod code_service_client {
                     <T as tonic::client::GrpcService<tonic::body::BoxBody>>::ResponseBody,
                 >,
             >,
-            <T as tonic::codegen::Service<http::Request<tonic::body::BoxBody>>>::Error:
-                Into<StdError> + std::marker::Send + std::marker::Sync,
+            <T as tonic::codegen::Service<
+                http::Request<tonic::body::BoxBody>,
+            >>::Error: Into<StdError> + std::marker::Send + std::marker::Sync,
         {
             CodeServiceClient::new(InterceptedService::new(inner, interceptor))
         }
@@ -137,12 +138,22 @@ pub mod code_service_client {
         pub async fn get_code(
             &mut self,
             request: impl tonic::IntoRequest<super::GetCodeRequest>,
-        ) -> std::result::Result<tonic::Response<super::GetCodeResponse>, tonic::Status> {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::GetCodeResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static("/code_service.CodeService/GetCode");
+            let path = http::uri::PathAndQuery::from_static(
+                "/code_service.CodeService/GetCode",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("code_service.CodeService", "GetCode"));
@@ -152,14 +163,22 @@ pub mod code_service_client {
         pub async fn init_counters(
             &mut self,
             request: impl tonic::IntoRequest<super::InitCountersRequest>,
-        ) -> std::result::Result<tonic::Response<super::InitCountersResponse>, tonic::Status>
-        {
-            self.inner.ready().await.map_err(|e| {
-                tonic::Status::unknown(format!("Service was not ready: {}", e.into()))
-            })?;
+        ) -> std::result::Result<
+            tonic::Response<super::InitCountersResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::unknown(
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
             let codec = tonic::codec::ProstCodec::default();
-            let path =
-                http::uri::PathAndQuery::from_static("/code_service.CodeService/InitCounters");
+            let path = http::uri::PathAndQuery::from_static(
+                "/code_service.CodeService/InitCounters",
+            );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(GrpcMethod::new("code_service.CodeService", "InitCounters"));
