@@ -112,6 +112,115 @@ pub async fn apply(
     }
 }
 
+/// Migration-mode optimization: validate and parse all fields, then do a single upsert
+/// instead of one per field. All messages must belong to the same record (same row + dataset).
+/// Preserves all per-field validation, value parsing, hypertable timestamp handling, and
+/// upsert path selection — identical to calling apply() N times, but with 1 DB round trip.
+pub async fn apply_batch(
+    tx: &mut AsyncPgConnection,
+    messages: &[CrdtMessageModel],
+) -> Result<(), Box<dyn std::error::Error>> {
+    if messages.is_empty() {
+        return Ok(());
+    }
+
+    let first = &messages[0];
+    let dataset = &first.dataset;
+    let hypertable_timestamp = &first.hypertable_timestamp;
+
+    let mut json_obj = serde_json::Map::new();
+    let clean_id = first.row.trim_matches('"').to_string();
+    json_obj.insert("id".to_string(), json!(clean_id));
+
+    // Validate and parse each field — same logic as apply() per message
+    for msg in messages {
+        let column = &msg.column;
+
+        let field_type = match field_type_in_table(dataset, column) {
+            Some(t) => t,
+            None => {
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    format!("Field '{}' doesn't exist in table '{}'", column, dataset),
+                )));
+            }
+        };
+
+        let json_value = parse_message_value_to_json(
+            &msg.value,
+            &field_type.field_type,
+            field_type.is_array,
+            field_type.is_json,
+            field_type.is_timestamptz,
+            column,
+        )?;
+
+        json_obj.insert(column.to_string(), json_value);
+    }
+
+    json_obj = clean_extra_quotes(json_obj);
+
+    let table = Table::from_str(dataset.as_str()).ok_or_else(|| {
+        Box::new(std::io::Error::new(
+            std::io::ErrorKind::InvalidInput,
+            format!("Unknown table: {}", dataset),
+        ))
+    })?;
+
+    if let Some(ht_timestamp) = hypertable_timestamp {
+        // Same timestamp parsing as apply()
+        let timestamp_str = if ht_timestamp.contains('T')
+            && !ht_timestamp.contains('Z')
+            && !ht_timestamp.contains('+')
+            && ht_timestamp.len() > 10
+            && !ht_timestamp[10..].contains('-')
+        {
+            format!("{}+00:00", ht_timestamp)
+        } else if ht_timestamp.contains(' ') && !ht_timestamp.contains('T') {
+            let with_t = ht_timestamp.replace(' ', "T");
+            format!("{}+00:00", with_t)
+        } else {
+            normalize_rfc3339_timezone(ht_timestamp)
+        };
+
+        let timestamp = chrono::DateTime::parse_from_rfc3339(&timestamp_str).map_err(|e| {
+            log::error!("Failed to parse timestamp '{}': {}", timestamp_str, e);
+            Box::new(e) as Box<dyn std::error::Error>
+        })?;
+
+        let ts_field_info = field_type_in_table(dataset, "timestamp");
+        let is_timestamptz = ts_field_info.map(|i| i.is_timestamptz).unwrap_or(false);
+        if is_timestamptz {
+            json_obj.insert(
+                "timestamp".to_string(),
+                json!(timestamp.with_timezone(&Utc)),
+            );
+        } else {
+            json_obj.insert("timestamp".to_string(), json!(timestamp.naive_utc()));
+        }
+
+        let json_values = serde_json::Value::Object(json_obj);
+        table
+            .upsert_record_with_id_timestamp(tx, json_values)
+            .await
+            .map_err(|e| {
+                log::error!("Error applying batched message: {}", e);
+                Box::<dyn std::error::Error>::from(e)
+            })?;
+    } else {
+        let json_values = serde_json::Value::Object(json_obj);
+        table
+            .upsert_record_with_id(tx, json_values)
+            .await
+            .map_err(|e| {
+                log::error!("Error applying batched message: {}", e);
+                Box::<dyn std::error::Error>::from(e)
+            })?;
+    }
+
+    Ok(())
+}
+
 /// Normalize timezone offset so RFC3339 accepts it: e.g. "+00" -> "+00:00", "-05" -> "-05:00".
 fn normalize_rfc3339_timezone(s: &str) -> String {
     let s = s.trim();
