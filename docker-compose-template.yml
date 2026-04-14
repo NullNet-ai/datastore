@@ -3,22 +3,36 @@ networks:
   frontend:
     external: true
 
+# docker compose -f 'docker-compose-template.yml' up -d --build 
 services:
   # TimescaleDB database
   timescaledb:
-    image: timescale/timescaledb:latest-pg15
+    build:
+      context: .
+      dockerfile: bin/store/dockerfile.wpgcron
     container_name: timescaledb
+    working_dir: /usr/src/crdt-workspace
     ports:
       - "0.0.0.0:5440:5432"
     networks:
       - internal
+    env_file:
+      - ./.env-store
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=timescaledb,pg_cron
+      - -c
+      - cron.database_name=${POSTGRES_DB}
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
+      - ./bin/store/docker/init/001-enable-timescaledb.sql:/docker-entrypoint-initdb.d/001-enable-timescaledb.sql:ro
     restart: always
+  # SELECT ET
   # Redis cache
   redis:
     image: redis:7
@@ -31,7 +45,7 @@ services:
       - redis_data:/data
     restart: unless-stopped
   # initializer for system setup
-  # docker compose -f docker-compose-template.yml --profile init up -d initializer
+  # docker compose -f docker-compose-template.yml --profile init up -d initializer --build
   initializer:
     build:
       context: .
@@ -40,7 +54,7 @@ services:
     container_name: store-initializer
     working_dir: /usr/src/crdt-workspace
     env_file:
-      - .env-store
+      - ./.env-store
     depends_on:
       - timescaledb
       - redis
@@ -56,8 +70,9 @@ services:
       dockerfile: bin/server/Dockerfile
     platform: linux/arm64
     container_name: crdt-sync-server
+    working_dir: /usr/src/crdt-workspace
     env_file:
-      - .env-sync-server
+      - ./.env-sync-server
     ports:
       - "0.0.0.0:3002:3002"
     networks:
@@ -123,17 +138,19 @@ services:
     networks:
       - internal
   # Main store application
+  # docker compose -f docker-compose-template.yml up -d store --build
   store:
     build:
       context: .
-      dockerfile: bin/store/dockerfile
+      dockerfile: bin/store/Dockerfile
     platform: linux/arm64
     container_name: crdt-store
+    working_dir: /usr/src/crdt-workspace
     depends_on:
       - timescaledb
       - redis
     env_file:
-      - .env-store
+      - ./.env-store
     ports:
       - "0.0.0.0:5005:5005"
       - "0.0.0.0:9000:9000"

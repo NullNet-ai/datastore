@@ -10,7 +10,7 @@ RUN cargo install cargo-chef --locked && cargo install sccache --locked
 COPY . .
 RUN cargo chef prepare --recipe-path recipe.json
 
-FROM --platform=$TARGETPLATFORM rust:bookworm AS builder
+FROM rust:bookworm AS builder
 
 COPY --from=chef /usr/local/cargo/bin/cargo-chef /usr/local/cargo/bin/cargo-chef
 COPY --from=chef /usr/local/cargo/bin/sccache /usr/local/cargo/bin/sccache
@@ -72,7 +72,7 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     strip /usr/src/crdt-workspace/store || true
 
 # Final runtime image — slim OS with only runtime deps
-FROM --platform=$TARGETPLATFORM debian:bookworm-slim
+FROM debian:bookworm-slim
 
 # Install runtime dependencies (libpq for Postgres), TZ and certs
 RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
