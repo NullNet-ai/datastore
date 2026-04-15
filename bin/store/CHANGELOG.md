@@ -5,6 +5,19 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.73
+
+### Author
+Jean
+
+### Added
+  - ***Organizations registration documentation and flow diagram***:
+    - `providers/operations/organizations/README.md`
+      - Document the `register` API contract, request struct, high-level flow for contact and device accounts, error handling, and example payloads for controller callers.
+    - `providers/operations/organizations/organization-register.drawio`
+    - `providers/operations/organizations/organization-register-flow.png`
+      - Add drawio diagram and reference a visual registration flow diagram that illustrates the main branches of the registration process.
+
 ## 0.2.72
 
 ### Author
