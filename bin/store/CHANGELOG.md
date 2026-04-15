@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.74
+
+### Author
+Jean
+
+### Changed
+  - ***Find Constructors — nested join subquery control***:
+    - `src/providers/queries/find/constructors/joins_constructor.rs`
+      - Extend `build_join_sql` to accept an `enable_direct_subquery` flag and default it to `true` so existing call sites continue to emit direct field references.
+      - For nested joins, factor the lateral subquery condition into a reusable `subquery_cond` expression and allow switching between a direct `"alias"."from_field"` reference and a `SELECT DISTINCT ... LIMIT 1` subquery. This makes it possible to turn off the direct subquery path in specific scenarios while keeping current behavior by default.
+
 ## 0.2.73
 
 ### Author
