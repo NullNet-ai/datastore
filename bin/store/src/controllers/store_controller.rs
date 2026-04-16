@@ -1336,13 +1336,15 @@ pub async fn get_by_filter(
         .into_iter()
         .filter_map(|result| result.row_to_json)
         .collect();
-
-    cache.insert_with_ttl(
-        cache_key.clone(),
-        serde_json::Value::Array(data.clone()),
-        std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
-    );
-    cache.add_index_key(&format!("{}_cache_", table), &cache_key);
+        
+    if !data.is_empty() {
+        cache.insert_with_ttl(
+            cache_key.clone(),
+            serde_json::Value::Array(data.clone()),
+            std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
+        );
+        cache.add_index_key(&format!("{}_cache_", table), &cache_key);
+    }
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
