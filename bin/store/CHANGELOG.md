@@ -5,6 +5,50 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.76
+
+### Author
+Jean
+
+### Revert
+  - ***Store controller — revert condition to prevent caching empty results in get_by_filter***:
+    - `src/controllers/store_controller.rs`
+      - Revert the condition to allow caching empty results.
+
+## 0.2.75
+
+### Author
+Jean
+
+### Changed
+  - ***Store controller — prevent caching empty results in get_by_filter***:
+    - `src/controllers/store_controller.rs`
+      - Avoid inserting empty data into cache and adding index key when the query returns no results. This prevents unnecessary cache entries and reduces memory usage for empty result sets.
+
+## 0.2.74
+
+### Author
+Jean
+
+### Changed
+  - ***Find Constructors — nested join subquery control***:
+    - `src/providers/queries/find/constructors/joins_constructor.rs`
+      - Extend `build_join_sql` to accept an `enable_direct_subquery` flag and default it to `true` so existing call sites continue to emit direct field references.
+      - For nested joins, factor the lateral subquery condition into a reusable `subquery_cond` expression and allow switching between a direct `"alias"."from_field"` reference and a `SELECT DISTINCT ... LIMIT 1` subquery. This makes it possible to turn off the direct subquery path in specific scenarios while keeping current behavior by default.
+
+## 0.2.73
+
+### Author
+Jean
+
+### Added
+  - ***Organizations registration documentation and flow diagram***:
+    - `providers/operations/organizations/README.md`
+      - Document the `register` API contract, request struct, high-level flow for contact and device accounts, error handling, and example payloads for controller callers.
+    - `providers/operations/organizations/organization-register.drawio`
+    - `providers/operations/organizations/organization-register-flow.png`
+      - Add drawio diagram and reference a visual registration flow diagram that illustrates the main branches of the registration process.
+
 ## 0.2.72
 
 ### Author

@@ -93,6 +93,7 @@ impl JoinsConstructor {
             join,
             false,
             "LEFT",
+            None,
             build_system_where_clause,
             build_infix_expression,
         )
@@ -112,6 +113,7 @@ impl JoinsConstructor {
             join,
             false,
             "INNER",
+            None,
             build_system_where_clause,
             build_infix_expression,
         )
@@ -248,6 +250,7 @@ impl JoinsConstructor {
             join,
             true,
             "LEFT",
+            None,
             build_system_where_clause,
             build_infix_expression,
         )
@@ -260,6 +263,7 @@ impl JoinsConstructor {
         join: &Join,
         is_self_join: bool,
         join_kind: &str,
+        enable_direct_subquery: Option<bool>,
         build_system_where_clause: &impl Fn(&str) -> Result<String, String>,
         build_infix_expression: &impl Fn(&[FilterCriteria]) -> Result<String, String>,
     ) -> String {
@@ -327,6 +331,7 @@ impl JoinsConstructor {
         }
 
         let combined_where = where_conditions.join(" AND ");
+        let enable_direct_subquery = enable_direct_subquery.unwrap_or(true);
 
         if is_nested {
             // For nested joins, we need to include an additional join inside the lateral subquery
@@ -381,13 +386,19 @@ impl JoinsConstructor {
                 found_entity
             };
 
+            let subquery_cond = format!("(SELECT DISTINCT \"{}\" FROM \"{}\" WHERE \"{}\" = \"{}\".\"{}\" LIMIT 1)", from_field, actual_from_entity, from_field, nested_join_alias, from_field);
+            let subquery = if enable_direct_subquery {
+                format!("\"{}\".\"{}\"", nested_join_alias, from_field)
+            } else {
+                subquery_cond.clone()
+            };
             return format!(
-                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = (SELECT DISTINCT \"{}\" FROM \"{}\" WHERE \"{}\" = \"{}\".\"{}\" LIMIT 1)) AS \"{}\" ON TRUE",
+                "{} JOIN LATERAL (SELECT {} FROM \"{}\" \"{}\" WHERE {} AND \"{}\".\"{}\" = {}) AS \"{}\" ON TRUE",
                 join_kind,
                 selected_fields,
                 to_entity, lateral_alias,
                 combined_where,
-                lateral_alias, to_field, from_field, actual_from_entity, from_field, nested_join_alias, from_field,
+                lateral_alias, to_field, subquery,
                 to_alias
             );
         }
