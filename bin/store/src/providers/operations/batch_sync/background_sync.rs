@@ -118,7 +118,7 @@ impl BackgroundSyncService {
                     let rows = {
                         let client = self.db_client.lock().await;
                         let query = format!(
-                            "SELECT * FROM {} WHERE status != 'synced' LIMIT {}",
+                            "SELECT * FROM {} WHERE status != 'Synced' LIMIT {}",
                             table_name, self.batch_sync_size
                         );
                         match client.query(query.as_str(), &[]).await {
@@ -205,7 +205,7 @@ impl BackgroundSyncService {
                     if !synced_ids.is_empty() {
                         let client = self.db_client.lock().await;
                         let update_query = format!(
-                            "UPDATE {} SET status = 'synced' WHERE id = ANY($1)",
+                            "UPDATE {} SET status = 'Synced' WHERE id = ANY($1)",
                             table_name
                         );
                         if let Err(e) = client.execute(&update_query, &[&synced_ids]).await {
@@ -328,7 +328,7 @@ impl BackgroundSyncService {
             let table_name: String = row.get(0);
 
             let count_query = format!(
-                "SELECT COUNT(*) as total FROM {} WHERE status != 'synced'",
+                "SELECT COUNT(*) as total FROM {} WHERE status != 'Synced'",
                 table_name
             );
 

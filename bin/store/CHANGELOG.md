@@ -5,6 +5,18 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.77
+
+### Author
+Kashan
+
+### Changed
+  - ***Background sync — use status instead of tombstone for tracking synced records***:
+    - `src/providers/operations/batch_sync/background_sync.rs`
+      - Change fetch condition from `WHERE tombstone = 0` to `WHERE status != 'Synced'`.
+      - Change completion update from `SET tombstone = 1, status = 'Synced'` to `SET status = 'Synced'`.
+      - Update weighted round-robin count query to use `WHERE status != 'Synced'`.
+
 ## 0.2.76
 
 ### Author
