@@ -1185,12 +1185,36 @@ pub async fn get_by_filter(
         .extensions()
         .get::<Auth>()
         .map_or(false, |auth_data| auth_data.is_root_account);
-
     let headers = auth.headers();
     let timezone = headers
         .get("timezone")
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string());
+    let query_string = auth.query_string();
+    let query_params: Vec<(String, String)> = query_string
+        .split('&')
+        .filter(|s| !s.is_empty())
+        .filter_map(|s| {
+            let parts: Vec<&str> = s.split('=').collect();
+            if parts.len() == 2 {
+                Some((parts[0].to_string(), parts[1].to_string()))
+            } else {
+                None
+            }
+        })
+        .collect();
+    let no_caching = query_params
+        .iter()
+        .find(|(k, _)| k == "no_caching")
+        .map(|(_, v)| v.eq_ignore_ascii_case("true") || v == "1")
+        .unwrap_or(false);
+
+    if no_caching {
+        log::warn!(
+            "no_caching query param set; bypassing cache for get_by_filter on table {}",
+            table
+        );
+    }
     // Extract organization_id from auth context
     let extensions = auth.extensions();
     let organization_id = match extensions.get::<Auth>() {
@@ -1254,20 +1278,24 @@ pub async fn get_by_filter(
     let mut hasher = Sha1::new();
     hasher.update(filter_str.as_bytes());
     let filter_hash = format!("{:x}", hasher.finalize());
-    let cache_key = format!("{}_cache_{}", table, filter_hash);
+    let cache_prefix = format!("{}_cache", table);
+    let version = cache.get_prefix_version(&cache_prefix);
+    let cache_key = format!("{}_v{}_{}", cache_prefix, version, filter_hash);
 
-    if let Some(cached) = cache.get(&cache_key) {
-        if let Some(arr) = cached.as_array() {
-            let data: Vec<Value> = arr.clone();
-            return HttpResponse::Ok().json(ApiResponse {
-                success: true,
-                message: format!(
-                    "Filter operation completed for table: {} (from cache)",
-                    &table
-                ),
-                count: data.len() as i32,
-                data,
-            });
+    if !no_caching {
+        if let Some(cached) = cache.get(&cache_key) {
+            if let Some(arr) = cached.as_array() {
+                let data: Vec<Value> = arr.clone();
+                return HttpResponse::Ok().json(ApiResponse {
+                    success: true,
+                    message: format!(
+                        "Filter operation completed for table: {} (from cache)",
+                        &table
+                    ),
+                    count: data.len() as i32,
+                    data,
+                });
+            }
         }
     }
 
@@ -1337,12 +1365,14 @@ pub async fn get_by_filter(
         .filter_map(|result| result.row_to_json)
         .collect();
 
-    cache.insert_with_ttl(
-        cache_key.clone(),
-        serde_json::Value::Array(data.clone()),
-        std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
-    );
-    cache.add_index_key(&format!("{}_cache_", table), &cache_key);
+    if !no_caching {
+        cache.insert_with_ttl(
+            cache_key.clone(),
+            serde_json::Value::Array(data.clone()),
+            std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
+        );
+        cache.add_index_key(&cache_prefix, &cache_key);
+    }
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,
@@ -1353,7 +1383,9 @@ pub async fn get_by_filter(
 }
 
 fn invalidate_table_cache_prefix(table: &str) {
-    cache.remove_by_prefix(&format!("{}_cache_", table));
+    // Commented: Versioned key for cache invalidation instead of scan and delete in redis
+    // cache.remove_by_prefix(&format!("{}_cache_", table));
+    cache.increment_by_prefix(&format!("{}_cache", table));
 }
 /// Count route: POST /api/store/{table}/count
 /// Uses the same filter parsing as get_by_filter and aggregation_filter.
@@ -1369,12 +1401,36 @@ pub async fn count_by_filter(
         .extensions()
         .get::<Auth>()
         .map_or(false, |auth_data| auth_data.is_root_account);
-
     let headers = auth.headers();
     let timezone = headers
         .get("timezone")
         .and_then(|v| v.to_str().ok())
         .map(|s| s.to_string());
+    let query_string = auth.query_string();
+    let query_params: Vec<(String, String)> = query_string
+        .split('&')
+        .filter(|s| !s.is_empty())
+        .filter_map(|s| {
+            let parts: Vec<&str> = s.split('=').collect();
+            if parts.len() == 2 {
+                Some((parts[0].to_string(), parts[1].to_string()))
+            } else {
+                None
+            }
+        })
+        .collect();
+    let no_caching = query_params
+        .iter()
+        .find(|(k, _)| k == "no_caching")
+        .map(|(_, v)| v.eq_ignore_ascii_case("true") || v == "1")
+        .unwrap_or(false);
+
+    if no_caching {
+        log::warn!(
+            "no_caching query param set; bypassing cache for count_by_filter on table {}",
+            table
+        );
+    }
 
     let extensions = auth.extensions();
     let organization_id = match extensions.get::<Auth>() {
@@ -1415,21 +1471,25 @@ pub async fn count_by_filter(
     let mut hasher = Sha1::new();
     hasher.update(filter_str.as_bytes());
     let filter_hash = format!("{:x}", hasher.finalize());
-    let cache_key = format!("{}_cache_count_{}", table, filter_hash);
+    let cache_prefix = format!("{}_cache", table);
+    let version = cache.get_prefix_version(&cache_prefix);
+    let cache_key = format!("{}_count_v{}_{}", cache_prefix, version, filter_hash);
 
-    if let Some(cached) = cache.get(&cache_key) {
-        let cached_count = if let Some(n) = cached.as_i64() {
-            Some(n)
-        } else {
-            cached.get("count").and_then(|v| v.as_i64())
-        };
-        if let Some(n) = cached_count {
-            return HttpResponse::Ok().json(ApiResponse {
-                success: true,
-                message: format!("Count completed for table: {} (from cache)", &table),
-                count: n as i32,
-                data: vec![serde_json::json!({ "count": n })],
-            });
+    if !no_caching {
+        if let Some(cached) = cache.get(&cache_key) {
+            let cached_count = if let Some(n) = cached.as_i64() {
+                Some(n)
+            } else {
+                cached.get("count").and_then(|v| v.as_i64())
+            };
+            if let Some(n) = cached_count {
+                return HttpResponse::Ok().json(ApiResponse {
+                    success: true,
+                    message: format!("Count completed for table: {} (from cache)", &table),
+                    count: n as i32,
+                    data: vec![serde_json::json!({ "count": n })],
+                });
+            }
         }
     }
 
@@ -1477,12 +1537,14 @@ pub async fn count_by_filter(
         .and_then(|v| v.as_i64())
         .unwrap_or(0);
 
-    cache.insert_with_ttl(
-        cache_key.clone(),
-        serde_json::json!(count_value),
-        std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
-    );
-    cache.add_index_key(&format!("{}_cache_", table), &cache_key);
+    if !no_caching {
+        cache.insert_with_ttl(
+            cache_key.clone(),
+            serde_json::json!(count_value),
+            std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
+        );
+        cache.add_index_key(&cache_prefix, &cache_key);
+    }
 
     HttpResponse::Ok().json(ApiResponse {
         success: true,

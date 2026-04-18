@@ -5,6 +5,30 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.79
+
+### Author
+Jean
+
+### Changed
+  - ***Store controller & cache — versioned cache keys and prefix indexing***:
+    - `src/controllers/store_controller.rs`
+      - Update `get_by_filter` and `count_by_filter` cache keys to use a `{table}_cache` prefix combined with a version (`get_prefix_version`) and a filter hash so cache can be invalidated per-table by bumping the prefix version instead of scanning keys.
+      - Align cache index tracking with prefix-based keys by using the cache prefix when adding index entries.
+    - `src/providers/storage/cache/cache_singleton.rs`
+      - Rely on `get_prefix_version`, `increment_by_prefix`, and `add_index_key` helpers to support prefix versioning and in-memory index tracking for cache entries.
+
+## 0.2.78
+
+### Author
+Jean
+
+### Changed
+  - ***Store controller — per-request cache disable via no_caching query param***:
+    - `src/controllers/store_controller.rs`
+      - Add `no_caching` query parameter handling in `get_by_filter` and `count_by_filter` that, when set to `true` or `1`, bypasses both cache reads and writes for the request.
+      - Emit warning logs when `no_caching` is enabled to aid observability of cache-bypass traffic.
+
 ## 0.2.77
 
 ### Author

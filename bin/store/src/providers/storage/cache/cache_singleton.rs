@@ -128,6 +128,59 @@ impl Cache {
         }
     }
 
+    pub fn increment_by_prefix(&self, prefix: &str) {
+        match CacheConfig::global().cache_type {
+            CacheType::Redis => {
+                if let Some(conn_str) = CacheConfig::global().redis_connection.clone() {
+                    if let Ok(client) = redis::Client::open(conn_str.as_str()) {
+                        if let Ok(mut con) = client.get_connection() {
+                            let version_key = format!("{}_version", prefix);
+                            let _: Result<i64, _> =
+                                redis::cmd("INCR").arg(&version_key).query(&mut con);
+                        }
+                    }
+                }
+            }
+            CacheType::InMemory => {
+                let index_key = format!("{}_index", prefix);
+                if let Some(v) = self.get(&index_key) {
+                    if let Some(arr) = v.as_array() {
+                        for k in arr {
+                            if let Some(s) = k.as_str() {
+                                let _ = self.remove(s);
+                            }
+                        }
+                    }
+                    let _ = self.remove(&index_key);
+                }
+            }
+        }
+    }
+
+    pub fn get_prefix_version(&self, prefix: &str) -> i64 {
+        match CacheConfig::global().cache_type {
+            CacheType::Redis => {
+                if let Some(conn_str) = CacheConfig::global().redis_connection.clone() {
+                    if let Ok(client) = redis::Client::open(conn_str.as_str()) {
+                        if let Ok(mut con) = client.get_connection() {
+                            let version_key = format!("{}_version", prefix);
+                            let res: Result<Option<i64>, _> =
+                                redis::cmd("GET").arg(&version_key).query(&mut con);
+                            if let Ok(Some(v)) = res {
+                                return v;
+                            }
+                            let _: Result<(), _> =
+                                redis::cmd("SET").arg(&version_key).arg(1).query(&mut con);
+                            return 1;
+                        }
+                    }
+                }
+                1
+            }
+            CacheType::InMemory => 1,
+        }
+    }
+
     pub fn add_index_key(&self, prefix: &str, key: &str) {
         if let CacheType::InMemory = CacheConfig::global().cache_type {
             let index_key = format!("{}_index", prefix);
