@@ -5,6 +5,22 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.80
+
+### Author
+Kashan
+
+### Changed
+  - ***Sync service — batched field apply for all local inserts/updates***:
+    - `src/providers/operations/sync/sync_service.rs`
+      - Use `apply_batch()` for all local inserts and updates (not just migration mode). Reduces DB round trips from N (one per field) to 1 per record. Remote sync path (`from_local_insert=false`) unchanged.
+    - `src/providers/operations/sync/store/store_driver.rs`
+      - Add defensive validation in `apply_batch()` to ensure all messages belong to the same record (same `row` + `dataset`).
+
+  - ***CRDT messages — populate database name***:
+    - `src/providers/operations/sync/message_service.rs`
+      - Extract database name from `DATABASE_URL` env var (e.g. `skyll` from `postgres://...localhost:5433/skyll`) and set it on every CRDT message instead of `None`.
+
 ## 0.2.79
 
 ### Author
