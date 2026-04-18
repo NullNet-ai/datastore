@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.78
+
+### Author
+Jean
+
+### Changed
+  - ***Store controller — per-request cache disable via no_caching query param***:
+    - `src/controllers/store_controller.rs`
+      - Add `no_caching` query parameter handling in `get_by_filter` and `count_by_filter` that, when set to `true` or `1`, bypasses both cache reads and writes for the request.
+      - Emit warning logs when `no_caching` is enabled to aid observability of cache-bypass traffic.
+
 ## 0.2.77
 
 ### Author
