@@ -1336,7 +1336,7 @@ pub async fn get_by_filter(
         .into_iter()
         .filter_map(|result| result.row_to_json)
         .collect();
-        
+
     cache.insert_with_ttl(
         cache_key.clone(),
         serde_json::Value::Array(data.clone()),

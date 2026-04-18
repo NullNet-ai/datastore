@@ -7,8 +7,17 @@ use diesel::upsert::excluded;
 use diesel_async::AsyncPgConnection;
 use diesel_async::RunQueryDsl;
 use serde_json::Value;
+use once_cell::sync::Lazy;
 use std::collections::HashSet;
 use std::hash::{Hash, Hasher};
+
+/// Database name extracted from DATABASE_URL (e.g. "skyll" from "postgres://...localhost:5433/skyll")
+static DATABASE_NAME: Lazy<Option<String>> = Lazy::new(|| {
+    std::env::var("DATABASE_URL")
+        .ok()
+        .and_then(|url| url.rsplit('/').next().map(|s| s.to_string()))
+        .filter(|s| !s.is_empty())
+});
 
 pub async fn create_messages(
     mut tx: &mut AsyncPgConnection,
@@ -51,7 +60,7 @@ pub async fn create_messages(
         })?;
 
         messages.push(CrdtMessageModel {
-            database: None,
+            database: DATABASE_NAME.clone(),
             dataset: dataset.to_string(),
             group_id: "".to_string(),
             timestamp,
@@ -78,7 +87,7 @@ pub async fn create_messages(
         })?;
 
         messages.push(CrdtMessageModel {
-            database: None,
+            database: DATABASE_NAME.clone(),
             dataset: dataset.to_string(),
             group_id: "".to_string(),
             timestamp,
@@ -104,7 +113,7 @@ pub async fn create_messages(
         })?;
 
         messages.push(CrdtMessageModel {
-            database: None,
+            database: DATABASE_NAME.clone(),
             dataset: dataset.to_string(),
             group_id: "".to_string(),
             timestamp,

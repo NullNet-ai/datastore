@@ -386,7 +386,10 @@ impl JoinsConstructor {
                 found_entity
             };
 
-            let subquery_cond = format!("(SELECT DISTINCT \"{}\" FROM \"{}\" WHERE \"{}\" = \"{}\".\"{}\" LIMIT 1)", from_field, actual_from_entity, from_field, nested_join_alias, from_field);
+            let subquery_cond = format!(
+                "(SELECT DISTINCT \"{}\" FROM \"{}\" WHERE \"{}\" = \"{}\".\"{}\" LIMIT 1)",
+                from_field, actual_from_entity, from_field, nested_join_alias, from_field
+            );
             let subquery = if enable_direct_subquery {
                 format!("\"{}\".\"{}\"", nested_join_alias, from_field)
             } else {

@@ -134,6 +134,16 @@ pub async fn apply_batch(
 
     // Validate and parse each field — same logic as apply() per message
     for msg in messages {
+        if msg.dataset != *dataset || msg.row != first.row {
+            return Err(Box::new(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                format!(
+                    "apply_batch: mixed records — expected dataset='{}' row='{}', got dataset='{}' row='{}'",
+                    dataset, first.row, msg.dataset, msg.row
+                ),
+            )));
+        }
+
         let column = &msg.column;
 
         let field_type = match field_type_in_table(dataset, column) {
