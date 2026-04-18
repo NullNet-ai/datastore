@@ -1278,7 +1278,9 @@ pub async fn get_by_filter(
     let mut hasher = Sha1::new();
     hasher.update(filter_str.as_bytes());
     let filter_hash = format!("{:x}", hasher.finalize());
-    let cache_key = format!("{}_cache_{}", table, filter_hash);
+    let cache_prefix = format!("{}_cache", table);
+    let version = cache.get_prefix_version(&cache_prefix);
+    let cache_key = format!("{}_v{}_{}", cache_prefix, version, filter_hash);
 
     if !no_caching {
         if let Some(cached) = cache.get(&cache_key) {
@@ -1369,7 +1371,7 @@ pub async fn get_by_filter(
             serde_json::Value::Array(data.clone()),
             std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
         );
-        cache.add_index_key(&format!("{}_cache_", table), &cache_key);
+        cache.add_index_key(&cache_prefix, &cache_key);
     }
 
     HttpResponse::Ok().json(ApiResponse {
@@ -1381,7 +1383,9 @@ pub async fn get_by_filter(
 }
 
 fn invalidate_table_cache_prefix(table: &str) {
-    cache.remove_by_prefix(&format!("{}_cache_", table));
+    // Commented: Versioned key for cache invalidation instead of scan and delete in redis
+    // cache.remove_by_prefix(&format!("{}_cache_", table));
+    cache.increment_by_prefix(&format!("{}_cache", table));
 }
 /// Count route: POST /api/store/{table}/count
 /// Uses the same filter parsing as get_by_filter and aggregation_filter.
@@ -1467,7 +1471,9 @@ pub async fn count_by_filter(
     let mut hasher = Sha1::new();
     hasher.update(filter_str.as_bytes());
     let filter_hash = format!("{:x}", hasher.finalize());
-    let cache_key = format!("{}_cache_count_{}", table, filter_hash);
+    let cache_prefix = format!("{}_cache", table);
+    let version = cache.get_prefix_version(&cache_prefix);
+    let cache_key = format!("{}_count_v{}_{}", cache_prefix, version, filter_hash);
 
     if !no_caching {
         if let Some(cached) = cache.get(&cache_key) {
@@ -1537,7 +1543,7 @@ pub async fn count_by_filter(
             serde_json::json!(count_value),
             std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
         );
-        cache.add_index_key(&format!("{}_cache_", table), &cache_key);
+        cache.add_index_key(&cache_prefix, &cache_key);
     }
 
     HttpResponse::Ok().json(ApiResponse {
