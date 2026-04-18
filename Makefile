@@ -534,6 +534,7 @@ counter-service-test-all: redis-flush counter-service-test counter-service-test-
 # =============================================================================
 
 # Run the store clean setup
+# Run the store clean setup
 store-clean-setup:
 	@echo "🧹 Starting store clean setup (--init-db)..."
 	@export PATH="/usr/local/cargo/bin:/root/.cargo/bin:$$HOME/.cargo/bin:$$PATH"; \
@@ -554,11 +555,7 @@ store-clean-setup:
 	export DYLD_LIBRARY_PATH="$$PG_LIB_DIR:$$DYLD_LIBRARY_PATH"; \
 	export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
 	export C_INCLUDE_PATH="$$PG_INCLUDE_DIR:$$C_INCLUDE_PATH"; \
-	export DATABASE_URL="$${DATABASE_URL:-postgres://postgres:admin@localhost:5440/store}"; \
-	export REDIS_CONNECTION="$${REDIS_CONNECTION:-redis://localhost:6390/0}"; \
-	export REDIS_URL="$${REDIS_URL:-redis://localhost:6390/0}"; \
-	cd bin/store && \
-	DATABASE_URL="$$DATABASE_URL" REDIS_CONNECTION="$$REDIS_CONNECTION" REDIS_URL="$$REDIS_URL" RUST_LOG=info cargo run -- --cleanup --init-db
+	cd bin/store && RUST_LOG=info cargo run -- --cleanup --init-db
  
 store-clean-setup-lm:
 	@echo "🧹 Starting store clean setup (low memory, --init-db)..."
@@ -580,15 +577,10 @@ store-clean-setup-lm:
 	export DYLD_LIBRARY_PATH="$$PG_LIB_DIR:$$DYLD_LIBRARY_PATH"; \
 	export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
 	export C_INCLUDE_PATH="$$PG_INCLUDE_DIR:$$C_INCLUDE_PATH"; \
-	export DATABASE_URL="$${DATABASE_URL:-postgres://postgres:admin@localhost:5440/store}"; \
-	export REDIS_CONNECTION="$${REDIS_CONNECTION:-redis://localhost:6390/0}"; \
-	export REDIS_URL="$${REDIS_URL:-redis://localhost:6390/0}"; \
 	cd bin/store && \
-	DATABASE_URL="$$DATABASE_URL" REDIS_CONNECTION="$$REDIS_CONNECTION" REDIS_URL="$$REDIS_URL" \
 	RUSTFLAGS="-C debuginfo=0 -C codegen-units=1" \
 	cargo build -j 1 && \
 	RUST_LOG=info ../../target/debug/store --cleanup --init-db
-
 # Run the store in watch mode
 store-watch:
 	@echo "👀 Starting store in watch mode..."
