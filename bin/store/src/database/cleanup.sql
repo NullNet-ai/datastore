@@ -19,4 +19,4 @@ END $$;
 
 -- Keep extension setup aligned with bin/store/docker/init/001-enable-timescaledb.sql
 CREATE EXTENSION IF NOT EXISTS timescaledb;
-CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- CREATE EXTENSION IF NOT EXISTS pg_cron;
