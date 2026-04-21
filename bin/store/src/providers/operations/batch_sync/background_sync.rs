@@ -2,7 +2,6 @@ use crate::controllers::common_controller::migration_mode_enabled;
 use crate::database::db::{self, DatabaseTypeConverter};
 use crate::providers::operations::sync::sync_service;
 use dotenv::dotenv;
-use futures::stream::{self, StreamExt};
 use log;
 use serde_json::{json, Value};
 use std::env;
@@ -16,8 +15,6 @@ pub struct BackgroundSyncService {
     batch_sync_size: usize,
     batch_sync_enabled: bool,
     batch_sync_type: String,
-    /// Number of records to process concurrently within a batch (migration mode)
-    batch_concurrency: usize,
 }
 
 impl BackgroundSyncService {
@@ -33,11 +30,6 @@ impl BackgroundSyncService {
             env::var("BATCH_SYNC_ENABLED").unwrap_or_else(|_| "false".to_string()) == "true";
         let batch_sync_type =
             env::var("BATCH_SYNC_TYPE").unwrap_or_else(|_| "round-robin".to_string());
-        let batch_concurrency = env::var("BATCH_SYNC_CONCURRENCY")
-            .unwrap_or_else(|_| "10".to_string())
-            .parse::<usize>()
-            .unwrap_or(10);
-
         // Get database connection
         let client = match db::create_connection().await {
             Ok(client) => client,
@@ -52,7 +44,6 @@ impl BackgroundSyncService {
             batch_sync_size,
             batch_sync_enabled,
             batch_sync_type,
-            batch_concurrency,
         })
     }
 
@@ -118,7 +109,7 @@ impl BackgroundSyncService {
                     let rows = {
                         let client = self.db_client.lock().await;
                         let query = format!(
-                            "SELECT * FROM {} WHERE status != 'Synced' LIMIT {}",
+                            "SELECT * FROM {} WHERE status != 'Synced' ORDER BY timestamp ASC LIMIT {}",
                             table_name, self.batch_sync_size
                         );
                         match client.query(query.as_str(), &[]).await {
@@ -157,49 +148,22 @@ impl BackgroundSyncService {
                         })
                         .collect();
 
-                    // 3. Process inserts — concurrent in migration mode, sequential otherwise
-                    let synced_ids: Vec<String> = if is_migration {
-                        let concurrency = self.batch_concurrency;
-                        let actual_table_owned = actual_table.clone();
-                        let results: Vec<Option<String>> = stream::iter(records.into_iter())
-                            .map(move |(id, row_value)| {
-                                let table = actual_table_owned.clone();
-                                async move {
-                                    match sync_service::insert(&table, row_value).await {
-                                        Ok(_) => Some(id),
-                                        Err(e) => {
-                                            log::error!(
-                                                "[batch_sync] table={} Error syncing record {}: {}",
-                                                table,
-                                                id,
-                                                e
-                                            );
-                                            None
-                                        }
-                                    }
-                                }
-                            })
-                            .buffer_unordered(concurrency)
-                            .collect()
-                            .await;
-                        results.into_iter().flatten().collect()
-                    } else {
-                        let mut ids = Vec::new();
-                        for (id, row_value) in &records {
-                            match sync_service::insert(&actual_table, row_value.clone()).await {
-                                Ok(_) => ids.push(id.clone()),
-                                Err(e) => {
-                                    log::error!(
-                                        "[batch_sync] table={} Error syncing record {}: {}",
-                                        table_name,
-                                        id,
-                                        e
-                                    );
-                                }
+                    // 3. Process inserts sequentially to preserve timestamp ordering
+                    // (self-referencing records need parent before child)
+                    let mut synced_ids: Vec<String> = Vec::new();
+                    for (id, row_value) in records {
+                        match sync_service::insert(&actual_table, row_value).await {
+                            Ok(_) => synced_ids.push(id),
+                            Err(e) => {
+                                log::error!(
+                                    "[batch_sync] table={} Error syncing record {}: {}",
+                                    table_name,
+                                    id,
+                                    e
+                                );
                             }
                         }
-                        ids
-                    };
+                    }
 
                     // 4. Batch-update all synced records in one query
                     if !synced_ids.is_empty() {

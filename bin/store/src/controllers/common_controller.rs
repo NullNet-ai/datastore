@@ -75,6 +75,48 @@ pub fn migration_mode_enabled() -> bool {
         .unwrap_or(false)
 }
 
+/// Check if the given table is referenced by foreign keys from other tables.
+/// Returns a list of (referencing_table, referencing_column, constraint_name) tuples.
+pub async fn get_fk_references(
+    client: &Client,
+    table_name: &str,
+) -> Result<Vec<(String, String, String)>, AppError> {
+    let query = "
+        SELECT
+            tc.table_name AS referencing_table,
+            kcu.column_name AS referencing_column,
+            tc.constraint_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.constraint_column_usage ccu
+            ON ccu.constraint_name = tc.constraint_name
+            AND ccu.table_schema = tc.table_schema
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+            AND ccu.table_name = $1
+            AND tc.table_name != $1
+    ";
+
+    let rows = client
+        .query(query, &[&table_name])
+        .await
+        .map_err(|e| AppError::DbConnection(format!("Failed to query FK references: {}", format_pg_error(&e))))?;
+
+    let refs: Vec<(String, String, String)> = rows
+        .iter()
+        .map(|row| {
+            (
+                row.get::<_, String>(0),
+                row.get::<_, String>(1),
+                row.get::<_, String>(2),
+            )
+        })
+        .collect();
+
+    Ok(refs)
+}
+
 /// Extract the actual PostgreSQL error details from a tokio_postgres::Error.
 /// The Display impl of tokio_postgres::Error just prints "db error" for database
 /// errors — the real message (constraint violation, type mismatch, etc.) is inside

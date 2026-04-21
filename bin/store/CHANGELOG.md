@@ -5,6 +5,24 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.81
+
+### Author
+Kashan
+
+### Changed
+  - ***Background sync — sequential processing with timestamp ordering***:
+    - `src/providers/operations/batch_sync/background_sync.rs`
+      - Fetch records with `ORDER BY timestamp ASC` to sync oldest records first.
+      - Remove concurrent processing (`buffer_unordered`) — process records sequentially to preserve timestamp ordering for self-referencing tables. Removed `BATCH_SYNC_CONCURRENCY` env var.
+
+### Added
+  - ***Batch insert — foreign key reference validation***:
+    - `src/controllers/common_controller.rs`
+      - Add `get_fk_references()` helper that queries `information_schema` to find all foreign keys from other tables pointing to the target table.
+    - `src/controllers/store_controller.rs`
+      - In normal mode, reject batch inserts for tables that are referenced by foreign keys from other tables. Returns a 400 with details of which tables/columns/constraints reference it. Skipped in migration mode.
+
 ## 0.2.80
 
 ### Author
