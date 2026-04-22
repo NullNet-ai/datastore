@@ -165,6 +165,71 @@ macro_rules! generate_upsert_record_match {
         }
     }
 }
+
+/// Migration-mode upsert: always does .set(value) on conflict, no version/status special branches.
+#[macro_export]
+#[allow(warnings)]
+#[allow(unreachable_patterns)]
+macro_rules! generate_upsert_record_migration_match {
+    ($self:expr, $conn:expr, $record:expr, $($table:ident, $model:ty),*) => {
+        paste::paste! {
+            {
+                match $self {
+                    $(
+                        Table::$table => {
+                            let value: $model = serde_json::from_value($record.clone()).map_err(|e| {
+                                log::error!("Failed to deserialize record for table {}: {}", stringify!($table), serde_json::to_string_pretty(&$record).unwrap_or_else(|_| "<invalid json>".to_string()));
+                                DieselError::DeserializationError(Box::new(e))
+                            })?;
+
+                            diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                .values(value.clone())
+                                .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id))
+                                .do_update()
+                                .set(value)
+                                .execute($conn)
+                                .await
+                                .map(|_| ())
+                        },
+                    )*
+                }
+            }
+        }
+    }
+}
+
+/// Migration-mode upsert with timestamp conflict: always does .set(value), no version/status branches.
+#[macro_export]
+#[allow(warnings)]
+#[allow(unreachable_patterns)]
+macro_rules! generate_upsert_record_migration_with_timestamp_match {
+    ($self:expr, $conn:expr, $record:expr, $($table:ident, $model:ty),*) => {
+        paste::paste! {
+            {
+                match $self {
+                    $(
+                        Table::$table => {
+                            let value: $model = serde_json::from_value($record.clone()).map_err(|e| {
+                                log::error!("Failed to deserialize record for table {}: {}", stringify!($table), serde_json::to_string_pretty(&$record).unwrap_or_else(|_| "<invalid json>".to_string()));
+                                DieselError::DeserializationError(Box::new(e))
+                            })?;
+
+                            diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                .values(value.clone())
+                                .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id, crate::generated::schema::[<$table:snake:lower>]::timestamp))
+                                .do_update()
+                                .set(value)
+                                .execute($conn)
+                                .await
+                                .map(|_| ())
+                        },
+                    )*
+                }
+            }
+        }
+    }
+}
+
 #[macro_export]
 #[allow(warnings)]
 #[allow(unreachable_patterns)]
