@@ -103,15 +103,22 @@ pub async fn register(
     } else {
         Ulid::new().to_string()
     };
-    let created_by_override = responsible_account_organization_id
-        .clone()
-        .filter(|account_organization_id| !account_organization_id.is_empty())
-        .or_else(|| Some(default_account_organization_id.clone()));
+    let created_by_override = if is_request {
+        responsible_account_organization_id
+            .clone()
+            .filter(|account_organization_id| !account_organization_id.is_empty())
+            .or_else(|| Some(default_account_organization_id.clone()))
+    } else {
+        // During initialization the AO row may not exist yet; avoid FK cycles through created_by.
+        None
+    };
 
+    let initial_status = if is_request { "Draft" } else { "Active" }.to_string();
     let mut account_organization = AccountOrganizationModel {
         id: Some(default_account_organization_id.clone()),
         tombstone: Some(0),
-        status: Some("Draft".to_string()),
+        status: Some(initial_status.clone()),
+        account_organization_status: Some(initial_status),
         created_date: Some(formatted_date.clone()),
         created_time: Some(formatted_time.clone()),
         updated_date: Some(formatted_date.clone()),
@@ -215,6 +222,19 @@ pub async fn register(
                     ));
                 }
                 let mut account_organization_json = account_organization_json_initial.clone();
+                if let Value::Object(obj) = &mut account_organization_json {
+                    obj.insert("email".to_string(), Value::String(account_id.clone()));
+                    obj.insert("account_id".to_string(), Value::String(_account_id.clone()));
+                    obj.insert(
+                        "organization_id".to_string(),
+                        Value::String(existing_team_org.id.clone().unwrap_or_default()),
+                    );
+                    obj.insert("status".to_string(), Value::String("Active".to_string()));
+                    obj.insert(
+                        "account_organization_status".to_string(),
+                        Value::String("Active".to_string()),
+                    );
+                }
                 if let Some(code) = helpers::generate_code("account_organizations").await? {
                     if let Value::Object(obj) = &mut account_organization_json {
                         obj.insert("code".to_string(), Value::String(code));
@@ -232,6 +252,14 @@ pub async fn register(
             }
         } else {
             let mut account_organization_json = account_organization_json_initial.clone();
+            if let Value::Object(obj) = &mut account_organization_json {
+                obj.insert("email".to_string(), Value::String(account_id.clone()));
+                obj.insert("status".to_string(), Value::String("Active".to_string()));
+                obj.insert(
+                    "account_organization_status".to_string(),
+                    Value::String("Active".to_string()),
+                );
+            }
             if let Some(code) = helpers::generate_code("account_organizations").await? {
                 if let Value::Object(obj) = &mut account_organization_json {
                     obj.insert("code".to_string(), Value::String(code));
@@ -256,10 +284,19 @@ pub async fn register(
             .and_then(|ao| ao.contact_id.clone())
             .and_then(|id| if id.trim().is_empty() { None } else { Some(id) });
 
-        if existing_account_org.is_none() {
+        if existing_account_org.is_none() && is_request {
             log::info!("existing_account_org is None, create a default account_organization");
 
             let mut account_organization_json = account_organization_json_initial.clone();
+            if let Value::Object(obj) = &mut account_organization_json {
+                obj.insert("email".to_string(), Value::String(account_id.clone()));
+                obj.insert("account_id".to_string(), Value::String(_account_id.clone()));
+                obj.insert("status".to_string(), Value::String("Active".to_string()));
+                obj.insert(
+                    "account_organization_status".to_string(),
+                    Value::String("Active".to_string()),
+                );
+            }
             // Generate the code once during the insertion of initial account_organization
             if let Some(code) = helpers::generate_code("account_organizations").await? {
                 if let Value::Object(obj) = &mut account_organization_json {
@@ -272,6 +309,10 @@ pub async fn register(
                 account_organization_json,
             )
             .await?;
+        } else if existing_account_org.is_none() {
+            log::info!(
+                "existing_account_org is None during initialization; deferring AO creation to final upsert"
+            );
         }
         //create a personal organization (use static ID only when set by initializers, e.g. super admin / system device)
         let personal_categories = vec!["Personal".to_string()];
@@ -477,7 +518,7 @@ pub async fn register(
                         params.organization_id.clone().unwrap_or_else(|| "unknown".to_string()),
                         error
                     );
-                    Ok(().into())
+                    Err(error)
                 }
             }
     } else {
@@ -630,8 +671,7 @@ pub async fn register(
                         params.organization_id.clone().unwrap_or_else(|| "unknown".to_string()),
                         error
                     );
-                    // Return empty JSON value on error
-                    Ok(().into())
+                    Err(error)
                 }
             }
     }

@@ -469,7 +469,7 @@ store:
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
 	fi && \
-	cd bin/store && RUST_BACKTRACE=full RUST_MIN_STACK=16777216 cargo run
+	cd bin/store && RUST_MIN_STACK=16777216 cargo run
 
 # =============================================================================
 # Counter service (gRPC + Redis code generation)
