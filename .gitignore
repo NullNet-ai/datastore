@@ -60,7 +60,7 @@ Thumbs.db
 /store*
 
 # temp files
-/tmp/*
+/tmp/*  
 
 # nginx
 data
