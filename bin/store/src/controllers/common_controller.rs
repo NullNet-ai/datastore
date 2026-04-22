@@ -3,7 +3,7 @@ use crate::database::db::{self, DatabaseTypeConverter};
 use crate::database::schema::verify::field_exists_in_table;
 use crate::generated::table_enum::{generate_code, Table};
 use crate::providers::operations::sync::sync_service::{insert, update};
-use crate::structs::core::{ApiResponse, Auth, RequestBody};
+use crate::structs::core::{ApiResponse, Auth, RequestBody, OnConflictAction};
 use crate::utils::parse_filters::{build_sql_filter, SqlFilter};
 use crate::utils::structs::FilterCriteria;
 use actix_web::http;
@@ -908,5 +908,171 @@ pub async fn perform_upsert(
             is_root_account,
         )
         .await
+    }
+}
+
+pub async fn perform_upsert_advanced(
+    table_name: &str,
+    conflict_columns: Vec<String>,
+    data: serde_json::Value,
+    pluck_fields: Option<Vec<String>>,
+    auth: &Auth,
+    is_root_account: bool,
+    action: OnConflictAction,
+) -> Result<ApiResponse, ApiError> {
+    let filters = FilterCriteria::build_from_conflict_columns(conflict_columns, &data)
+        .map_err(|e| ApiError::new(http::StatusCode::BAD_REQUEST, e))?;
+
+    let SqlFilter { sql, params } = build_sql_filter(&filters.clone())
+        .map_err(|e| ApiError::new(http::StatusCode::BAD_REQUEST, e.to_string()))?;
+    let converted_params = convert_params_to_sql_types(&params).map_err(|e| {
+        ApiError::new(
+            http::StatusCode::BAD_REQUEST,
+            format!("Failed to convert parameters: {}", e),
+        )
+    })?;
+    let query = format!("SELECT id FROM {} WHERE {} LIMIT 1", table_name, sql);
+    let pg_params: Vec<&(dyn tokio_postgres::types::ToSql + Sync)> = converted_params
+        .iter()
+        .map(|b| b.as_ref() as &(dyn tokio_postgres::types::ToSql + Sync))
+        .collect();
+
+    let conn = db::create_connection().await.map_err(|e| {
+        ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to establish database connection: {}", e),
+        )
+    })?;
+
+    let row = conn.query_opt(&query, &pg_params[..]).await.map_err(|e| {
+        ApiError::new(
+            http::StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Failed to execute query: {}", e),
+        )
+    })?;
+
+    let record_id = match row {
+        Some(row) => row.get::<_, String>(0),
+        None => "".to_string(),
+    };
+
+    if record_id.is_empty() {
+        return process_and_insert_record(table_name, data, pluck_fields, auth, is_root_account)
+            .await;
+    }
+
+    let table = Table::from_str(table_name).ok_or_else(|| {
+        ApiError::new(
+            http::StatusCode::BAD_REQUEST,
+            format!("Unknown table: {}", table_name),
+        )
+    })?;
+
+    match action {
+        OnConflictAction::UpdateAll => {
+            process_and_update_record(
+                table_name,
+                data,
+                &record_id,
+                pluck_fields,
+                "update",
+                auth,
+                is_root_account,
+            )
+            .await
+        }
+        OnConflictAction::DoNothing => {
+            let mut conn = db::get_async_connection().await;
+            let existing = table
+                .get_by_id(
+                    &mut conn,
+                    &record_id,
+                    is_root_account,
+                    Some(auth.organization_id.clone()),
+                )
+                .await
+                .map_err(|e| {
+                    ApiError::new(
+                        http::StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to get existing record: {}", e),
+                    )
+                })?;
+
+            let existing = match existing {
+                Some(record_value) => record_value,
+                None => {
+                    return Err(ApiError::new(
+                        http::StatusCode::NOT_FOUND,
+                        format!(
+                            "Record with ID '{}' not found in '{}'",
+                            record_id, table_name
+                        ),
+                    ));
+                }
+            };
+
+            let plucked_record = match pluck_fields {
+                Some(fields) => table.pluck_fields(&existing, fields),
+                None => existing,
+            };
+
+            Ok(ApiResponse {
+                success: true,
+                message: format!("Record exists in '{}'", table_name),
+                count: 1,
+                data: vec![plucked_record],
+            })
+        }
+        OnConflictAction::UpdateFields(fields) => {
+            let mut conn = db::get_async_connection().await;
+            let existing = table
+                .get_by_id(
+                    &mut conn,
+                    &record_id,
+                    is_root_account,
+                    Some(auth.organization_id.clone()),
+                )
+                .await
+                .map_err(|e| {
+                    ApiError::new(
+                        http::StatusCode::INTERNAL_SERVER_ERROR,
+                        format!("Failed to get existing record: {}", e),
+                    )
+                })?;
+
+            let mut merged = match existing {
+                Some(record_value) => record_value,
+                None => {
+                    return Err(ApiError::new(
+                        http::StatusCode::NOT_FOUND,
+                        format!(
+                            "Record with ID '{}' not found in '{}'",
+                            record_id, table_name
+                        ),
+                    ));
+                }
+            };
+
+            if let (serde_json::Value::Object(ref mut existing_map), serde_json::Value::Object(ref data_map)) =
+                (&mut merged, &data)
+            {
+                for field in fields {
+                    if let Some(value) = data_map.get(&field) {
+                        existing_map.insert(field.clone(), value.clone());
+                    }
+                }
+            }
+
+            process_and_update_record(
+                table_name,
+                merged,
+                &record_id,
+                pluck_fields,
+                "update",
+                auth,
+                is_root_account,
+            )
+            .await
+        }
     }
 }

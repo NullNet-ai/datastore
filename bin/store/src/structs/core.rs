@@ -75,6 +75,15 @@ pub struct UpsertRequestBody {
     pub conflict_columns: Vec<String>,
 }
 
+#[derive(Deserialize, Serialize, Clone)]
+pub struct AdvancedUpsertRequestBody {
+    pub data: Value,
+    pub conflict_columns: Vec<String>,
+    pub action: String,
+    #[serde(default)]
+    pub update_fields: Vec<String>,
+}
+
 #[derive(Deserialize)]
 pub struct BatchUpdateBody {
     pub advance_filters: Vec<FilterCriteria>,
@@ -396,6 +405,12 @@ pub struct Auth {
     pub role_id: String,
     pub is_root_account: bool,
     pub account_id: String,
+}
+
+pub enum OnConflictAction {
+    UpdateAll,
+    DoNothing,
+    UpdateFields(Vec<String>),
 }
 
 // get by filter

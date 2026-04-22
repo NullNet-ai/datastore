@@ -1,7 +1,7 @@
 use crate::controllers::store_controller::{
     aggregation_filter, batch_delete_records, batch_insert_records, batch_update_records,
     count_by_filter, create_record, delete_record, get_by_filter, get_by_id, search_suggestions,
-    switch_account, update_record, upsert, verify_schema,
+    switch_account, update_record, upsert, verify_schema, upsert_advanced
 };
 use crate::middlewares::auth_middleware::Authentication;
 use crate::middlewares::session_middleware::SessionMiddleware;
@@ -41,6 +41,7 @@ pub fn configure_store_routes(cfg: &mut ServiceConfig, app_state: AppState) {
             .route(
                 "/{table}/filter/suggestions",
                 web::post().to(search_suggestions),
-            ),
+            )
+            .route("/advance_upsert/{table}", web::post().to(upsert_advanced)),
     );
 }
