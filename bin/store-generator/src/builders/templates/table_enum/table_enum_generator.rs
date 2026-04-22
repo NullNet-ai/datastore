@@ -26,7 +26,7 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     let mut file = File::create(output_path)?;
 
     // Write imports
-    writeln!(file, "use crate::{{generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match, generate_upsert_record_match, generate_upsert_record_with_timestamp_match}};")?;
+    writeln!(file, "use crate::{{generate_get_by_id_match, generate_hypertable_timestamp_match, generate_insert_record_match, generate_upsert_record_match, generate_upsert_record_migration_match, generate_upsert_record_migration_with_timestamp_match, generate_upsert_record_with_timestamp_match}};")?;
     for table in &tables {
         let singular_name = to_singular(&table.name);
         let model_name = format!("{}_model", singular_name.to_case(Case::Snake));
@@ -230,6 +230,49 @@ pub fn generate_table_enum(schema_path: &str, output_path: &str) -> io::Result<(
     writeln!(
         file,
         "        generate_upsert_record_with_timestamp_match!("
+    )?;
+    writeln!(file, "            self,")?;
+    writeln!(file, "            conn,")?;
+    writeln!(file, "            record,")?;
+    writeln!(
+        file,
+        "            {} // Add other tables and their models here as needed",
+        table_model_list
+    )?;
+    writeln!(file, "        )")?;
+    writeln!(file, "    }}")?;
+
+    // upsert_record_migration method (no version/status branches)
+    writeln!(file, "")?;
+    writeln!(file, "    /// Migration-mode upsert: always sets all non-None fields, no version/status special handling.")?;
+    writeln!(file, "    pub async fn upsert_record_migration(")?;
+    writeln!(file, "        &self,")?;
+    writeln!(file, "        conn: &mut AsyncPgConnection,")?;
+    writeln!(file, "        record: Value,")?;
+    writeln!(file, "    ) -> Result<(), DieselError> {{")?;
+    writeln!(file, "        generate_upsert_record_migration_match!(")?;
+    writeln!(file, "            self,")?;
+    writeln!(file, "            conn,")?;
+    writeln!(file, "            record,")?;
+    writeln!(
+        file,
+        "            {} // Add other tables and their models here as needed",
+        table_model_list
+    )?;
+    writeln!(file, "        )")?;
+    writeln!(file, "    }}")?;
+
+    // upsert_record_migration_with_timestamp method
+    writeln!(file, "")?;
+    writeln!(file, "    /// Migration-mode upsert with timestamp conflict: always sets all non-None fields.")?;
+    writeln!(file, "    pub async fn upsert_record_migration_with_timestamp(")?;
+    writeln!(file, "        &self,")?;
+    writeln!(file, "        conn: &mut AsyncPgConnection,")?;
+    writeln!(file, "        record: Value,")?;
+    writeln!(file, "    ) -> Result<(), DieselError> {{")?;
+    writeln!(
+        file,
+        "        generate_upsert_record_migration_with_timestamp_match!("
     )?;
     writeln!(file, "            self,")?;
     writeln!(file, "            conn,")?;
