@@ -5,6 +5,33 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.83
+
+### Author
+Kashan
+
+### Added
+  - ***Migration-mode upsert macros — no version/status branching***:
+    - `src/macros/table_enum/table_enum_macros.rs`
+      - Add `generate_upsert_record_migration_match!` and `generate_upsert_record_migration_with_timestamp_match!` macros. These always do `ON CONFLICT DO UPDATE SET value` without checking for version/status fields, ensuring all fields are written in a batched upsert.
+    - `src/generated/table_enum.rs`
+      - Add `upsert_record_migration()` and `upsert_record_migration_with_timestamp()` methods on `Table` enum using the new macros.
+
+### Changed
+  - ***apply_batch uses migration upsert methods***:
+    - `src/providers/operations/sync/store/store_driver.rs`
+      - `apply_batch()` now calls `upsert_record_migration` / `upsert_record_migration_with_timestamp` instead of the regular upsert methods. Fixes the issue where version/status fields in the batched JSON would cause the upsert to only update version or status and silently drop all other fields.
+
+## 0.2.82
+
+### Author
+Kashan
+
+### Fixed
+  - ***Sync service — revert apply_batch to migration mode only***:
+    - `src/providers/operations/sync/sync_service.rs`
+      - Revert `apply_batch()` to migration mode only. In normal mode, use per-field `apply()` to respect the version/status upsert branches in the macro. The upsert macro has special branches for `version` (only increments version) and `status` (only sets status/previous_status) — when batching all fields into one JSON, these branches would fire and silently drop all other fields like `account_id`.
+
 ## 0.2.81
 
 ### Author

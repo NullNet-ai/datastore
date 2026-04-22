@@ -211,7 +211,7 @@ pub async fn apply_batch(
 
         let json_values = serde_json::Value::Object(json_obj);
         table
-            .upsert_record_with_id_timestamp(tx, json_values)
+            .upsert_record_migration_with_timestamp(tx, json_values)
             .await
             .map_err(|e| {
                 log::error!("Error applying batched message: {}", e);
@@ -220,7 +220,7 @@ pub async fn apply_batch(
     } else {
         let json_values = serde_json::Value::Object(json_obj);
         table
-            .upsert_record_with_id(tx, json_values)
+            .upsert_record_migration(tx, json_values)
             .await
             .map_err(|e| {
                 log::error!("Error applying batched message: {}", e);

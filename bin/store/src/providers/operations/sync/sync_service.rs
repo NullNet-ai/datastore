@@ -1,3 +1,4 @@
+use crate::controllers::common_controller::migration_mode_enabled;
 use crate::database::db;
 use crate::generated::models::crdt_message_model::CrdtMessageModel;
 use crate::providers::operations::sync::hlc::hlc_service::HlcService;
@@ -273,18 +274,31 @@ async fn apply_messages(
     let mut to_send: Vec<CrdtMessageModel> = Vec::new();
 
     if from_local_insert {
-        // Batch all field applies into a single upsert query instead of one per field.
-        // CRDT messages, timestamps, and merkle updates are unaffected — only the local
-        // DB write is batched. The remote sync path (from_local_insert=false) is unchanged.
-        apply_batch(&mut tx, &messages).await?;
-        for msg in &messages {
-            let inserted_timestamp: Clock =
-                HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
-            let mut updated_msg = msg.clone();
-            updated_msg.group_id =
-                std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
-            updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
-            to_send.push(updated_msg);
+        if migration_mode_enabled() {
+            // Migration mode: batch all field applies into a single upsert query.
+            // Safe because migration skips version/status special handling.
+            apply_batch(&mut tx, &messages).await?;
+            for msg in &messages {
+                let inserted_timestamp: Clock =
+                    HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
+                let mut updated_msg = msg.clone();
+                updated_msg.group_id =
+                    std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
+                updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
+                to_send.push(updated_msg);
+            }
+        } else {
+            // Normal mode: apply per-field to respect version/status upsert branches.
+            for msg in &messages {
+                apply(&mut tx, msg).await?;
+                let inserted_timestamp: Clock =
+                    HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
+                let mut updated_msg = msg.clone();
+                updated_msg.group_id =
+                    std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
+                updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
+                to_send.push(updated_msg);
+            }
         }
     } else {
         let existing_messages = compare_messages(&mut tx, messages.clone()).await?;
