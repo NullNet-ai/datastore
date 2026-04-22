@@ -4,15 +4,16 @@ use crate::providers::operations::sync::sync_endpoints_service;
 use crate::providers::operations::sync::transport::transport_driver::PostOpts;
 use actix_web::{get, post, web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 #[derive(Serialize)]
 pub struct ResponsePackage {
-    data: Vec<PostOpts>,
+    pub data: Vec<PostOpts>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct EndpointRequest {
-    endpoint: SyncEndpointModel,
+    pub endpoint: SyncEndpointModel,
 }
 
 #[get("/api/sync_endpoints")]

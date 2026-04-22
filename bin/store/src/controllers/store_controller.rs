@@ -57,6 +57,7 @@ use sha1::Sha1;
 use std::collections::HashSet;
 use std::sync::Mutex;
 use ulid::Ulid;
+use utoipa::ToSchema;
 
 use super::common_controller::{perform_upsert, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
@@ -457,7 +458,7 @@ pub async fn get_by_id(
 
 // ... existing code ...
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct BatchInsertBody {
     records: Vec<Value>,
 }
@@ -4423,13 +4424,13 @@ async fn refresh_materialized_view_once(mv_name: String) -> Result<(), ApiError>
 }
 /// Schema verification endpoint
 /// Verifies that a table exists and optionally checks if specified fields exist in the table
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct SchemaVerificationRequest {
     pub entity: String,
     pub fields: Option<Vec<String>>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct SchemaVerificationResponse {
     pub exists: bool,
     pub available_fields: Vec<String>,
@@ -6138,7 +6139,7 @@ pub async fn delete_trigger(
     }
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct TriggerListQuery {
     pub schema: Option<String>,
     pub table: Option<String>,

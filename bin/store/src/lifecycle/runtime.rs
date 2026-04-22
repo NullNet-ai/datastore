@@ -642,8 +642,10 @@ impl RuntimeManager {
     ) -> Result<actix_web::dev::Server, Box<dyn std::error::Error + Send + Sync>> {
         use crate::providers::storage::AppState;
         use crate::routers::*;
-        use actix_web::{middleware::Logger, web, App, HttpServer};
+        use actix_web::{http::header, middleware::Logger, web, App, HttpResponse, HttpServer};
         use actix_web_metrics::ActixWebMetricsBuilder;
+        use utoipa::OpenApi;
+        use utoipa_swagger_ui::SwaggerUi;
 
         info!("[RUNTIME] Configuring HTTP server for {}", bind_address);
 
@@ -686,7 +688,19 @@ impl RuntimeManager {
                 .configure(|cfg| file_router::configure_file_routes(cfg, app_state.clone()))
                 // TODO: not sure what happens here if the order is set at above
                 // order issue
-                .configure(health_router::configure_health_routes);
+                .configure(health_router::configure_health_routes)
+                .route(
+                    "/swagger-ui",
+                    web::get().to(|| async {
+                        HttpResponse::TemporaryRedirect()
+                            .append_header((header::LOCATION, "/swagger-ui/"))
+                            .finish()
+                    }),
+                )
+                .service(
+                    SwaggerUi::new("/swagger-ui/{_:.*}")
+                        .url("/api-docs/openapi.json", crate::openapi::ApiDoc::openapi()),
+                );
 
             if let Some(hs) = &health_service {
                 app = app.app_data(web::Data::new(hs.clone()));

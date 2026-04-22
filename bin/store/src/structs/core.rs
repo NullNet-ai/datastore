@@ -11,6 +11,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, HashMap};
 use ulid::Ulid;
+use utoipa::ToSchema;
 use uuid::Uuid;
 #[derive(Debug)]
 /// Configuration structure for command-line arguments
@@ -23,7 +24,7 @@ pub struct CommandArgs {
     pub create_schema: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum MatchPattern {
     /// Exact match - value as provided
@@ -38,7 +39,7 @@ pub enum MatchPattern {
     Custom,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
 pub struct ApiResponse {
     pub success: bool,
     pub message: String,
@@ -63,30 +64,30 @@ impl std::fmt::Display for ApiResponse {
     }
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, ToSchema)]
 #[serde(transparent)]
 pub struct RequestBody {
     pub record: Value,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, ToSchema)]
 pub struct UpsertRequestBody {
     pub data: Value,
     pub conflict_columns: Vec<String>,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct BatchUpdateBody {
     pub advance_filters: Vec<FilterCriteria>,
     pub updates: RequestBody,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, ToSchema)]
 pub struct SwitchAccountRequest {
     pub data: SwitchAccountData,
 }
 
-#[derive(Deserialize, Serialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, ToSchema)]
 pub struct SwitchAccountData {
     pub token: String,
     pub organization_id: String,
@@ -309,7 +310,7 @@ impl RequestBody {
     }
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, ToSchema)]
 pub struct QueryParams {
     #[serde(default = "default_pluck")]
     pub pluck: String,
@@ -411,7 +412,7 @@ fn default_group_by_fields() -> Vec<String> {
     Vec::new()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema)]
 pub struct GroupBy {
     #[serde(default = "default_group_by_fields")]
     pub fields: Vec<String>,
@@ -419,7 +420,7 @@ pub struct GroupBy {
     pub has_count: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema)]
 pub struct GetByFilter {
     #[serde(default = "default_pluck_vec")]
     pub pluck: Vec<String>,
@@ -480,7 +481,7 @@ pub struct GetByFilter {
     pub materialized_view: Option<MaterializedViewConfig>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AggregationFilter {
     pub entity: String,
 
@@ -505,14 +506,14 @@ pub struct AggregationFilter {
     pub time_format: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Aggregation {
     pub aggregation: AggregationType,
     pub aggregate_on: String,
     pub bucket_name: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum AggregationType {
     Sum,
@@ -526,13 +527,13 @@ pub enum AggregationType {
     ArrayAgg,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct AggregationOrder {
     pub order_by: String,
     pub order_direction: String,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct ConcatenateField {
     pub fields: Vec<String>,
     pub field_name: String,
@@ -671,7 +672,7 @@ impl ConcatenateField {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct SortOption {
     pub by_field: String,
     pub by_direction: String,
@@ -739,7 +740,7 @@ fn default_parse_as() -> String {
     String::new()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, ToSchema)]
 pub enum ETimeFormats {
     #[serde(rename = "HH24:MI:SS")]
     HH24MISS,
@@ -778,7 +779,7 @@ fn default_time_format() -> String {
     ETimeFormats::default().to_string()
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TriggerTransitionRelations {
     #[serde(default)]
     pub old_table: Option<String>,
@@ -786,7 +787,7 @@ pub struct TriggerTransitionRelations {
     pub new_table: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct TriggerOptions {
     #[serde(default)]
     pub name: Option<String>,
@@ -813,7 +814,7 @@ pub struct TriggerOptions {
     pub table: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RefreshStrategy {
     #[serde(rename = "type")]
     pub r#type: String,
@@ -823,7 +824,7 @@ pub struct RefreshStrategy {
     pub trigger: Option<TriggerOptions>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct MaterializedViewConfig {
     #[serde(default)]
     pub create: Option<bool>,
@@ -837,7 +838,7 @@ pub struct MaterializedViewConfig {
     pub refresh_strategy: Option<RefreshStrategy>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct Join {
     pub r#type: String, // use r#type because `type` is a Rust keyword
     pub field_relation: FieldRelation,
@@ -845,13 +846,13 @@ pub struct Join {
     pub nested: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct FieldRelation {
     pub to: RelationEndpoint,
     pub from: RelationEndpoint,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub struct RelationEndpoint {
     pub entity: String,
     pub field: String,
@@ -866,7 +867,7 @@ pub struct RelationEndpoint {
 }
 
 //advance filters
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type")]
 pub enum FilterCriteria {
     #[serde(rename = "criteria")]
@@ -890,7 +891,7 @@ pub enum FilterCriteria {
     LogicalOperator { operator: LogicalOperator },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum LogicalOperator {
     And,
@@ -905,7 +906,7 @@ impl ToString for LogicalOperator {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 #[serde(tag = "type")]
 pub enum GroupAdvanceFilter {
     #[serde(rename = "criteria")]
@@ -922,7 +923,7 @@ pub enum GroupAdvanceFilter {
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, ToSchema)]
 pub enum FilterOperator {
     #[serde(rename = "equal")]
     Equal,
@@ -965,7 +966,7 @@ pub enum FilterOperator {
 //     pub file: String,
 // }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, ToSchema)]
 pub struct SearchSuggestionParams {
     #[serde(default)]
     pub advance_filters: Vec<FilterCriteria>,

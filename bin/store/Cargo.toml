@@ -1,6 +1,6 @@
 [package]
 name = "store"
-version = "0.2.84"
+version = "0.2.85"
 edition = "2021"
 rust-version = "1.91.1"
 default-run = "store"
@@ -78,6 +78,8 @@ metrics-exporter-prometheus = "0.18"
 actix-web-metrics = "0.4"
 metrics-process = "2.4"
 tokio-metrics = { version = "0.4.9" }
+utoipa = { version = "5", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "8", features = ["actix-web"] }
 
 
 [dev-dependencies]

@@ -1,9 +1,19 @@
 use crate::generated::schema::sync_endpoints;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
 #[derive(
-    Queryable, Selectable, Serialize, Debug, Default, Deserialize, Clone, AsChangeset, Insertable,
+    Queryable,
+    Selectable,
+    Serialize,
+    Debug,
+    Default,
+    Deserialize,
+    Clone,
+    AsChangeset,
+    Insertable,
+    ToSchema,
 )]
 #[diesel(table_name = sync_endpoints)]
 #[diesel(check_for_backend(diesel::pg::Pg))]

@@ -10,6 +10,7 @@ mod initializers;
 mod lifecycle;
 mod macros;
 mod middlewares;
+mod openapi;
 mod providers;
 mod routers;
 mod structs;
