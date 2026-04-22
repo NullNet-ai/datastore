@@ -2,10 +2,3 @@
 index = "sparse+https://crates.dnamicro.net/api/v1/crates/"
 credential-provider = ["cargo:token"]
 token = "Lwqk5bDbiGF6uDfusdGFmKlrngugMIKs"
-
-[target.aarch64-apple-darwin]
-rustflags = ["-L", "/opt/homebrew/opt/libpq/lib"]
-
-[env]
-PQ_LIB_DIR = "/opt/homebrew/opt/libpq/lib"
-PQ_INCLUDE_DIR = "/opt/homebrew/opt/libpq/include"

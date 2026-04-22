@@ -4,7 +4,7 @@ use crate::controllers::store_controller::{
     switch_account, update_record, upsert, verify_schema, upsert_advanced
 };
 use crate::middlewares::auth_middleware::Authentication;
-use crate::middlewares::session_middleware::SessionMiddleware;
+// use crate::middlewares::session_middleware::SessionMiddleware;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use crate::providers::storage::AppState;
 use actix_web::web;
@@ -24,7 +24,7 @@ pub fn configure_store_routes(cfg: &mut ServiceConfig, app_state: AppState) {
             .app_data(web::Data::new(app_state))
             .wrap(ShutdownGuard)
             .wrap(Authentication)
-            .wrap(SessionMiddleware)
+            // .wrap(SessionMiddleware)
             .route("/aggregate", web::post().to(aggregation_filter))
             .route("/verify_schema", web::post().to(verify_schema))
             .route("/{table}", web::post().to(create_record))

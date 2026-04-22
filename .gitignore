@@ -60,8 +60,12 @@ Thumbs.db
 /store*
 
 # temp files
-/tmp/*
+/tmp/*  
 
 # nginx
 data
 letsencrypt
+
+# schema bases
+/datastore-postgres-experimental-qa-src-schema-application
+/bin/store/src/database/schema/application_tables/*
