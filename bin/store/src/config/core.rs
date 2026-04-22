@@ -63,6 +63,7 @@ pub struct EnvConfig {
     // Search suggestion
     pub default_search_pattern: String,
     pub search_suggestion_cache_ttl_ms: u64,
+    pub find_cache_ttl_ms: u64,
 
     // Log
     pub log_file_path: String,
@@ -98,6 +99,9 @@ pub struct EnvConfig {
     // Test
     pub strict_validation: bool,
     pub prometheus_base_url: String,
+    pub server_keep_alive_secs: u64,
+    pub server_workers: Option<usize>,
+    pub insert_queue_capacity: usize,
 }
 
 impl Default for EnvConfig {
@@ -236,6 +240,10 @@ impl Default for EnvConfig {
                 .unwrap_or_else(|_| "30000".to_string())
                 .parse()
                 .unwrap_or(30000),
+            find_cache_ttl_ms: std::env::var("FIND_CACHE_TTL_MS")
+                .unwrap_or_else(|_| "300000".to_string())
+                .parse()
+                .unwrap_or(300000),
 
             // Log
             log_file_path: std::env::var("LOG_FILE_PATH")
@@ -314,6 +322,17 @@ impl Default for EnvConfig {
                 .unwrap_or(false),
             prometheus_base_url: std::env::var("PROMETHEUS_BASE_URL")
                 .unwrap_or_else(|_| "http://prometheus:9090".to_string()),
+            server_keep_alive_secs: std::env::var("KEEP_ALIVE_SECS")
+                .unwrap_or_else(|_| "30".to_string())
+                .parse()
+                .unwrap_or(30),
+            server_workers: std::env::var("WORKERS")
+                .ok()
+                .and_then(|s| s.parse::<usize>().ok()),
+            insert_queue_capacity: std::env::var("INSERT_QUEUE_CAPACITY")
+                .unwrap_or_else(|_| "100".to_string())
+                .parse()
+                .unwrap_or(100),
         }
     }
 }

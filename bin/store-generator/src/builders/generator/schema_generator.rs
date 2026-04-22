@@ -243,23 +243,27 @@ impl SchemaGenerator {
             if current_index_names.contains(&existing_name) {
                 continue;
             }
-            // Skip if any current index name is "existing_name_something" (e.g. sensor vs sensor_id from system_indexes).
-            // Avoids false "removed" when migrations use a shorter name and current def uses a longer one.
-            if current_index_names
-                .iter()
-                .any(|cur| cur.starts_with(&format!("{}_", existing_name)))
-            {
-                continue;
-            }
             if let Some(existing_sql) =
                 Self::get_existing_index_sql_from_migrations(&table_def.name, &existing_name)
             {
-                changes.push(SchemaChange {
-                    table_name: table_def.name.clone(),
-                    change_type: SchemaChangeType::RemovedIndex,
-                    field_name: Some(existing_name),
-                    field_definition: Some(existing_sql),
-                });
+                // Only consider this a removed index if it is NOT overridden by an equivalent
+                // definition in the current schema. Two indexes are considered equivalent if
+                // they target the same table with the same columns, index type, uniqueness,
+                // and WHERE predicate (regardless of index name or naming convention).
+                if Self::is_index_overridden_by_current_def(&table_def.name, &existing_sql, indexes)
+                {
+                    changes.push(SchemaChange {
+                        table_name: table_def.name.clone(),
+                        change_type: SchemaChangeType::RemovedIndex,
+                        field_name: Some(existing_name),
+                        field_definition: Some(existing_sql),
+                    });
+                    continue;
+                }
+
+                // Not matched by any current index definition — retain it (do not drop).
+                // Intentionally skip emitting RemovedIndex so the existing index stays.
+                continue;
             }
         }
 
@@ -451,11 +455,13 @@ impl SchemaGenerator {
         index_name: &str,
     ) -> Option<String> {
         let migrations_dir = paths::database::MIGRATIONS_DIR.as_str();
-        let entries = std::fs::read_dir(migrations_dir).ok()?;
-        for entry in entries.flatten() {
-            let up_sql =
-                std::fs::read_to_string(entry.path().join(paths::database::UP_SQL_FILE)).ok()?;
-            // Match full line: CREATE [UNIQUE] INDEX "index_name" ON "table_name" ... ;
+        // Collect migration entries and sort by directory name (Diesel timestamp prefix ensures lexical = chronological)
+        let mut entries: Vec<_> = std::fs::read_dir(migrations_dir).ok()?.flatten().collect();
+        entries.sort_by_key(|e| e.file_name());
+        // Iterate from newest to oldest to pick the latest definition for this index
+        for entry in entries.iter().rev() {
+            let up_path = entry.path().join(paths::database::UP_SQL_FILE);
+            let up_sql = std::fs::read_to_string(&up_path).ok()?;
             let on_table = format!("ON \"{}\"", table_name);
             if !up_sql.contains(&on_table) {
                 continue;
@@ -467,7 +473,6 @@ impl SchemaGenerator {
                     && line.contains(&format!("\"{}\"", index_name))
                     && line.contains(&on_table)
                 {
-                    // Strip Diesel/statement-breakpoint comment (e.g. ";--> statement-breakpoint") so comparison matches generator output
                     let sql = if let Some(comment_start) = line.find("-->") {
                         line[..comment_start].trim_end().trim_end_matches(';')
                     } else {
@@ -525,19 +530,96 @@ impl SchemaGenerator {
     /// btree(tombstone) and btree("tombstone") from migrations are treated as equal.
     fn normalize_index_sql_for_compare(sql: &str) -> String {
         let s = sql.trim().trim_end_matches(';');
-        let s = s.to_lowercase();
-        let s = s.split_whitespace().collect::<Vec<_>>().join(" ");
+        let mut s = s.to_lowercase();
+        s = s.split_whitespace().collect::<Vec<_>>().join(" ");
+        // If no explicit USING is present, assume PostgreSQL default btree for comparison purposes.
+        if !s.contains(" using ") {
+            if let Ok(re) = regex::Regex::new(r#"on\s+"([^"]+)"\s*\("#) {
+                s = re
+                    .replace_all(&s, |caps: &regex::Captures<'_>| {
+                        let table = &caps[1];
+                        format!("on \"{}\" using btree(", table)
+                    })
+                    .into_owned();
+            }
+        }
         // Normalize column list: ("col") or (col) -> (col) so existing migrations match generator output
         if let Ok(re) = regex::Regex::new(r"using btree\(([^)]+)\)") {
-            let s = re.replace_all(&s, |caps: &regex::Captures<'_>| {
-                let inner = &caps[1];
-                let unquoted = inner.replace('"', "");
-                format!("using btree({})", unquoted)
-            });
-            s.into_owned()
-        } else {
-            s
+            s = re
+                .replace_all(&s, |caps: &regex::Captures<'_>| {
+                    let inner = &caps[1];
+                    let unquoted = inner.replace('"', "");
+                    format!("using btree({})", unquoted)
+                })
+                .into_owned();
         }
+        s
+    }
+
+    /// Normalize CREATE INDEX SQL to ignore index name differences for equivalence checks.
+    /// Keeps table, type, columns, UNIQUE flag, and WHERE predicate; strips the specific index name.
+    fn normalize_index_sql_for_equivalence(sql: &str, table_name: &str) -> String {
+        let mut s = sql.trim().trim_end_matches(';').to_lowercase();
+        // Collapse whitespace
+        s = s.split_whitespace().collect::<Vec<_>>().join(" ");
+        // Normalize column list as in compare
+        if let Ok(re) = regex::Regex::new(r"using ([a-z]+)\(([^)]+)\)") {
+            s = re
+                .replace_all(&s, |caps: &regex::Captures<'_>| {
+                    let idx_type = &caps[1];
+                    let inner = &caps[2];
+                    let unquoted = inner.replace('"', "");
+                    format!("using {}({})", idx_type, unquoted)
+                })
+                .into_owned();
+        }
+        // Strip index name token between INDEX and ON "table"
+        let pattern = format!(
+            r#"index\s+(?:if not exists\s+)?\"[^\"]+\"\s+on\s+\"{}\""#,
+            table_name.to_lowercase()
+        );
+        if let Ok(re) = regex::Regex::new(&pattern) {
+            s = re
+                .replace(&s, format!("index on \"{}\"", table_name.to_lowercase()))
+                .into_owned();
+        }
+        s
+    }
+
+    /// Determine if an existing index (from SQL) is overridden by any of the current index
+    /// definitions for the given table. Equivalence ignores the index name but requires
+    /// the same table, columns, type, UNIQUE flag, and WHERE predicate.
+    fn is_index_overridden_by_current_def(
+        table_name: &str,
+        existing_create_sql: &str,
+        current_indexes: &[(
+            String,
+            Vec<String>,
+            bool,
+            Option<String>,
+            Option<crate::builders::generator::diesel_schema_definition::WhereExpr>,
+        )],
+    ) -> bool {
+        let existing_norm =
+            Self::normalize_index_sql_for_equivalence(existing_create_sql, table_name);
+        for (_, columns, is_unique, index_type, where_clause) in current_indexes {
+            let expected = crate::builders::generator::migration_generator::MigrationGenerator::generate_create_index_sql_full(
+                table_name,
+                "equivalence_idx_name",
+                &columns.join(","),
+                index_type.as_deref(),
+                where_clause.as_ref(),
+                *is_unique,
+            );
+            if let Ok(expected_sql) = expected {
+                let expected_norm =
+                    Self::normalize_index_sql_for_equivalence(&expected_sql, table_name);
+                if expected_norm == existing_norm {
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     /// For reserved keywords, use a different Rust identifier and #[sql_name] to avoid clashes.
@@ -964,5 +1046,47 @@ impl SchemaGenerator {
             }
         }
         false
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::builders::generator::diesel_schema_definition::WhereExpr;
+
+    #[test]
+    fn index_equivalence_matches_across_naming_conventions() {
+        let table = "organization_accounts";
+        let existing_sql = r#"CREATE INDEX "organization_accounts_created_by_idx" ON "organization_accounts" USING btree("created_by");"#;
+        let current = vec![(
+            "idx_organization_accounts_created_by".to_string(),
+            vec!["created_by".to_string()],
+            false,
+            Some("btree".to_string()),
+            None::<WhereExpr>,
+        )];
+        assert!(SchemaGenerator::is_index_overridden_by_current_def(
+            table,
+            existing_sql,
+            &current
+        ));
+    }
+
+    #[test]
+    fn index_equivalence_detects_non_overridden() {
+        let table = "organization_accounts";
+        let existing_sql = r#"CREATE INDEX "organization_accounts_status_idx" ON "organization_accounts" USING btree("status");"#;
+        let current = vec![(
+            "idx_organization_accounts_created_by".to_string(),
+            vec!["created_by".to_string()],
+            false,
+            Some("btree".to_string()),
+            None::<WhereExpr>,
+        )];
+        assert!(!SchemaGenerator::is_index_overridden_by_current_def(
+            table,
+            existing_sql,
+            &current
+        ));
     }
 }

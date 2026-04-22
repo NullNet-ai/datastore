@@ -26,6 +26,8 @@ pub struct DeviceInfo {
 }
 
 #[derive(Clone)]
+// To be discussed: Whether to use this struct or not.
+#[allow(dead_code)]
 pub struct SessionConfig {
     pub cookie_name: String,
     pub cookie_max_age: String,
@@ -33,7 +35,8 @@ pub struct SessionConfig {
     #[allow(dead_code)]
     pub secret: String,
 }
-
+// To be discussed: Whether to use this struct or not.
+#[allow(dead_code)]
 impl Default for SessionConfig {
     fn default() -> Self {
         Self {
@@ -50,10 +53,13 @@ impl Default for SessionConfig {
 
 /// Core session management functions that can be shared between HTTP and gRPC
 #[derive(Clone)]
+// To be discussed: Whether to use this struct or not.
+#[allow(dead_code)]
 pub struct SessionManager {
     config: SessionConfig,
 }
-
+// To be discussed: Whether to use this struct or not.
+#[allow(dead_code)]
 impl SessionManager {
     pub fn new(config: SessionConfig) -> Self {
         Self { config }
@@ -410,7 +416,23 @@ impl SessionManager {
     }
 
     pub fn should_skip_session(&self, path: &str) -> bool {
-        path.contains("/logout")
+        if path.contains("/logout") {
+            return true;
+        }
+        // Skip session management for batch insert in migration mode
+        if path.contains("/batch/") {
+            if std::env::var("MIGRATION_MODE")
+                .ok()
+                .map(|v| {
+                    let v = v.trim();
+                    v.eq_ignore_ascii_case("true") || v == "1"
+                })
+                .unwrap_or(false)
+            {
+                return true;
+            }
+        }
+        false
     }
 
     /// Get session header name

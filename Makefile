@@ -2,7 +2,7 @@
 
 # PHONY targets (targets that don't create files)
 .PHONY: all dev clean help install install-seeding verify-install install-macos install-linux install-windows \
-        server store store-clean-setup store-watch store-build \
+        server store store-clean-setup store-clean-setup-lm store-watch store-build \
         store-prod store-build-linux store-build-linux-bx store-build-linux-clean store-build-linux-zig store-build-docker store-build-docker-legacy store-build-docker-nocache store-build-docker-memsafe store-build-docker-memsafe-legacy store-build-docker-auth docker-diagnose \
         store-build-debian-amd64 store-build-debian-arm64 \
         redis-flush counter-service counter-service-test counter-service-test-integration counter-service-test-all \
@@ -31,6 +31,7 @@ help:
 	@echo "  server                  - Run the server"
 	@echo "  store                   - Run the store"
 	@echo "  store-clean-setup       - Run store clean setup"
+	@echo "  store-clean-setup-lm    - Run store clean setup with minimal memory"
 	@echo "  store-watch             - Run store in watch mode with debug"
 	@echo "  store-build             - Build store in release mode"
 	@echo "  store-prod              - Run store compiled store binary (target/release/store) in production mode"
@@ -159,26 +160,34 @@ install-rust-tools:
 start-docker-services:
 	@echo "⏳ Waiting 5 seconds before starting Docker services..."
 	@sleep 5
+	@if [ ! -f "$(DOCKER_COMPOSE_FILE)" ]; then \
+		echo "❌ Error: Docker Compose file not found at $(DOCKER_COMPOSE_FILE)"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(ENV_STORE_FILE)" ]; then \
+		echo "❌ Error: Env file not found at $(ENV_STORE_FILE)"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(ENV_SYNC_SERVER_FILE)" ]; then \
+		echo "❌ Error: Env file not found at $(ENV_SYNC_SERVER_FILE)"; \
+		exit 1; \
+	fi
 	@# Start Docker Compose services
-	@echo "🐳 Starting Docker Compose services (TimescaleDB and Redis)..."
+	@echo "🐳 Starting Docker Compose services..."
 	@if [ "$$(uname -s | cut -c1-10)" = "MINGW32_NT" ] || [ "$$(uname -s | cut -c1-10)" = "MINGW64_NT" ] || [ "$$(uname -s | cut -c1-6)" = "CYGWIN" ] || powershell -Command "exit 0" 2>/dev/null; then \
-		powershell -Command "if (Test-Path 'bin/store/docker-compose.yml') { if (Get-Command docker -ErrorAction SilentlyContinue) { try { docker info | Out-Null; docker-compose -f bin/store/docker-compose.yml up -d; Write-Host '✅ Docker Compose services started successfully!' } catch { Write-Host '⚠️  Docker daemon is not running. Please start Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' } } else { Write-Host '⚠️  Docker not found. Please install Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' } } else { Write-Host '⚠️  Docker Compose file not found at bin/store/docker-compose.yml' }"; \
+		powershell -Command "if (Get-Command docker -ErrorAction SilentlyContinue) { try { docker info | Out-Null; docker-compose -f $(DOCKER_COMPOSE_FILE) up -d; Write-Host '✅ Docker Compose services started successfully!' } catch { Write-Host '⚠️  Docker daemon is not running. Please start Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' } } else { Write-Host '⚠️  Docker not found. Please install Docker Desktop and try again.'; Write-Host '   You can manually start services later with: make docker-compose-up' }"; \
 	else \
-		if [ -f "bin/store/docker-compose.yml" ]; then \
-			if command -v docker >/dev/null 2>&1; then \
-				if docker info >/dev/null 2>&1; then \
-					docker-compose -f bin/store/docker-compose.yml up -d; \
-					echo "✅ Docker Compose services started successfully!"; \
-				else \
-					echo "⚠️  Docker daemon is not running. Please start Docker Desktop and try again."; \
-					echo "   You can manually start services later with: make docker-compose-up"; \
-				fi; \
+		if command -v docker >/dev/null 2>&1; then \
+			if docker info >/dev/null 2>&1; then \
+				docker-compose -f $(DOCKER_COMPOSE_FILE) up -d; \
+				echo "✅ Docker Compose services started successfully!"; \
 			else \
-				echo "⚠️  Docker not found. Please install Docker Desktop and try again."; \
+				echo "⚠️  Docker daemon is not running. Please start Docker Desktop and try again."; \
 				echo "   You can manually start services later with: make docker-compose-up"; \
 			fi; \
 		else \
-			echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
+			echo "⚠️  Docker not found. Please install Docker Desktop and try again."; \
+			echo "   You can manually start services later with: make docker-compose-up"; \
 		fi; \
 	fi
 
@@ -261,15 +270,6 @@ install-macos-deps:
 	else \
 		echo "✅ Homebrew already installed"; \
 	fi
-	@# Ensure Homebrew is in PATH for subsequent commands
-	@export PATH="/opt/homebrew/bin:$$PATH"; \
-	if ! command -v psql >/dev/null 2>&1; then \
-		echo "🐘 Installing PostgreSQL..."; \
-		brew install postgresql@14; \
-		brew services start postgresql@14; \
-	else \
-		echo "✅ PostgreSQL already installed"; \
-	fi
 	@# Install Protocol Buffers
 	@export PATH="/opt/homebrew/bin:$$PATH"; \
 	if ! command -v protoc >/dev/null 2>&1; then \
@@ -277,6 +277,14 @@ install-macos-deps:
 		brew install protobuf; \
 	else \
 		echo "✅ Protocol Buffers already installed"; \
+	fi
+	@# Install libpq for PostgreSQL client headers/libs (required by Rust postgres crates at link time)
+	@export PATH="/opt/homebrew/bin:$$PATH"; \
+	if ! brew list libpq >/dev/null 2>&1; then \
+		echo "📦 Installing libpq..."; \
+		brew install libpq; \
+	else \
+		echo "✅ libpq already installed"; \
 	fi
 	@echo "🎉 macOS system dependencies installed!"
 	@make start-docker-services
@@ -406,14 +414,14 @@ verify-install:
 		echo "❌ PostgreSQL not found" && exit 1; \
 	fi
 	@echo "Checking Docker Compose services..."
-	@if [ -f "bin/store/docker-compose.yml" ]; then \
+	@if [ -f "$(DOCKER_COMPOSE_FILE)" ]; then \
 		if command -v docker-compose >/dev/null 2>&1; then \
-			docker-compose -f bin/store/docker-compose.yml ps; \
+			docker-compose -f $(DOCKER_COMPOSE_FILE) ps; \
 		else \
 			echo "⚠️  Docker Compose not found, skipping service check"; \
 		fi; \
 	else \
-		echo "⚠️  Docker Compose file not found at bin/store/docker-compose.yml"; \
+		echo "⚠️  Docker Compose file not found at $(DOCKER_COMPOSE_FILE)"; \
 	fi
 	@echo "✅ All required tools are installed and working!"
 
@@ -469,7 +477,16 @@ store:
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
 	fi && \
-	cd bin/store && cargo run
+	PG_LIB_DIR="$$(pg_config --libdir 2>/dev/null || true)" && \
+	PG_INCLUDE_DIR="$$(pg_config --includedir 2>/dev/null || true)" && \
+	if [ -z "$$PG_LIB_DIR" ] || [ ! -d "$$PG_LIB_DIR" ]; then PG_LIB_DIR="/opt/homebrew/opt/libpq/lib"; fi && \
+	if [ -z "$$PG_INCLUDE_DIR" ] || [ ! -d "$$PG_INCLUDE_DIR" ]; then PG_INCLUDE_DIR="/opt/homebrew/opt/libpq/include"; fi && \
+	export PQ_LIB_DIR="$$PG_LIB_DIR" && \
+	export LIBRARY_PATH="$$PG_LIB_DIR:$$LIBRARY_PATH" && \
+	export DYLD_LIBRARY_PATH="$$PG_LIB_DIR:$$DYLD_LIBRARY_PATH" && \
+	export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:$$PKG_CONFIG_PATH" && \
+	export C_INCLUDE_PATH="$$PG_INCLUDE_DIR:$$C_INCLUDE_PATH" && \
+	cd bin/store && RUST_MIN_STACK=16777216 cargo run
 
 # =============================================================================
 # Counter service (gRPC + Redis code generation)
@@ -534,6 +551,7 @@ counter-service-test-all: redis-flush counter-service-test counter-service-test-
 # =============================================================================
 
 # Run the store clean setup
+# Run the store clean setup
 store-clean-setup:
 	@echo "🧹 Starting store clean setup (--init-db)..."
 	@export PATH="/usr/local/cargo/bin:/root/.cargo/bin:$$HOME/.cargo/bin:$$PATH"; \
@@ -541,8 +559,45 @@ store-clean-setup:
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
 	fi; \
+	PG_LIB_DIR="$$(pg_config --libdir 2>/dev/null || true)"; \
+	PG_INCLUDE_DIR="$$(pg_config --includedir 2>/dev/null || true)"; \
+	if [ -z "$$PG_LIB_DIR" ] || [ ! -d "$$PG_LIB_DIR" ]; then \
+		PG_LIB_DIR="/opt/homebrew/opt/libpq/lib"; \
+	fi; \
+	if [ -z "$$PG_INCLUDE_DIR" ] || [ ! -d "$$PG_INCLUDE_DIR" ]; then \
+		PG_INCLUDE_DIR="/opt/homebrew/opt/libpq/include"; \
+	fi; \
+	export PQ_LIB_DIR="$$PG_LIB_DIR"; \
+	export LIBRARY_PATH="$$PG_LIB_DIR:$$LIBRARY_PATH"; \
+	export DYLD_LIBRARY_PATH="$$PG_LIB_DIR:$$DYLD_LIBRARY_PATH"; \
+	export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export C_INCLUDE_PATH="$$PG_INCLUDE_DIR:$$C_INCLUDE_PATH"; \
 	cd bin/store && RUST_LOG=info cargo run -- --cleanup --init-db
-
+ 
+store-clean-setup-lm:
+	@echo "🧹 Starting store clean setup (low memory, --init-db)..."
+	@export PATH="/usr/local/cargo/bin:/root/.cargo/bin:$$HOME/.cargo/bin:$$PATH"; \
+	if ! command -v cargo >/dev/null 2>&1; then \
+		echo "❌ Cargo not found. Please run 'make install' first."; \
+		exit 1; \
+	fi; \
+	PG_LIB_DIR="$$(pg_config --libdir 2>/dev/null || true)"; \
+	PG_INCLUDE_DIR="$$(pg_config --includedir 2>/dev/null || true)"; \
+	if [ -z "$$PG_LIB_DIR" ] || [ ! -d "$$PG_LIB_DIR" ]; then \
+		PG_LIB_DIR="/opt/homebrew/opt/libpq/lib"; \
+	fi; \
+	if [ -z "$$PG_INCLUDE_DIR" ] || [ ! -d "$$PG_INCLUDE_DIR" ]; then \
+		PG_INCLUDE_DIR="/opt/homebrew/opt/libpq/include"; \
+	fi; \
+	export PQ_LIB_DIR="$$PG_LIB_DIR"; \
+	export LIBRARY_PATH="$$PG_LIB_DIR:$$LIBRARY_PATH"; \
+	export DYLD_LIBRARY_PATH="$$PG_LIB_DIR:$$DYLD_LIBRARY_PATH"; \
+	export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export C_INCLUDE_PATH="$$PG_INCLUDE_DIR:$$C_INCLUDE_PATH"; \
+	cd bin/store && \
+	RUSTFLAGS="-C debuginfo=0 -C codegen-units=1" \
+	cargo build -j 1 && \
+	RUST_LOG=info ../../target/debug/store --cleanup --init-db
 # Run the store in watch mode
 store-watch:
 	@echo "👀 Starting store in watch mode..."
@@ -566,7 +621,16 @@ store-build:
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
 	fi
-	@cd bin/store && cargo build --release && cp -f ../../target/release/store ../../store
+	@PG_LIB_DIR="$$(pg_config --libdir 2>/dev/null || true)"; \
+	PG_INCLUDE_DIR="$$(pg_config --includedir 2>/dev/null || true)"; \
+	if [ -z "$$PG_LIB_DIR" ] || [ ! -d "$$PG_LIB_DIR" ]; then PG_LIB_DIR="/opt/homebrew/opt/libpq/lib"; fi; \
+	if [ -z "$$PG_INCLUDE_DIR" ] || [ ! -d "$$PG_INCLUDE_DIR" ]; then PG_INCLUDE_DIR="/opt/homebrew/opt/libpq/include"; fi; \
+	export PQ_LIB_DIR="$$PG_LIB_DIR"; \
+	export LIBRARY_PATH="$$PG_LIB_DIR:$$LIBRARY_PATH"; \
+	export DYLD_LIBRARY_PATH="$$PG_LIB_DIR:$$DYLD_LIBRARY_PATH"; \
+	export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export C_INCLUDE_PATH="$$PG_INCLUDE_DIR:$$C_INCLUDE_PATH"; \
+	cd bin/store && cargo build --release && cp -f ../../target/release/store ../../store
 
 # Build a Linux binary in Docker and place it at repo root as ./store
 # Usage: make store-build-linux [LINUX_PLATFORM=linux/amd64|linux/arm64]
@@ -981,14 +1045,24 @@ pm2-delete:
 # =============================================================================
 
 # Docker Compose file path
-DOCKER_COMPOSE_FILE := docker-compose.yml
+DOCKER_COMPOSE_FILE := docker-compose-template.yml
+ENV_STORE_FILE := .env-store
+ENV_SYNC_SERVER_FILE := .env-sync-server
 
 # Start TimescaleDB and Redis services using Docker Compose
 docker-compose-up:
 	@echo "🐳 Starting Docker Compose services..."
 	@if [ ! -f "$(DOCKER_COMPOSE_FILE)" ]; then \
 		echo "❌ Error: Docker Compose file not found at $(DOCKER_COMPOSE_FILE)"; \
-		echo "Please ensure the docker-compose.yml file exists in bin/store/"; \
+		echo "Please ensure $(DOCKER_COMPOSE_FILE) exists in the project root."; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(ENV_STORE_FILE)" ]; then \
+		echo "❌ Error: Env file not found at $(ENV_STORE_FILE)"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(ENV_SYNC_SERVER_FILE)" ]; then \
+		echo "❌ Error: Env file not found at $(ENV_SYNC_SERVER_FILE)"; \
 		exit 1; \
 	fi
 	@if command -v docker >/dev/null 2>&1; then \
@@ -1234,6 +1308,11 @@ store-initialize-device:
 	@echo "✅ Device initialization completed! Waiting 1 second before exit..."
 	@sleep 1
 	@echo "🏁 Exiting store-initialize-device"
+
+# Publish store-generator to dnamicro registry
+publish-store-generator:
+	@echo "📦 Publishing store-generator to 'dnamicro' registry..."
+	@cd bin/store-generator && cargo publish --registry dnamicro
 
 
 code-eval: 

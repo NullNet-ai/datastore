@@ -334,7 +334,7 @@ macro_rules! generate_batch_insert_method {
                     };
 
                     // Convert JSON to CSV
-                    let csv_data = match convert_json_to_csv(&processed_records, &columns) {
+                    let csv_data = match convert_json_to_csv(&processed_records, &columns, &table_name) {
                         Ok(data) => data,
                         Err(e) => {
                             return Err(Status::internal(format!(
@@ -367,13 +367,15 @@ macro_rules! generate_batch_insert_method {
                     }
 
                     // Send sync messages for each record
-                    for record in processed_records.iter() {
+                    if !crate::controllers::common_controller::migration_mode_enabled() {
+                        for record in processed_records.iter() {
 
-                        if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
-                            if let Err(e) =
+                            if let Some(id) = record.get("id").and_then(|v| v.as_str()) {
+                                if let Err(e) =
 crate::providers::operations::batch_sync::batch_sync::BatchSyncService::send_code_assignment_message(table_name.clone(), id.to_string(), "".to_string(), auth_data.clone(), true).await
-                            {
-                                log::error!("Code assignment error with id {id}: {e}");
+                                {
+                                    log::error!("Code assignment error with id {id}: {e}");
+                                }
                             }
                         }
                     }

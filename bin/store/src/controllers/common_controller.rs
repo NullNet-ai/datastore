@@ -26,6 +26,17 @@ pub enum AppError {
     DataSend(String),
 }
 
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::DbConnection(msg) => write!(f, "Database connection failed: {}", msg),
+            AppError::CopyCommand(msg) => write!(f, "COPY command failed: {}", msg),
+            AppError::CsvConversion(msg) => write!(f, "CSV conversion failed: {}", msg),
+            AppError::DataSend(msg) => write!(f, "Failed to send data to database: {}", msg),
+        }
+    }
+}
+
 impl From<csv::Error> for AppError {
     fn from(e: csv::Error) -> Self {
         AppError::CsvConversion(e.to_string())
@@ -34,11 +45,27 @@ impl From<csv::Error> for AppError {
 
 impl From<tokio_postgres::Error> for AppError {
     fn from(e: tokio_postgres::Error) -> Self {
-        AppError::DbConnection(e.to_string())
+        AppError::DbConnection(format_pg_error(&e))
     }
 }
 
-fn migration_mode_enabled() -> bool {
+// /// Check if a table physically exists in the database by querying information_schema.
+// pub async fn temp_table_exists_in_db(table_name: &str) -> Result<bool, AppError> {
+//     let client = db::create_connection()
+//         .await
+//         .map_err(|e| AppError::DbConnection(e.to_string()))?;
+//     let row = client
+//         .query_one(
+//             "SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = $1)",
+//             &[&table_name],
+//         )
+//         .await
+//         .map_err(|e| AppError::DbConnection(e.to_string()))?;
+//     let exists: bool = row.get(0);
+//     Ok(exists)
+// }
+
+pub fn migration_mode_enabled() -> bool {
     env::var("MIGRATION_MODE")
         .ok()
         .map(|v| {
@@ -46,6 +73,99 @@ fn migration_mode_enabled() -> bool {
             v.eq_ignore_ascii_case("true") || v == "1"
         })
         .unwrap_or(false)
+}
+
+/// Check if the given table is referenced by foreign keys from other tables.
+/// Returns a list of (referencing_table, referencing_column, constraint_name) tuples.
+pub async fn get_fk_references(
+    client: &Client,
+    table_name: &str,
+) -> Result<Vec<(String, String, String)>, AppError> {
+    let query = "
+        SELECT
+            tc.table_name AS referencing_table,
+            kcu.column_name AS referencing_column,
+            tc.constraint_name
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+            ON tc.constraint_name = kcu.constraint_name
+            AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.constraint_column_usage ccu
+            ON ccu.constraint_name = tc.constraint_name
+            AND ccu.table_schema = tc.table_schema
+        WHERE tc.constraint_type = 'FOREIGN KEY'
+            AND ccu.table_name = $1
+            AND tc.table_name != $1
+    ";
+
+    let rows = client
+        .query(query, &[&table_name])
+        .await
+        .map_err(|e| AppError::DbConnection(format!("Failed to query FK references: {}", format_pg_error(&e))))?;
+
+    let refs: Vec<(String, String, String)> = rows
+        .iter()
+        .map(|row| {
+            (
+                row.get::<_, String>(0),
+                row.get::<_, String>(1),
+                row.get::<_, String>(2),
+            )
+        })
+        .collect();
+
+    Ok(refs)
+}
+
+/// Extract the actual PostgreSQL error details from a tokio_postgres::Error.
+/// The Display impl of tokio_postgres::Error just prints "db error" for database
+/// errors — the real message (constraint violation, type mismatch, etc.) is inside
+/// the DbError returned by .as_db_error().
+fn format_pg_error(e: &tokio_postgres::Error) -> String {
+    // First try to get structured DB error details
+    if let Some(db_err) = e.as_db_error() {
+        let mut msg = format!("{} ({})", db_err.message(), db_err.code().code());
+        if let Some(detail) = db_err.detail() {
+            msg.push_str(&format!(", detail: {}", detail));
+        }
+        if let Some(column) = db_err.column() {
+            msg.push_str(&format!(", column: {}", column));
+        }
+        if let Some(constraint) = db_err.constraint() {
+            msg.push_str(&format!(", constraint: {}", constraint));
+        }
+        if let Some(table) = db_err.table() {
+            msg.push_str(&format!(", table: {}", table));
+        }
+        return msg;
+    }
+
+    // For COPY sink errors, as_db_error() returns None because the error is
+    // wrapped through the futures Sink trait. Walk the source chain to find
+    // the underlying DbError.
+    let mut source = std::error::Error::source(&e);
+    while let Some(err) = source {
+        if let Some(pg_err) = err.downcast_ref::<tokio_postgres::error::DbError>() {
+            let mut msg = format!("{} ({})", pg_err.message(), pg_err.code().code());
+            if let Some(detail) = pg_err.detail() {
+                msg.push_str(&format!(", detail: {}", detail));
+            }
+            if let Some(column) = pg_err.column() {
+                msg.push_str(&format!(", column: {}", column));
+            }
+            if let Some(constraint) = pg_err.constraint() {
+                msg.push_str(&format!(", constraint: {}", constraint));
+            }
+            if let Some(table) = pg_err.table() {
+                msg.push_str(&format!(", table: {}", table));
+            }
+            return msg;
+        }
+        source = err.source();
+    }
+
+    // Last resort: Debug format shows the full error chain
+    format!("{:?}", e)
 }
 
 pub async fn execute_copy(
@@ -56,60 +176,94 @@ pub async fn execute_copy(
 ) -> Result<(), AppError> {
     let temp_table_name = format!("temp_{}", table_name);
 
-    // Create statements for both tables
+    // Quote column names to handle reserved keywords (e.g. "order")
+    let quoted_columns: Vec<String> = columns.iter().map(|c| format!("\"{}\"", c)).collect();
+    let columns_str = quoted_columns.join(",");
+
     let stmt = format!(
         "COPY {} ({}) FROM STDIN WITH (FORMAT csv)",
-        table_name,
-        columns.join(",")
+        table_name, columns_str
     );
 
     let temp_stmt = format!(
         "COPY {} ({}) FROM STDIN WITH (FORMAT csv)",
-        temp_table_name,
-        columns.join(",")
+        temp_table_name, columns_str
     );
 
-    // Clone the client and data for parallel operations
-    let client_clone = client;
-    let csv_data_clone = csv_data.clone();
+    // Wrap both COPYs in a single transaction so they both succeed or both roll back.
+    client.execute("BEGIN", &[]).await.map_err(|e| {
+        AppError::DbConnection(format!(
+            "BEGIN transaction for table '{}': {}",
+            table_name,
+            format_pg_error(&e)
+        ))
+    })?;
 
-    // Execute both copy operations in parallel
-    let (main_result, temp_result) = tokio::join!(
-        async {
-            let sink = client
-                .copy_in(&stmt)
-                .await
-                .map_err(|e| AppError::CopyCommand(e.to_string()))?;
+    // COPY into main table
+    let result: Result<(), AppError> = async {
+        let sink = client.copy_in(&stmt).await.map_err(|e| {
+            AppError::CopyCommand(format!("table '{}': {}", table_name, format_pg_error(&e)))
+        })?;
+        pin_mut!(sink);
+        sink.send(Bytes::from(csv_data.clone()))
+            .await
+            .map_err(|e| {
+                AppError::DataSend(format!("table '{}': {}", table_name, format_pg_error(&e)))
+            })?;
+        sink.close().await.map_err(|e| {
+            AppError::DataSend(format!(
+                "table '{}' closing COPY stream: {}",
+                table_name,
+                format_pg_error(&e)
+            ))
+        })?;
 
-            pin_mut!(sink);
-            sink.send(Bytes::from(csv_data))
-                .await
-                .map_err(|e| AppError::DataSend(e.to_string()))?;
+        // COPY into temp table
+        let sink = client.copy_in(&temp_stmt).await.map_err(|e| {
+            AppError::CopyCommand(format!(
+                "temp table '{}': {}",
+                temp_table_name,
+                format_pg_error(&e)
+            ))
+        })?;
+        pin_mut!(sink);
+        sink.send(Bytes::from(csv_data)).await.map_err(|e| {
+            AppError::DataSend(format!(
+                "temp table '{}': {}",
+                temp_table_name,
+                format_pg_error(&e)
+            ))
+        })?;
+        sink.close().await.map_err(|e| {
+            AppError::DataSend(format!(
+                "temp table '{}' closing COPY stream: {}",
+                temp_table_name,
+                format_pg_error(&e)
+            ))
+        })?;
 
-            sink.close()
-                .await
-                .map_err(|e| AppError::DataSend(e.to_string()))
-        },
-        async {
-            let sink = client_clone
-                .copy_in(&temp_stmt)
-                .await
-                .map_err(|e| AppError::CopyCommand(e.to_string()))?;
+        Ok(())
+    }
+    .await;
 
-            pin_mut!(sink);
-            sink.send(Bytes::from(csv_data_clone))
-                .await
-                .map_err(|e| AppError::DataSend(e.to_string()))?;
+    if let Err(e) = &result {
+        log::error!(
+            "COPY failed for table '{}', rolling back: {}",
+            table_name,
+            e
+        );
+        let _ = client.execute("ROLLBACK", &[]).await;
+        return Err(result.unwrap_err());
+    }
 
-            sink.close()
-                .await
-                .map_err(|e| AppError::DataSend(e.to_string()))
-        }
-    );
-
-    // Check results from both operations
-    main_result?;
-    temp_result?;
+    // Both succeeded — commit
+    client.execute("COMMIT", &[]).await.map_err(|e| {
+        AppError::DbConnection(format!(
+            "COMMIT transaction for table '{}': {}",
+            table_name,
+            format_pg_error(&e)
+        ))
+    })?;
 
     Ok(())
 }
@@ -161,7 +315,25 @@ fn extract_columns_owned(records: &[Value]) -> Result<Vec<String>, String> {
         .ok_or_else(|| "Invalid record format".to_string())
 }
 
-pub fn convert_json_to_csv(records: &[Value], columns: &[String]) -> Result<Vec<u8>, AppError> {
+pub fn convert_json_to_csv(
+    records: &[Value],
+    columns: &[String],
+    table_name: &str,
+) -> Result<Vec<u8>, AppError> {
+    use crate::database::schema::verify::field_type_in_table;
+    use std::collections::HashSet;
+
+    // Build a set of columns that are JSON/JSONB so we can serialize them properly
+    let json_columns: HashSet<&str> = columns
+        .iter()
+        .filter(|col| {
+            field_type_in_table(table_name, col)
+                .map(|info| info.is_json)
+                .unwrap_or(false)
+        })
+        .map(|s| s.as_str())
+        .collect();
+
     let mut wtr = WriterBuilder::new().has_headers(false).from_writer(vec![]);
 
     for record in records {
@@ -171,7 +343,18 @@ pub fn convert_json_to_csv(records: &[Value], columns: &[String]) -> Result<Vec<
 
         let row: Vec<String> = columns
             .iter()
-            .map(|col| serialize_value(obj.get(col).unwrap_or(&Value::Null)))
+            .map(|col| {
+                let val = obj.get(col.as_str()).unwrap_or(&Value::Null);
+                if json_columns.contains(col.as_str()) {
+                    // For JSON/JSONB columns, always output valid JSON
+                    match val {
+                        Value::Null => String::new(),
+                        _ => serde_json::to_string(val).unwrap_or_default(),
+                    }
+                } else {
+                    serialize_value(val)
+                }
+            })
             .collect();
 
         wtr.write_record(&row)
@@ -188,13 +371,24 @@ fn serialize_value(value: &Value) -> String {
         Value::Null => String::new(),
         Value::Number(n) => n.to_string(),
         Value::Bool(b) => b.to_string(),
-        Value::Array(arr) => format!(
-            "{{{}}}",
-            arr.iter()
-                .map(serialize_value)
-                .collect::<Vec<_>>()
-                .join(",")
-        ),
+        Value::Array(arr) => {
+            // If any element is an object or nested array, treat the whole thing as JSON
+            let is_json_array = arr
+                .iter()
+                .any(|v| matches!(v, Value::Object(_) | Value::Array(_)));
+            if is_json_array {
+                serde_json::to_string(value).unwrap_or_default()
+            } else {
+                // Simple Postgres array literal for scalar arrays (text[], int[], etc.)
+                format!(
+                    "{{{}}}",
+                    arr.iter()
+                        .map(serialize_value)
+                        .collect::<Vec<_>>()
+                        .join(",")
+                )
+            }
+        }
         Value::Object(_) => serde_json::to_string(value).unwrap_or_default(),
     }
 }

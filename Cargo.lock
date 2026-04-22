@@ -4173,12 +4173,14 @@ dependencies = [
  "combine",
  "futures-util",
  "itoa",
+ "native-tls",
  "percent-encoding",
  "pin-project-lite",
  "ryu",
  "sha1_smol",
  "socket2 0.4.10",
  "tokio",
+ "tokio-native-tls",
  "tokio-util",
  "url",
 ]
@@ -4954,7 +4956,7 @@ checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
 
 [[package]]
 name = "store"
-version = "0.2.67"
+version = "0.2.84"
 dependencies = [
  "actix",
  "actix-files",
@@ -5011,7 +5013,7 @@ dependencies = [
  "sha1",
  "sha2",
  "socketioxide",
- "store-generator 0.1.20 (sparse+https://crates.dnamicro.net/api/v1/crates/)",
+ "store-generator 0.1.23 (sparse+https://crates.dnamicro.net/api/v1/crates/)",
  "thiserror 1.0.69",
  "time 0.3.47",
  "tokio",
@@ -5028,7 +5030,7 @@ dependencies = [
 
 [[package]]
 name = "store-generator"
-version = "0.1.20"
+version = "0.1.23"
 dependencies = [
  "chrono 0.4.44",
  "env_logger 0.11.10",
@@ -5045,9 +5047,9 @@ dependencies = [
 
 [[package]]
 name = "store-generator"
-version = "0.1.20"
+version = "0.1.23"
 source = "sparse+https://crates.dnamicro.net/api/v1/crates/"
-checksum = "89e596e84ae5650c7b139c3ad8d884bd0f9b9b9d2905035c9f4a539422895076"
+checksum = "e0e0bcc7d85c6e89bad1cb84784e4a8293892d343bf170e2232ae9ee6018c992"
 dependencies = [
  "chrono 0.4.44",
  "env_logger 0.11.10",

@@ -5,6 +5,235 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.84
+
+### Author
+Jean
+
+### Changed
+  - ***Organizations — invited account device_id initialization***:
+    - `src/providers/operations/organizations/organization_service.rs`
+      - Default `device_id` to `None` for invited contact-account flow and only set it from `_account_id` when creating a device for non-contact accounts.
+      - Remove adding of account_id in insertion of initial account organization as account may not be existing  yet.
+
+## 0.2.83
+
+### Author
+Kashan
+
+### Added
+  - ***Migration-mode upsert macros — no version/status branching***:
+    - `src/macros/table_enum/table_enum_macros.rs`
+      - Add `generate_upsert_record_migration_match!` and `generate_upsert_record_migration_with_timestamp_match!` macros. These always do `ON CONFLICT DO UPDATE SET value` without checking for version/status fields, ensuring all fields are written in a batched upsert.
+    - `src/generated/table_enum.rs`
+      - Add `upsert_record_migration()` and `upsert_record_migration_with_timestamp()` methods on `Table` enum using the new macros.
+
+### Changed
+  - ***apply_batch uses migration upsert methods***:
+    - `src/providers/operations/sync/store/store_driver.rs`
+      - `apply_batch()` now calls `upsert_record_migration` / `upsert_record_migration_with_timestamp` instead of the regular upsert methods. Fixes the issue where version/status fields in the batched JSON would cause the upsert to only update version or status and silently drop all other fields.
+
+## 0.2.82
+
+### Author
+Kashan
+
+### Fixed
+  - ***Sync service — revert apply_batch to migration mode only***:
+    - `src/providers/operations/sync/sync_service.rs`
+      - Revert `apply_batch()` to migration mode only. In normal mode, use per-field `apply()` to respect the version/status upsert branches in the macro. The upsert macro has special branches for `version` (only increments version) and `status` (only sets status/previous_status) — when batching all fields into one JSON, these branches would fire and silently drop all other fields like `account_id`.
+
+## 0.2.81
+
+### Author
+Kashan
+
+### Changed
+  - ***Background sync — sequential processing with timestamp ordering***:
+    - `src/providers/operations/batch_sync/background_sync.rs`
+      - Fetch records with `ORDER BY timestamp ASC` to sync oldest records first.
+      - Remove concurrent processing (`buffer_unordered`) — process records sequentially to preserve timestamp ordering for self-referencing tables. Removed `BATCH_SYNC_CONCURRENCY` env var.
+
+### Added
+  - ***Batch insert — foreign key reference validation***:
+    - `src/controllers/common_controller.rs`
+      - Add `get_fk_references()` helper that queries `information_schema` to find all foreign keys from other tables pointing to the target table.
+    - `src/controllers/store_controller.rs`
+      - In normal mode, reject batch inserts for tables that are referenced by foreign keys from other tables. Returns a 400 with details of which tables/columns/constraints reference it. Skipped in migration mode.
+
+## 0.2.80
+
+### Author
+Kashan
+
+### Changed
+  - ***Sync service — batched field apply for all local inserts/updates***:
+    - `src/providers/operations/sync/sync_service.rs`
+      - Use `apply_batch()` for all local inserts and updates (not just migration mode). Reduces DB round trips from N (one per field) to 1 per record. Remote sync path (`from_local_insert=false`) unchanged.
+    - `src/providers/operations/sync/store/store_driver.rs`
+      - Add defensive validation in `apply_batch()` to ensure all messages belong to the same record (same `row` + `dataset`).
+
+  - ***CRDT messages — populate database name***:
+    - `src/providers/operations/sync/message_service.rs`
+      - Extract database name from `DATABASE_URL` env var (e.g. `skyll` from `postgres://...localhost:5433/skyll`) and set it on every CRDT message instead of `None`.
+
+## 0.2.79
+
+### Author
+Jean
+
+### Changed
+  - ***Store controller & cache — versioned cache keys and prefix indexing***:
+    - `src/controllers/store_controller.rs`
+      - Update `get_by_filter` and `count_by_filter` cache keys to use a `{table}_cache` prefix combined with a version (`get_prefix_version`) and a filter hash so cache can be invalidated per-table by bumping the prefix version instead of scanning keys.
+      - Align cache index tracking with prefix-based keys by using the cache prefix when adding index entries.
+    - `src/providers/storage/cache/cache_singleton.rs`
+      - Rely on `get_prefix_version`, `increment_by_prefix`, and `add_index_key` helpers to support prefix versioning and in-memory index tracking for cache entries.
+
+## 0.2.78
+
+### Author
+Jean
+
+### Changed
+  - ***Store controller — per-request cache disable via no_caching query param***:
+    - `src/controllers/store_controller.rs`
+      - Add `no_caching` query parameter handling in `get_by_filter` and `count_by_filter` that, when set to `true` or `1`, bypasses both cache reads and writes for the request.
+      - Emit warning logs when `no_caching` is enabled to aid observability of cache-bypass traffic.
+
+## 0.2.77
+
+### Author
+Kashan
+
+### Changed
+  - ***Background sync — use status instead of tombstone for tracking synced records***:
+    - `src/providers/operations/batch_sync/background_sync.rs`
+      - Change fetch condition from `WHERE tombstone = 0` to `WHERE status != 'Synced'`.
+      - Change completion update from `SET tombstone = 1, status = 'Synced'` to `SET status = 'Synced'`.
+      - Update weighted round-robin count query to use `WHERE status != 'Synced'`.
+
+## 0.2.76
+
+### Author
+Jean
+
+### Revert
+  - ***Store controller — revert condition to prevent caching empty results in get_by_filter***:
+    - `src/controllers/store_controller.rs`
+      - Revert the condition to allow caching empty results.
+
+## 0.2.75
+
+### Author
+Jean
+
+### Changed
+  - ***Store controller — prevent caching empty results in get_by_filter***:
+    - `src/controllers/store_controller.rs`
+      - Avoid inserting empty data into cache and adding index key when the query returns no results. This prevents unnecessary cache entries and reduces memory usage for empty result sets.
+
+## 0.2.74
+
+### Author
+Jean
+
+### Changed
+  - ***Find Constructors — nested join subquery control***:
+    - `src/providers/queries/find/constructors/joins_constructor.rs`
+      - Extend `build_join_sql` to accept an `enable_direct_subquery` flag and default it to `true` so existing call sites continue to emit direct field references.
+      - For nested joins, factor the lateral subquery condition into a reusable `subquery_cond` expression and allow switching between a direct `"alias"."from_field"` reference and a `SELECT DISTINCT ... LIMIT 1` subquery. This makes it possible to turn off the direct subquery path in specific scenarios while keeping current behavior by default.
+
+## 0.2.73
+
+### Author
+Jean
+
+### Added
+  - ***Organizations registration documentation and flow diagram***:
+    - `providers/operations/organizations/README.md`
+      - Document the `register` API contract, request struct, high-level flow for contact and device accounts, error handling, and example payloads for controller callers.
+    - `providers/operations/organizations/organization-register.drawio`
+    - `providers/operations/organizations/organization-register-flow.png`
+      - Add drawio diagram and reference a visual registration flow diagram that illustrates the main branches of the registration process.
+
+## 0.2.72
+
+### Author
+Kashan
+
+### Changed
+  - ***Migration mode — batched field apply in sync service***:
+    - `src/providers/operations/sync/store/store_driver.rs`
+      - Add `apply_batch()` that collects all field validations and value parsing for a record, then performs a single upsert query instead of one per field. Preserves all per-field validation (`field_type_in_table`), value parsing (`parse_message_value_to_json`), quote cleaning, and hypertable timestamp handling.
+    - `src/providers/operations/sync/sync_service.rs`
+      - In `apply_messages()`, when `MIGRATION_MODE=true` and `from_local_insert`, call `apply_batch()` once instead of `apply()` per field. Reduces DB round trips from N (one per field) to 1 per record. HLC timestamp / merkle updates still run per message. Non-migration and server-sync paths are completely unchanged.
+
+## 0.2.71
+
+### Author
+Kashan
+
+### Fixed
+  - ***COPY error reporting — extract actual PostgreSQL error details***:
+    - `src/controllers/common_controller.rs`
+      - Add `format_pg_error()` helper that extracts real PostgreSQL error messages (message, code, detail, column, constraint, table) instead of showing generic "db error". Walks the error source chain for COPY sink errors where `as_db_error()` returns `None`. Falls back to Debug format.
+      - Fix `From<tokio_postgres::Error>` impl to use `format_pg_error` instead of lossy `.to_string()`.
+      - Add proper ROLLBACK on COPY transaction failure instead of leaving the connection in an aborted state.
+
+### Changed
+  - ***Migration mode — increase payload limit***:
+    - `src/lifecycle/runtime.rs`
+      - When `MIGRATION_MODE=true`, set `JsonConfig` and `PayloadConfig` to 20 MB (up from default 256 KB) to support large batch inserts during migration.
+
+  - ***Background sync — concurrent processing in migration mode***:
+    - `src/providers/operations/batch_sync/background_sync.rs`
+      - In migration mode with ordered sync, process inserts concurrently using `buffer_unordered(N)` instead of one-at-a-time. Controlled by `BATCH_SYNC_CONCURRENCY` env var (default: 10).
+      - Batch tombstone updates into a single `UPDATE ... WHERE id = ANY($1)` instead of one UPDATE per record.
+      - Release DB mutex lock during insert processing so it's only held for SELECT and tombstone UPDATE.
+      - Remove inter-batch and inter-cycle sleep delays in migration mode for maximum throughput.
+
+## 0.2.70
+
+### Author
+Jean
+
+### Fixed
+  - ***Registration flow — account_organization/contact/device reuse and code generation***:
+    - `providers/operations/organizations/organization_service.rs`
+      - Reuse existing draft `account_organizations` records where present and generate `code` only when inserting initial rows, avoiding duplicate records and code churn.
+      - When re-registering a contact account that already has a draft `account_organization`, reuse its `contact_id` and update the contact instead of creating a new one, so contact/account links remain stable.
+      - Ensure device registration always generates a device code via the remote counter service and returns the team organization ID in the register response when the device already exists.
+      - Treat `account_organizations` writes in the non-contact path as updates rather than inserts so `created_*` fields are preserved and the response always returns the persisted `account_organization_id`.
+
+## 0.2.69
+
+### Author
+Jean
+
+### Changed
+  - ***Find Constructors — Where Constructor***:
+    - `src/providers/queries/find/constructors/where_constructor.rs`
+      - Refactor array field handling for equality/inequality operators to use array literals instead of ANY() for more accurate semantics, affected operators: equal, not_equal, contains, not_contains
+
+### Added
+  - ***Find Constructors — NotLike Operator***:
+    - `src/providers/queries/find/constructors/where_constructor.rs`
+      - Add NotLike operator to the query construction pipeline, mapping it to the SQL NOT LIKE operator with proper pattern matching and case sensitivity.
+      - Add enum variant in core structs, map it in gRPC converter, and update SQL constructors to handle the new operator with proper pattern matching and case sensitivity.
+
+## 0.2.68
+
+### Author
+Jean
+
+### Changed
+  - ***Controllers — Search Suggestions***:
+    - `src/controllers/store_controller.rs`
+      - Handle materialized view creation failure gracefully
+        - When materialized view creation fails, fall back to direct query execution instead of returning an error. This ensures search suggestions remain available even when MV setup encounters issues. 
+        - Also include organization context in cache key to prevent cross-org cache contamination.
+      
 ## 0.2.67
 
 ### Author

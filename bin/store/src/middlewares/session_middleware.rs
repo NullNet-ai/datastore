@@ -23,16 +23,19 @@ use crate::{
     generated::models::session_model::SessionModel,
     providers::operations::auth::structs::{Claims, Origin},
 };
-
+// To be discussed: Whether to use this struct or not.
+#[allow(dead_code)]
 pub struct SessionMiddleware;
-
+// To be discussed: Whether to use this struct or not.
+#[allow(dead_code)]
 struct HttpSessionConfig {
     session_manager: SessionManager,
     cookie_same_site: SameSite,
     cookie_secure: bool,
     cookie_http_only: bool,
 }
-
+// To be discussed: Whether to use this struct or not.
+#[allow(dead_code)]
 pub struct SessionMiddlewareService<S> {
     service: Rc<S>,
     config: HttpSessionConfig,

@@ -4,7 +4,7 @@ use crate::controllers::initializer_controller::{
     run_system_code_config, run_system_device_config,
 };
 use crate::middlewares::auth_middleware::Authentication;
-use crate::middlewares::session_middleware::SessionMiddleware;
+// use crate::middlewares::session_middleware::SessionMiddleware;
 use crate::middlewares::shutdown_middleware::ShutdownGuard;
 use actix_web::web;
 use actix_web::web::ServiceConfig;
@@ -14,7 +14,7 @@ pub fn configure_system_routes(cfg: &mut ServiceConfig) {
         web::scope("/api/system")
             .wrap(ShutdownGuard)
             .wrap(Authentication)
-            .wrap(SessionMiddleware)
+            // .wrap(SessionMiddleware)
             .route("/initialize_all", web::post().to(run_initializers))
             .route(
                 "/initialize/system_code_config",

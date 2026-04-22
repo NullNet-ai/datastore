@@ -77,31 +77,31 @@ macro_rules! generate_get_by_id_match {
                             .ok()
                             .map(|v| v.trim().eq_ignore_ascii_case("true") || v.trim() == "1")
                             .unwrap_or(false);
-
-                        let mut query = crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]
-                            .filter(crate::generated::schema::[<$table:snake:lower>]::id.eq($id))
-                            .into_boxed();
-
+                        let table_name = stringify!([<$table:snake:lower>]);
+                        let id_escaped = $id.replace("'", "''");
+                        let mut clauses: Vec<String> = vec![format!("id = '{}'", id_escaped)];
                         if !migration_mode {
-                            query = query
-                                .filter(crate::generated::schema::[<$table:snake:lower>]::tombstone.eq(0));
-
+                            clauses.push("tombstone = 0".to_string());
                             if !$is_root_account {
-                                if let Some(org_id) = $organization_id {
-                                    query = query
-                                        .filter(crate::generated::schema::[<$table:snake:lower>]::organization_id.is_not_null())
-                                        .filter(crate::generated::schema::[<$table:snake:lower>]::organization_id.eq(org_id));
+                                if let Some(org_id) = $organization_id.clone() {
+                                    let org_escaped = org_id.replace("'", "''");
+                                    clauses.push("organization_id IS NOT NULL".to_string());
+                                    clauses.push(format!("organization_id = '{}'", org_escaped));
                                 }
                             }
                         }
-
-                        let result = query
-                            .select(crate::generated::schema::[<$table:snake:lower>]::all_columns)
-                            .first::<$model>($conn)
-                            .await
-                            .optional()?;
-
-                        Ok(result.map(|record| serde_json::to_value(record).unwrap_or_default()))
+                        let where_sql = clauses.join(" AND ");
+                        let select_sql = format!(
+                            "SELECT row_to_json(t) FROM (SELECT * FROM {} WHERE {} LIMIT 1) t",
+                            table_name, where_sql
+                        );
+                        let rows = diesel::dsl::sql_query(select_sql)
+                            .load::<crate::providers::queries::find::queries::DynamicResult>($conn)
+                            .await?;
+                        let value = rows
+                            .get(0)
+                            .and_then(|r| r.row_to_json.clone());
+                        Ok(value)
                     },
                 )*
             }
@@ -165,6 +165,71 @@ macro_rules! generate_upsert_record_match {
         }
     }
 }
+
+/// Migration-mode upsert: always does .set(value) on conflict, no version/status special branches.
+#[macro_export]
+#[allow(warnings)]
+#[allow(unreachable_patterns)]
+macro_rules! generate_upsert_record_migration_match {
+    ($self:expr, $conn:expr, $record:expr, $($table:ident, $model:ty),*) => {
+        paste::paste! {
+            {
+                match $self {
+                    $(
+                        Table::$table => {
+                            let value: $model = serde_json::from_value($record.clone()).map_err(|e| {
+                                log::error!("Failed to deserialize record for table {}: {}", stringify!($table), serde_json::to_string_pretty(&$record).unwrap_or_else(|_| "<invalid json>".to_string()));
+                                DieselError::DeserializationError(Box::new(e))
+                            })?;
+
+                            diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                .values(value.clone())
+                                .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id))
+                                .do_update()
+                                .set(value)
+                                .execute($conn)
+                                .await
+                                .map(|_| ())
+                        },
+                    )*
+                }
+            }
+        }
+    }
+}
+
+/// Migration-mode upsert with timestamp conflict: always does .set(value), no version/status branches.
+#[macro_export]
+#[allow(warnings)]
+#[allow(unreachable_patterns)]
+macro_rules! generate_upsert_record_migration_with_timestamp_match {
+    ($self:expr, $conn:expr, $record:expr, $($table:ident, $model:ty),*) => {
+        paste::paste! {
+            {
+                match $self {
+                    $(
+                        Table::$table => {
+                            let value: $model = serde_json::from_value($record.clone()).map_err(|e| {
+                                log::error!("Failed to deserialize record for table {}: {}", stringify!($table), serde_json::to_string_pretty(&$record).unwrap_or_else(|_| "<invalid json>".to_string()));
+                                DieselError::DeserializationError(Box::new(e))
+                            })?;
+
+                            diesel::insert_into(crate::generated::schema::[<$table:snake:lower>]::dsl::[<$table:snake:lower>]::table())
+                                .values(value.clone())
+                                .on_conflict((crate::generated::schema::[<$table:snake:lower>]::id, crate::generated::schema::[<$table:snake:lower>]::timestamp))
+                                .do_update()
+                                .set(value)
+                                .execute($conn)
+                                .await
+                                .map(|_| ())
+                        },
+                    )*
+                }
+            }
+        }
+    }
+}
+
 #[macro_export]
 #[allow(warnings)]
 #[allow(unreachable_patterns)]

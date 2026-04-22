@@ -197,6 +197,11 @@ create_root_wrapper!(root_create_trigger => create_trigger,
     request_body: actix_web::web::Json<serde_json::Value>
 );
 
+create_root_wrapper!(root_list_triggers => list_triggers,
+    auth: HttpRequest,
+    query: actix_web::web::Query<crate::controllers::store_controller::TriggerListQuery>
+);
+
 create_root_wrapper!(root_cron_schedule_job => cron_schedule_job,
     auth: HttpRequest,
     request_body: actix_web::web::Json<serde_json::Value>

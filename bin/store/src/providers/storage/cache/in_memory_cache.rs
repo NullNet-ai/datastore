@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::fmt::Debug;
 use std::hash::Hash;
 use std::sync::{Arc, Mutex};
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use super::cache_interface::CacheInterface;
 
@@ -12,7 +12,7 @@ where
     K: Eq + Hash + Clone + Debug + Send + Sync,
     V: Clone + Send + Sync,
 {
-    cache: Arc<Mutex<HashMap<K, V>>>,
+    cache: Arc<Mutex<HashMap<K, (V, Option<Instant>)>>>,
 }
 
 #[allow(warnings)]
@@ -26,6 +26,18 @@ where
         Self {
             cache: Arc::new(Mutex::new(HashMap::new())),
         }
+    }
+
+    fn purge_if_expired_locked(cache: &mut HashMap<K, (V, Option<Instant>)>, key: &K) -> bool {
+        if let Some((_, exp)) = cache.get(key) {
+            if let Some(t) = exp {
+                if Instant::now() >= *t {
+                    cache.remove(key);
+                    return true;
+                }
+            }
+        }
+        false
     }
 }
 
@@ -45,22 +57,27 @@ where
     V: Clone + Send + Sync,
 {
     fn get(&self, key: &K) -> Option<V> {
-        let cache = self.cache.lock().unwrap();
-        cache.get(key).cloned()
+        let mut cache = self.cache.lock().unwrap();
+        if Self::purge_if_expired_locked(&mut cache, key) {
+            return None;
+        }
+        cache.get(key).map(|(v, _)| v.clone())
     }
 
     fn insert(&self, key: K, value: V) {
         let mut cache = self.cache.lock().unwrap();
-        cache.insert(key, value);
+        cache.insert(key, (value, None));
     }
 
-    fn insert_with_ttl(&self, key: K, value: V, _ttl: Duration) {
-        Self::insert(&self, key, value);
+    fn insert_with_ttl(&self, key: K, value: V, ttl: Duration) {
+        let mut cache = self.cache.lock().unwrap();
+        let expires_at = Instant::now() + ttl;
+        cache.insert(key, (value, Some(expires_at)));
     }
 
     fn remove(&self, key: &K) -> Option<V> {
         let mut cache = self.cache.lock().unwrap();
-        cache.remove(key)
+        cache.remove(key).map(|(v, _)| v)
     }
 
     fn clear(&self) {
@@ -69,7 +86,10 @@ where
     }
 
     fn contains_key(&self, key: &K) -> bool {
-        let cache = self.cache.lock().unwrap();
+        let mut cache = self.cache.lock().unwrap();
+        if Self::purge_if_expired_locked(&mut cache, key) {
+            return false;
+        }
         cache.contains_key(key)
     }
 

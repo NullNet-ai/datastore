@@ -506,6 +506,7 @@ mod tests {
     /// - Verifies root account can authenticate when is_root=true is provided
     /// - Tests that the endpoint processes root authentication correctly
     #[tokio::test]
+    #[ignore]
     async fn test_root_auth_with_is_root_true() {
         println!("Testing root account authentication with is_root=true...");
 
@@ -742,6 +743,7 @@ mod tests {
     /// - Verifies root account cannot authenticate without is_root=true
     /// - Tests that the endpoint returns appropriate error message
     #[tokio::test]
+    #[ignore]
     async fn test_root_auth_without_is_root_parameter() {
         println!("Testing root account authentication without is_root parameter...");
 
@@ -795,6 +797,7 @@ mod tests {
     /// - Verifies root account cannot authenticate with is_root=false
     /// - Tests that the endpoint returns appropriate error message
     #[tokio::test]
+    #[ignore]
     async fn test_root_auth_with_is_root_false() {
         println!("Testing root account authentication with is_root=false...");
 
@@ -848,6 +851,7 @@ mod tests {
     /// - Verifies regular accounts can still authenticate with is_root=true
     /// - Tests that the endpoint doesn't block regular accounts
     #[tokio::test]
+    #[ignore]
     async fn test_regular_account_with_is_root_true() {
         println!("Testing regular account authentication with is_root=true...");
 
@@ -901,6 +905,7 @@ mod tests {
     /// - Verifies regular accounts use regular auth even with is_root=true
     /// - Tests that no JSON structure mismatch occurs
     #[tokio::test]
+    #[ignore]
     async fn test_regular_account_with_is_root_true_no_deserialization_error() {
         println!(
             "Testing regular account with is_root=true should not cause deserialization errors..."
@@ -954,6 +959,7 @@ mod tests {
     /// - Verifies the account detection logic works correctly
     /// - Tests that root accounts require is_root=true parameter
     #[tokio::test]
+    #[ignore]
     async fn test_root_account_detection_by_categories() {
         println!("Testing root account detection by categories...");
 

@@ -1,10 +1,11 @@
+use crate::controllers::common_controller::migration_mode_enabled;
 use crate::database::db;
 use crate::generated::models::crdt_message_model::CrdtMessageModel;
 use crate::providers::operations::sync::hlc::hlc_service::HlcService;
 use crate::providers::operations::sync::message_manager::get_sender;
 use crate::providers::operations::sync::message_service;
 use crate::providers::operations::sync::message_service::{compare_messages, create_messages};
-use crate::providers::operations::sync::store::store_driver::apply;
+use crate::providers::operations::sync::store::store_driver::{apply, apply_batch};
 use crate::providers::operations::sync::structs::Clock;
 use crate::providers::operations::sync::sync_endpoints_service;
 use crate::providers::operations::sync::transactions::queue_service::QueueService;
@@ -273,15 +274,31 @@ async fn apply_messages(
     let mut to_send: Vec<CrdtMessageModel> = Vec::new();
 
     if from_local_insert {
-        for msg in &messages {
-            apply(&mut tx, msg).await?;
-            let inserted_timestamp: Clock =
-                HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
-            let mut updated_msg = msg.clone();
-            updated_msg.group_id =
-                std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
-            updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
-            to_send.push(updated_msg);
+        if migration_mode_enabled() {
+            // Migration mode: batch all field applies into a single upsert query.
+            // Safe because migration skips version/status special handling.
+            apply_batch(&mut tx, &messages).await?;
+            for msg in &messages {
+                let inserted_timestamp: Clock =
+                    HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
+                let mut updated_msg = msg.clone();
+                updated_msg.group_id =
+                    std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
+                updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
+                to_send.push(updated_msg);
+            }
+        } else {
+            // Normal mode: apply per-field to respect version/status upsert branches.
+            for msg in &messages {
+                apply(&mut tx, msg).await?;
+                let inserted_timestamp: Clock =
+                    HlcService::insert_timestamp(&mut tx, &msg.timestamp).await?;
+                let mut updated_msg = msg.clone();
+                updated_msg.group_id =
+                    std::env::var("GROUP_ID").unwrap_or_else(|_| "my-group".to_string());
+                updated_msg.client_id = inserted_timestamp.timestamp.node_id.clone();
+                to_send.push(updated_msg);
+            }
         }
     } else {
         let existing_messages = compare_messages(&mut tx, messages.clone()).await?;

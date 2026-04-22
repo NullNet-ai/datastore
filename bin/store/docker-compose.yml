@@ -3,21 +3,35 @@ networks:
   frontend:
     external: true
 
+# docker compose -f 'docker-compose-template.yml' up -d --build 
 services:
+  # TimescaleDB database
   timescaledb:
-    image: timescale/timescaledb:latest-pg15
+    build:
+      context: .
+      dockerfile: bin/store/dockerfile.wpgcron
     container_name: timescaledb
     ports:
       - "0.0.0.0:5440:5432"
     networks:
       - internal
+    env_file:
+      - .env-store
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: admin
-      POSTGRES_DB: postgres
+      POSTGRES_DB: ${POSTGRES_DB}
+    command:
+      - postgres
+      - -c
+      - shared_preload_libraries=timescaledb,pg_cron
+      - -c
+      - cron.database_name=${POSTGRES_DB}
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
+      - ./docker/init/001-enable-timescaledb.sql:/docker-entrypoint-initdb.d/001-enable-timescaledb.sql:ro
     restart: always
+  # Redis cache
   redis:
     image: redis:7
     container_name: redis
@@ -28,6 +42,8 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+  # initializer for system setup
+  # docker compose -f docker-compose-template.yml --profile init up -d initializer --build
   initializer:
     build:
       context: .
@@ -63,7 +79,7 @@ services:
   # NOTE: Run this in private profile
   # Login to private registry
   # docker login registry.dnamicro.com
-  # docker compose --profile private up -d migration
+  # docker compose -f docker-compose-template.yml--profile private up -d migration
   migration:
     image: registry.dnamicro.com/skyll-migration-service:qa-6243
     container_name: migration
@@ -93,11 +109,11 @@ services:
     deploy:
       replicas: 0
   # Counter Service
-  # docker compose -f 'docker-compose.yml' up -d --build 'rust-ctr-svc'
+  # docker compose -f docker-compose-template.yml up -d --build 'rust-ctr-svc'
   # NOTE: Run this in private profile
   # Login to private registry
   # docker login registry.dnamicro.com
-  # docker compose --profile private up -d rust-ctr-svc
+  # docker compose -f docker-compose-template.yml --profile private up -d rust-ctr-svc
   rust-ctr-svc:
     image: registry.dnamicro.com/skyll-counter-service:qa-6246
     container_name: counter-service
@@ -119,10 +135,11 @@ services:
     networks:
       - internal
   # Main store application
+  # docker compose -f docker-compose-template.yml up -d store --build
   store:
     build:
       context: .
-      dockerfile: dockerfile
+      dockerfile: bin/store/Dockerfile
     platform: linux/arm64
     container_name: crdt-store
     depends_on:
@@ -132,9 +149,35 @@ services:
       - .env-store
     ports:
       - "0.0.0.0:5005:5005"
+      - "0.0.0.0:9000:9000"
     networks:
       - internal
+  # http://store:9090/metrics
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    networks:
+      - internal
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana-storage:/var/lib/grafana
+    networks:
+      - internal
+    restart: unless-stopped
 
 volumes:
   timescaledb_data:
   redis_data:
+  grafana-storage:

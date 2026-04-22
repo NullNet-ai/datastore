@@ -405,9 +405,9 @@ impl StartupManager {
                         .push("REDIS_CONNECTION required when CACHE_TYPE is 'redis'".to_string());
                     validation.is_valid = false;
                 } else if let Some(ref redis_url) = self.config.redis_connection {
-                    if !redis_url.starts_with("redis://") {
+                    if !redis_url.starts_with("redis://") && !redis_url.starts_with("rediss://") {
                         validation.errors.push(
-                            "REDIS_CONNECTION must be a valid Redis URL starting with 'redis://'"
+                            "REDIS_CONNECTION must be a valid Redis URL starting with 'redis://' or 'rediss://'"
                                 .to_string(),
                         );
                         validation.is_valid = false;
@@ -541,10 +541,10 @@ impl StartupManager {
             // Validate batch sync type
             if !self.config.batch_sync_type.is_empty() {
                 match self.config.batch_sync_type.as_str() {
-                    "round-robin" | "weighted-round-robin" => {}
+                    "round-robin" | "weighted-round-robin" | "ordered" => {}
                     _ => {
                         validation.errors.push(
-                            "BATCH_SYNC_TYPE must be 'round-robin' or 'weighted-round-robin'"
+                            "BATCH_SYNC_TYPE must be 'round-robin', 'weighted-round-robin', or 'ordered'"
                                 .to_string(),
                         );
                         validation.is_valid = false;

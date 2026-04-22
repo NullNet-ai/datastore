@@ -12,10 +12,12 @@ use crate::providers::operations::organizations::organization_service::{
 };
 use crate::providers::operations::organizations::structs::Register;
 use crate::providers::operations::sync::sync_service::insert;
+use crate::providers::storage::cache::cache;
 use crate::structs::core::ApiResponse;
 use crate::structs::organizations_structs::VerifyPasswordParams;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
+use std::{env, time::Duration};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthDto {
@@ -39,6 +41,60 @@ pub struct AuthByTokenDto {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct RegisterDto {
     pub data: Register,
+}
+
+fn empty_session() -> SessionModel {
+    SessionModel {
+        id: None,
+        tombstone: None,
+        status: None,
+        previous_status: None,
+        version: None,
+        created_date: None,
+        created_time: None,
+        updated_date: None,
+        updated_time: None,
+        organization_id: None,
+        created_by: None,
+        updated_by: None,
+        deleted_by: None,
+        requested_by: None,
+        timestamp: None,
+        tags: None,
+        categories: None,
+        code: None,
+        sensitivity_level: None,
+        sync_status: None,
+        is_batch: None,
+        image_url: None,
+        account_organization_id: None,
+        device_name: None,
+        browser_name: None,
+        operating_system: None,
+        authentication_method: None,
+        location: None,
+        ip_address: None,
+        session_started: None,
+        remark: None,
+        user_role_id: None,
+        user_account_id: None,
+        user_is_root_user: None,
+        token: None,
+        cookie_path: None,
+        cookie_expire: None,
+        cookie_http_only: None,
+        cookie_original_max_age: None,
+        origin_url: None,
+        origin_host: None,
+        origin_user_agent: None,
+        valid_pass_key: None,
+        role_permission: None,
+        field_permission: None,
+        record_permission: None,
+        expire: None,
+        application_accessed: None,
+        last_accessed: None,
+    }
 }
 
 pub struct OrganizationsController;
@@ -98,28 +154,21 @@ impl OrganizationsController {
         // Drop the extensions borrow before continuing
         drop(extensions);
 
-        let session = match &session_option {
-            Some(session) => session,
+        // to be disccussed
+        let session = match session_option.clone() {
+            Some(s) => s,
             None => {
-                return HttpResponse::Unauthorized().json(ApiResponse {
-                    success: false,
-                    message: "Session doesn't exist in the login request".to_string(),
-                    count: 0,
-                    data: vec![],
-                })
+                log::warn!("Session doesn't exist in the login request");
+                empty_session()
             }
         };
 
-        // Extract session ID and handle error if it doesn't exist
+        // to be disccussed
         let session_id = match &session.id {
             Some(id) => id.clone(),
             None => {
-                return HttpResponse::BadRequest().json(ApiResponse {
-                    success: false,
-                    message: "Session ID doesn't exist in the organization_controller".to_string(),
-                    count: 0,
-                    data: vec![],
-                })
+                log::warn!("Session ID doesn't exist in the organization_controller");
+                "".to_string()
             }
         };
 
@@ -161,6 +210,84 @@ impl OrganizationsController {
             .account_secret
             .clone()
             .unwrap_or_else(|| data.data.password.clone().unwrap_or_default());
+
+        let cache_key = format!("login:{}:{}:{}", account_id, is_root, session_id);
+
+        if let Some(existing) = session.token.clone() {
+            if verify(&existing).is_ok() {
+                let updated = SessionModel {
+                    token: Some(existing.clone()),
+                    origin_user_agent: req
+                        .headers()
+                        .get("user-agent")
+                        .map(|v| v.to_str().unwrap_or_default().to_string()),
+                    origin_host: Some(req.connection_info().host().to_string()),
+                    origin_url: Some(req.path().to_string()),
+                    user_is_root_user: Some(is_root),
+                    user_account_id: Some(account_id.clone()),
+                    ..session.clone()
+                };
+                req.extensions_mut().insert(updated);
+                return HttpResponse::Ok()
+                    .cookie(
+                        actix_web::cookie::Cookie::build("token", existing.clone())
+                            .path("/")
+                            .finish(),
+                    )
+                    .json(serde_json::json!({
+                        "token": existing,
+                        "sessionID": session_id.clone()
+                    }));
+            }
+        }
+
+        if let Some(cached) = cache.get(&cache_key) {
+            if let Some(tok) = cached.get("token").and_then(|v| v.as_str()) {
+                let tok = tok.to_string();
+                if verify(&tok).is_ok() {
+                    let role_id_cached = cached
+                        .get("role_id")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string();
+                    let ao_cached = cached
+                        .get("account_organization_id")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string());
+                    let sid_cached = cached
+                        .get("sessionID")
+                        .and_then(|v| v.as_str())
+                        .map(|s| s.to_string())
+                        .unwrap_or_else(|| session_id.clone());
+
+                    let updated = SessionModel {
+                        token: Some(tok.clone()),
+                        origin_user_agent: req
+                            .headers()
+                            .get("user-agent")
+                            .map(|v| v.to_str().unwrap_or_default().to_string()),
+                        origin_host: Some(req.connection_info().host().to_string()),
+                        origin_url: Some(req.path().to_string()),
+                        user_role_id: Some(role_id_cached),
+                        user_is_root_user: Some(is_root),
+                        user_account_id: Some(account_id.clone()),
+                        account_organization_id: ao_cached,
+                        ..session.clone()
+                    };
+                    req.extensions_mut().insert(updated);
+                    return HttpResponse::Ok()
+                        .cookie(
+                            actix_web::cookie::Cookie::build("token", tok.clone())
+                                .path("/")
+                                .finish(),
+                        )
+                        .json(serde_json::json!({
+                            "token": tok,
+                            "sessionID": sid_cached
+                        }));
+                }
+            }
+        }
 
         // Check if this is a root account by trying to get root account info
         let root_account_organization = get_root_account_info(&account_id).await;
@@ -206,6 +333,22 @@ impl OrganizationsController {
                 (err.message, None)
             })
         };
+
+        if let Ok(login_response) = &result {
+            if let Some(token) = &login_response.token {
+                let ttl_ms: u64 = env::var("LOGIN_CACHE_TTL_MS")
+                    .unwrap_or_else(|_| "60000".to_string())
+                    .parse()
+                    .unwrap_or(60000);
+                let to_cache = serde_json::json!({
+                    "token": token,
+                    "sessionID": login_response.session_id.clone().unwrap_or_else(|| session_id.clone()),
+                    "role_id": login_response.role_id.clone(),
+                    "account_organization_id": login_response.account_organization_id.clone().unwrap_or_default()
+                });
+                cache.insert_with_ttl(cache_key.clone(), to_cache, Duration::from_millis(ttl_ms));
+            }
+        }
 
         // Extract account_organization_id from the result (available even if auth failed)
         let account_organization_id = match &result {
@@ -351,15 +494,11 @@ impl OrganizationsController {
         // Drop the extensions borrow before continuing
         drop(extensions);
 
-        let session = match &session_option {
-            Some(session) => session,
+        let session = match session_option.clone() {
+            Some(s) => s,
             None => {
-                return HttpResponse::Unauthorized().json(ApiResponse {
-                    success: false,
-                    message: "Session doesn't exist in the login request".to_string(),
-                    count: 0,
-                    data: vec![],
-                })
+                log::warn!("Session doesn't exist in the login request");
+                empty_session()
             }
         };
 
@@ -367,12 +506,8 @@ impl OrganizationsController {
         let session_id = match &session.id {
             Some(id) => id.clone(),
             None => {
-                return HttpResponse::BadRequest().json(ApiResponse {
-                    success: false,
-                    message: "Session ID doesn't exist in the organization_controller".to_string(),
-                    count: 0,
-                    data: vec![],
-                })
+                log::warn!("Session ID doesn't exist in the organization_controller");
+                "".to_string()
             }
         };
 
@@ -583,8 +718,53 @@ impl OrganizationsController {
         }
     }
 
-    pub async fn logout(_req: HttpRequest, _token_header: Option<String>) -> impl Responder {
-        // Empty implementation
+    pub async fn logout(req: HttpRequest, token_header: Option<String>) -> impl Responder {
+        let extensions = req.extensions();
+        let session_option = extensions.get::<SessionModel>().cloned();
+        drop(extensions);
+
+        let mut account_id = session_option
+            .as_ref()
+            .and_then(|s| s.user_account_id.clone());
+        let mut is_root = session_option.as_ref().and_then(|s| s.user_is_root_user);
+        let mut session_id = session_option.as_ref().and_then(|s| s.id.clone());
+
+        let auth_header = req
+            .headers()
+            .get("authorization")
+            .and_then(|h| h.to_str().ok());
+        let token = extract_token(auth_header).or(token_header);
+
+        if let Some(t) = token {
+            if let Ok(claims) = verify(&t) {
+                if account_id.is_none() {
+                    account_id = Some(claims.account.account_id.clone());
+                }
+                if is_root.is_none() {
+                    is_root = Some(claims.account.is_root_account);
+                }
+                if session_id.is_none() {
+                    session_id = Some(claims.sessionID.clone());
+                }
+            }
+        }
+
+        if let (Some(acc), Some(sid)) = (account_id.as_ref(), session_id.as_ref()) {
+            if let Some(ir) = is_root {
+                let key = format!("login:{}:{}:{}", acc, ir, sid);
+                let _ = cache.remove(&key);
+                log::info!("Removed login cache for key: {}", key);
+            } else {
+                let key_true = format!("login:{}:true:{}", acc, sid);
+                let key_false = format!("login:{}:false:{}", acc, sid);
+                let _ = cache.remove(&key_true);
+                let _ = cache.remove(&key_false);
+                log::info!("Removed login cache for keys: {}, {}", key_true, key_false);
+            }
+        } else {
+            log::warn!("Logout called but insufficient data to remove login cache");
+        }
+
         HttpResponse::Ok().finish()
     }
 
@@ -675,15 +855,11 @@ impl OrganizationsController {
         // Drop the extensions borrow before continuing
         drop(extensions);
 
-        let session = match &session_option {
-            Some(session) => session,
+        let session = match session_option.clone() {
+            Some(s) => s,
             None => {
-                return HttpResponse::Unauthorized().json(ApiResponse {
-                    success: false,
-                    message: "Session doesn't exist in the login request".to_string(),
-                    count: 0,
-                    data: vec![],
-                })
+                log::warn!("Session doesn't exist in the login request");
+                empty_session()
             }
         };
 
@@ -691,12 +867,8 @@ impl OrganizationsController {
         let session_id = match &session.id {
             Some(id) => id.clone(),
             None => {
-                return HttpResponse::BadRequest().json(ApiResponse {
-                    success: false,
-                    message: "Session ID doesn't exist in the organization_controller".to_string(),
-                    count: 0,
-                    data: vec![],
-                })
+                log::warn!("Session ID doesn't exist in the organization_controller");
+                "".to_string()
             }
         };
 

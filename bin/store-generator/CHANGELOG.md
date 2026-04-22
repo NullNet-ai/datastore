@@ -5,6 +5,16 @@ All notable changes to the store-generator crate will be documented in this file
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.1.23
+### Author
+Kashan
+
+### Added
+  - ***Table enum generator — migration-mode upsert methods***:
+    - `src/builders/templates/table_enum/table_enum_generator.rs`
+      - Generate `upsert_record_migration()` and `upsert_record_migration_with_timestamp()` methods on `Table` enum. These use new macros `generate_upsert_record_migration_match!` and `generate_upsert_record_migration_with_timestamp_match!` which always do `.set(value)` on conflict — no version/status special branches. Used by `apply_batch()` in migration mode to ensure all fields are set in a single upsert.
+      - Updated macro import line to include the two new macros.
+
 ## 0.1.20
 ### Author
 Kashan

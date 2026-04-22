@@ -23,6 +23,7 @@ pub fn convert_filter_criteria(proto_filter: &store::FilterCriteria) -> Option<F
                 8 => FilterOperator::Contains,
                 9 => FilterOperator::NotContains,
                 10 => FilterOperator::Like,
+                18 => FilterOperator::NotLike,
                 11 => FilterOperator::IsBetween,
                 12 => FilterOperator::IsNotBetween,
                 13 => FilterOperator::IsEmpty,

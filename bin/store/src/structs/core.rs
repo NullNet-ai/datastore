@@ -134,8 +134,19 @@ impl RequestBody {
         // // Add common fields to the record
         self.add_common_fields(operation, auth, is_root_account, table);
 
-        // Normalize all timestamp/timestamptz fields to RFC3339 so model deserialization and sync succeed
-        self.normalize_timestamp_fields(table);
+        // Normalize all timestamp/timestamptz fields to RFC3339 so model deserialization and sync succeed.
+        // Skip in migration mode — data is already well-formed and this is expensive in bulk
+        // (calls field_type_in_table per field per record).
+        if !std::env::var("MIGRATION_MODE")
+            .ok()
+            .map(|v| {
+                let v = v.trim();
+                v.eq_ignore_ascii_case("true") || v == "1"
+            })
+            .unwrap_or(false)
+        {
+            self.normalize_timestamp_fields(table);
+        }
 
         if let Some(timestamp) = self.record.get_mut("timestamp") {
             if let Some(ts_str) = timestamp.as_str() {
@@ -768,16 +779,38 @@ fn default_time_format() -> String {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TriggerTransitionRelations {
+    #[serde(default)]
+    pub old_table: Option<String>,
+    #[serde(default)]
+    pub new_table: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TriggerOptions {
-    pub table: String,
     #[serde(default)]
     pub name: Option<String>,
     #[serde(default)]
     pub timing: Option<String>,
-    #[serde(default)]
-    pub events: Option<Vec<String>>,
+    #[serde(default, alias = "events")]
+    pub event: Option<Vec<String>>,
     #[serde(default)]
     pub level: Option<String>,
+    #[serde(default)]
+    pub condition: Option<String>,
+    #[serde(default)]
+    pub transition_relations: Option<TriggerTransitionRelations>,
+    #[serde(default)]
+    pub deferrable: Option<bool>,
+    #[serde(default)]
+    pub initially_deferred: Option<bool>,
+    #[serde(default)]
+    pub constraint: Option<bool>,
+    #[serde(default)]
+    pub referenced_table: Option<String>,
+    // Optional source table for refresh_strategy trigger mode.
+    #[serde(default)]
+    pub table: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -921,6 +954,8 @@ pub enum FilterOperator {
     IsNotEmpty,
     #[serde(rename = "like")]
     Like,
+    #[serde(rename = "not_like")]
+    NotLike,
     #[serde(rename = "has_no_value")]
     HasNoValue,
 }
