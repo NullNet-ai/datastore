@@ -1,7 +1,8 @@
 use crate::config::core::EnvConfig;
 use crate::controllers::common_controller::{
-    convert_json_to_csv, execute_copy, migration_mode_enabled, process_and_get_record_by_id,
-    process_and_insert_record, process_and_update_record, process_records,
+    convert_json_to_csv, execute_copy, get_fk_references, migration_mode_enabled,
+    process_and_get_record_by_id, process_and_insert_record, process_and_update_record,
+    process_records,
 };
 use crate::database::db::create_connection;
 use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
@@ -514,6 +515,48 @@ pub async fn batch_insert_records(
             });
         }
     };
+
+    // Check if other tables reference this table via foreign keys.
+    // If so, reject the batch insert — records synced through the background process
+    // may not be available when other tables' normal inserts reference them.
+    if !migration_mode_enabled() {
+        match get_fk_references(&client, &table_name).await {
+            Ok(refs) if !refs.is_empty() => {
+                let details: Vec<String> = refs
+                    .iter()
+                    .map(|(ref_table, ref_column, constraint)| {
+                        format!(
+                            "table '{}' column '{}' (constraint: {})",
+                            ref_table, ref_column, constraint
+                        )
+                    })
+                    .collect();
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: format!(
+                        "Batch insert not allowed for table '{}': it is referenced by foreign keys from other tables. \
+                        Records inserted via batch are synced asynchronously and may not be available when referenced. \
+                        Referenced by: {}. \
+                        Drop these foreign key constraints before batch inserting.",
+                        table_name,
+                        details.join("; ")
+                    ),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+            Ok(_) => {} // No references, proceed
+            Err(e) => {
+                log::error!("Error checking FK references for table '{}': {}", table_name, e);
+                return HttpResponse::InternalServerError().json(ApiResponse {
+                    success: false,
+                    message: format!("Error checking foreign key references: {}", e),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    }
 
     // In migration mode, skip the temp table check — it was created in the migration's Phase 1.
     if !migration_mode_enabled() {
