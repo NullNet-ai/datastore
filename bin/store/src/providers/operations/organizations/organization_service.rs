@@ -290,7 +290,6 @@ pub async fn register(
             let mut account_organization_json = account_organization_json_initial.clone();
             if let Value::Object(obj) = &mut account_organization_json {
                 obj.insert("email".to_string(), Value::String(account_id.clone()));
-                obj.insert("account_id".to_string(), Value::String(_account_id.clone()));
                 obj.insert("status".to_string(), Value::String("Active".to_string()));
                 obj.insert(
                     "account_organization_status".to_string(),
@@ -426,41 +425,41 @@ pub async fn register(
                         ..Default::default()
                     };
 
-                // Convert model to JSON and insert into database
-                let contact_json = serde_json::to_value(&contact)
-                    .map_err(|e| ApiError::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to serialize contact: {}", e)
-                    ))?;
+                    // Convert model to JSON and insert into database
+                    let contact_json = serde_json::to_value(&contact)
+                        .map_err(|e| ApiError::new(
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            format!("Failed to serialize contact: {}", e)
+                        ))?;
 
-                sync_service::insert(&"contacts".to_string(), contact_json).await?;
+                    sync_service::insert(&"contacts".to_string(), contact_json).await?;
 
-                // Create Contact Email using ContactEmailModel
-                let contact_email = ContactEmailModel {
-                    id: Some(Ulid::new().to_string()),
-                    contact_id: Some(user_id.clone()),
-                    email: Some(account_id.clone()),
-                    is_primary: Some(true),
-                    organization_id: Some(team_organization_id.clone()),
-                    tombstone: Some(0),
-                    status: Some("Active".to_string()),
-                    created_date: Some(formatted_date.clone()),
-                    created_time: Some(formatted_time.clone()),
-                    updated_date: Some(formatted_date.clone()),
-                    updated_time: Some(formatted_time.clone()),
-                    created_by: created_by_override.clone(),
-                    ..Default::default()
-                };
+                    // Create Contact Email using ContactEmailModel
+                    let contact_email = ContactEmailModel {
+                        id: Some(Ulid::new().to_string()),
+                        contact_id: Some(user_id.clone()),
+                        email: Some(account_id.clone()),
+                        is_primary: Some(true),
+                        organization_id: Some(team_organization_id.clone()),
+                        tombstone: Some(0),
+                        status: Some("Active".to_string()),
+                        created_date: Some(formatted_date.clone()),
+                        created_time: Some(formatted_time.clone()),
+                        updated_date: Some(formatted_date.clone()),
+                        updated_time: Some(formatted_time.clone()),
+                        created_by: created_by_override.clone(),
+                        ..Default::default()
+                    };
 
-                // Convert model to JSON and insert into database
-                let contact_email_json = serde_json::to_value(&contact_email)
-                    .map_err(|e| ApiError::new(
-                        StatusCode::INTERNAL_SERVER_ERROR,
-                        format!("Failed to serialize contact email: {}", e)
-                    ))?;
+                    // Convert model to JSON and insert into database
+                    let contact_email_json = serde_json::to_value(&contact_email)
+                        .map_err(|e| ApiError::new(
+                            StatusCode::INTERNAL_SERVER_ERROR,
+                            format!("Failed to serialize contact email: {}", e)
+                        ))?;
 
-                sync_service::insert(&"contact_emails".to_string(), contact_email_json).await?;
-            }
+                    sync_service::insert(&"contact_emails".to_string(), contact_email_json).await?;
+                }
 
                 // Update Account Organization using AccountOrganizationModel
                 account_organization = AccountOrganizationModel {
@@ -527,11 +526,12 @@ pub async fn register(
         {
             // No need to require provided account_organization_id; we pre-created a draft AO
 
-            let mut device_id: Option<String> = Some(_account_id.clone());
+            let mut device_id: Option<String> = None;
             let mut device_code: Option<String> = None;
 
             // Create Device if not a contact account
             if !is_contact_account {
+                device_id = Some(_account_id.clone());
                 // Use new ULID if it's a request, otherwise use system_device_ulid
                 let device_id_value = device_id.ok_or_else(|| {
                     ApiError::new(
