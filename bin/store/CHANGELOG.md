@@ -5,6 +5,16 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.82
+
+### Author
+Kashan
+
+### Fixed
+  - ***Sync service — revert apply_batch to migration mode only***:
+    - `src/providers/operations/sync/sync_service.rs`
+      - Revert `apply_batch()` to migration mode only. In normal mode, use per-field `apply()` to respect the version/status upsert branches in the macro. The upsert macro has special branches for `version` (only increments version) and `status` (only sets status/previous_status) — when batching all fields into one JSON, these branches would fire and silently drop all other fields like `account_id`.
+
 ## 0.2.81
 
 ### Author
