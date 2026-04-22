@@ -470,52 +470,72 @@ impl RuntimeManager {
         // Start Socket.IO server
         tokio::spawn(async move {
             use crate::providers::operations::message_stream::gateway::{
-                create_socket_io, set_streaming_service,
+                configure_socket_io, set_streaming_service,
             };
             use crate::providers::operations::message_stream::streaming_service::MessageStreamingService;
-            use axum::Router;
+            use hyper::server::conn::http1;
+            use hyper_util::rt::TokioIo;
+            use socketioxide::SocketIo;
 
-            tokio::select! {
-                _ = async {
-                    // Create Socket.IO layer and instance
-                    let (layer, io) = create_socket_io();
+            // Create Socket.IO service and instance
+            let (socket_service, io) = SocketIo::new_svc();
+            configure_socket_io(&io);
 
-                    // Initialize the MessageStreamingService
-                    let streaming_service = MessageStreamingService::new(io);
+            // Initialize the MessageStreamingService
+            let streaming_service = MessageStreamingService::new(io);
 
-                    // Set the streaming service reference
-                    set_streaming_service(streaming_service.clone());
+            // Set the streaming service reference
+            set_streaming_service(streaming_service.clone());
 
-                    // Initialize the streaming service (starts broker and routing)
-                    if let Err(e) = streaming_service.initialize().await {
-                        error!("Failed to initialize MessageStreamingService: {}", e);
-                    } else {
-                        info!("MessageStreamingService initialized successfully");
+            // Initialize the streaming service (starts broker and routing)
+            if let Err(e) = streaming_service.initialize().await {
+                error!("Failed to initialize MessageStreamingService: {}", e);
+            } else {
+                info!("MessageStreamingService initialized successfully");
+            }
+
+            let listener =
+                match tokio::net::TcpListener::bind(format!("{}:{}", socket_host, socket_port))
+                    .await
+                {
+                    Ok(listener) => listener,
+                    Err(e) => {
+                        error!("Failed to bind Socket.IO server: {}", e);
+                        return;
                     }
+                };
 
-                    // Create and run the Socket.IO server
-                    let app = Router::new().layer(layer);
-                    let listener =
-                        match tokio::net::TcpListener::bind(format!("{}:{}", socket_host, socket_port))
-                            .await
-                        {
-                            Ok(listener) => listener,
-                            Err(e) => {
-                                error!("Failed to bind Socket.IO server: {}", e);
-                                return;
+            info!(
+                "Socket.IO server listening on {}:{}",
+                socket_host, socket_port
+            );
+
+            loop {
+                tokio::select! {
+                    _ = socket_shutdown_rx.recv() => {
+                        info!("Socket.IO server received shutdown signal");
+                        break;
+                    }
+                    incoming = listener.accept() => {
+                        match incoming {
+                            Ok((stream, _)) => {
+                                let io = TokioIo::new(stream);
+                                let svc = socket_service.clone();
+                                tokio::spawn(async move {
+                                    if let Err(e) = http1::Builder::new()
+                                        .serve_connection(io, svc)
+                                        .with_upgrades()
+                                        .await
+                                    {
+                                        error!("Socket.IO server connection error: {}", e);
+                                    }
+                                });
                             }
-                        };
-
-                    info!(
-                        "Socket.IO server listening on {}:{}",
-                        socket_host, socket_port
-                    );
-                    if let Err(e) = axum::serve(listener, app).await {
-                        error!("Socket.IO server error: {}", e);
+                            Err(e) => {
+                                error!("Socket.IO accept error: {}", e);
+                            }
+                        }
                     }
-                } => {}
-                _ = socket_shutdown_rx.recv() => {
-                    info!("Socket.IO server received shutdown signal");
                 }
             }
         });

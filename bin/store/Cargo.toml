@@ -61,8 +61,9 @@ actix = "0.13.5"
 actix-web-actors = "4.3.1"
 socketioxide = { version = "0.9.1", features = ["extensions"] }
 tower-http = { version = "0.5", features = ["cors"] }
-axum = "0.7"
 tower = "0.4"
+hyper = "1"
+hyper-util = { version = "0.1", features = ["tokio"] }
 rpassword = "7.4.0"
 argon2 = "0.5.3"
 ulid = "1.2.1"
