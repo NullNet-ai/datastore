@@ -5,6 +5,17 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.84
+
+### Author
+Jean
+
+### Changed
+  - ***Organizations — invited account device_id initialization***:
+    - `src/providers/operations/organizations/organization_service.rs`
+      - Default `device_id` to `None` for invited contact-account flow and only set it from `_account_id` when creating a device for non-contact accounts.
+      - Remove adding of account_id in insertion of initial account organization as account may not be existing  yet.
+
 ## 0.2.83
 
 ### Author
