@@ -645,7 +645,7 @@ impl RuntimeManager {
         use actix_web::{http::header, middleware::Logger, web, App, HttpResponse, HttpServer};
         use actix_web_metrics::ActixWebMetricsBuilder;
         use utoipa::OpenApi;
-        use utoipa_swagger_ui::SwaggerUi;
+        use utoipa_swagger_ui::{Config as SwaggerConfig, SwaggerUi};
 
         info!("[RUNTIME] Configuring HTTP server for {}", bind_address);
 
@@ -699,7 +699,11 @@ impl RuntimeManager {
                 )
                 .service(
                     SwaggerUi::new("/swagger-ui/{_:.*}")
-                        .url("/api-docs/openapi.json", crate::openapi::ApiDoc::openapi()),
+                        .url("/api-docs/openapi.json", crate::openapi::ApiDoc::openapi())
+                        .config(
+                            SwaggerConfig::new(["/api-docs/openapi.json"])
+                                .persist_authorization(true),
+                        ),
                 );
 
             if let Some(hs) = &health_service {
