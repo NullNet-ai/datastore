@@ -471,45 +471,170 @@ impl StateManager {
     /// Generate health report
     pub async fn generate_health_report(&self) -> String {
         let phase = self.get_phase().await;
-        let components = self.get_all_components().await;
+        let mut components: Vec<(String, String)> = self
+            .get_all_components()
+            .await
+            .into_iter()
+            .map(|(name, info)| (name, format!("{:?}", info.status)))
+            .collect();
+        components.sort_by(|a, b| a.0.cmp(&b.0));
         let health_metrics = self.get_health_metrics().await;
         let uptime = self.get_uptime();
 
-        let mut report = String::new();
-        report.push_str(&format!("=== System Health Report ===\n"));
-        report.push_str(&format!("Phase: {:?}\n", phase));
-        report.push_str(&format!("Uptime: {:?}\n", uptime));
-        report.push_str(&format!(
-            "Overall Status: {:?}\n",
-            health_metrics.overall_status
-        ));
-        report.push_str(&format!(
-            "Active Connections: {}\n",
-            health_metrics.active_connections
-        ));
-        report.push_str(&format!(
-            "Processed Requests: {}\n",
-            health_metrics.processed_requests
-        ));
-        report.push_str(&format!(
-            "Error Rate: {:.2}%\n",
-            health_metrics.error_rate * 100.0
-        ));
+        let mut summary_rows: Vec<(&str, String)> = vec![
+            ("Phase", format!("{:?}", phase)),
+            ("Uptime", format!("{:?}", uptime)),
+            (
+                "Overall Status",
+                format!("{:?}", health_metrics.overall_status),
+            ),
+            (
+                "Active Connections",
+                health_metrics.active_connections.to_string(),
+            ),
+            (
+                "Processed Requests",
+                health_metrics.processed_requests.to_string(),
+            ),
+            ("Error Rate", format!("{:.2}%", health_metrics.error_rate * 100.0)),
+        ];
 
         if let Some(memory) = health_metrics.memory_usage_mb {
-            report.push_str(&format!("Memory Usage: {} MB\n", memory));
+            summary_rows.push(("Memory Usage", format!("{} MB", memory)));
         }
 
         if let Some(cpu) = health_metrics.cpu_usage_percent {
-            report.push_str(&format!("CPU Usage: {:.1}%\n", cpu));
+            summary_rows.push(("CPU Usage", format!("{:.1}%", cpu)));
         }
 
-        report.push_str("\n=== Components ===\n");
-        for (name, info) in components {
-            report.push_str(&format!("{}: {:?}\n", name, info.status));
-        }
+        let mut report = String::new();
+        report.push_str("=== System Health Report ===\n");
+        report.push_str(&Self::render_two_column_table("Metric", "Value", &summary_rows));
+        report.push_str("\n\n=== Components ===\n");
+        report.push_str(&Self::render_component_status_table(&components));
 
         report
+    }
+
+    fn render_two_column_table(
+        left_header: &str,
+        right_header: &str,
+        rows: &[(&str, String)],
+    ) -> String {
+        let left_col_width = rows
+            .iter()
+            .map(|(left, _)| left.len())
+            .max()
+            .unwrap_or(0)
+            .max(left_header.len());
+        let right_col_width = rows
+            .iter()
+            .map(|(_, right)| right.len())
+            .max()
+            .unwrap_or(0)
+            .max(right_header.len());
+
+        let mut out = String::new();
+        out.push_str(&format!(
+            "+-{:-<left$}-+-{:-<right$}-+\n",
+            "",
+            "",
+            left = left_col_width,
+            right = right_col_width
+        ));
+        out.push_str(&format!(
+            "| {:<left$} | {:<right$} |\n",
+            left_header,
+            right_header,
+            left = left_col_width,
+            right = right_col_width
+        ));
+        out.push_str(&format!(
+            "+-{:-<left$}-+-{:-<right$}-+\n",
+            "",
+            "",
+            left = left_col_width,
+            right = right_col_width
+        ));
+
+        for (left, right) in rows {
+            out.push_str(&format!(
+                "| {:<left$} | {:<right$} |\n",
+                left,
+                right,
+                left = left_col_width,
+                right = right_col_width
+            ));
+        }
+
+        out.push_str(&format!(
+            "+-{:-<left$}-+-{:-<right$}-+",
+            "",
+            "",
+            left = left_col_width,
+            right = right_col_width
+        ));
+        out
+    }
+
+    fn render_component_status_table(rows: &[(String, String)]) -> String {
+        let component_header = "Component";
+        let status_header = "Status";
+
+        let component_col_width = rows
+            .iter()
+            .map(|(component, _)| component.len())
+            .max()
+            .unwrap_or(0)
+            .max(component_header.len());
+        let status_col_width = rows
+            .iter()
+            .map(|(_, status)| status.len())
+            .max()
+            .unwrap_or(0)
+            .max(status_header.len());
+
+        let mut out = String::new();
+        out.push_str(&format!(
+            "+-{:-<component$}-+-{:-<status$}-+\n",
+            "",
+            "",
+            component = component_col_width,
+            status = status_col_width
+        ));
+        out.push_str(&format!(
+            "| {:<component$} | {:<status$} |\n",
+            component_header,
+            status_header,
+            component = component_col_width,
+            status = status_col_width
+        ));
+        out.push_str(&format!(
+            "+-{:-<component$}-+-{:-<status$}-+\n",
+            "",
+            "",
+            component = component_col_width,
+            status = status_col_width
+        ));
+
+        for (component, status) in rows {
+            out.push_str(&format!(
+                "| {:<component$} | {:<status$} |\n",
+                component,
+                status,
+                component = component_col_width,
+                status = status_col_width
+            ));
+        }
+
+        out.push_str(&format!(
+            "+-{:-<component$}-+-{:-<status$}-+",
+            "",
+            "",
+            component = component_col_width,
+            status = status_col_width
+        ));
+        out
     }
 
     /// Start background monitoring task

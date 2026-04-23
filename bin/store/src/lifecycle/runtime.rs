@@ -133,6 +133,7 @@ impl RuntimeManager {
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         info!("[RUNTIME] ===== ENTERING RuntimeManager::execute =====");
         self.start_time = Some(Instant::now());
+        info!("\n{}", self.config.render_loaded_env_table());
 
         info!("[RUNTIME] Installing Prometheus metrics exporter");
         let builder = match PrometheusBuilder::new().set_buckets(&[
@@ -272,7 +273,7 @@ impl RuntimeManager {
 
     /// Check database health using the connection pool (reuses connections instead of opening new ones)
     pub async fn check_database_health() -> Result<(), String> {
-        use crate::database::db::get_async_connection;
+        use crate::database::db::try_get_async_connection;
         use diesel_async::RunQueryDsl;
         use std::time::Duration;
 
@@ -281,7 +282,9 @@ impl RuntimeManager {
         // Timeout long enough to wait for a free pool connection under load (default pool can be busy)
         const HEALTH_CHECK_TIMEOUT_SECS: u64 = 15;
         match tokio::time::timeout(Duration::from_secs(HEALTH_CHECK_TIMEOUT_SECS), async {
-            let mut conn = get_async_connection().await;
+            let mut conn = try_get_async_connection()
+                .await
+                .map_err(|e| format!("Failed to checkout pooled connection: {}", e))?;
             diesel::sql_query("SELECT 1 as health_check")
                 .execute(&mut *conn)
                 .await

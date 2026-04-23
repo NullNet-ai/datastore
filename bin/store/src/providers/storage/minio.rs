@@ -113,9 +113,11 @@ pub async fn initialize() -> std::io::Result<(Client, String)> {
             let mut bucket_names = Vec::new();
             for bucket in buckets {
                 if let Some(name) = bucket.name() {
-                    println!("  - {}", name);
                     bucket_names.push(name.to_string());
                 }
+            }
+            if !bucket_names.is_empty() {
+                println!("\n{}", render_bucket_table(&bucket_names));
             }
             bucket_names
         }
@@ -342,6 +344,55 @@ pub fn print_client_config(client: &Client) {
     println!("   Endpoint: Configured during client creation");
 
     println!("   Service: Amazon S3");
+}
+
+fn render_bucket_table(bucket_names: &[String]) -> String {
+    let index_header = "No";
+    let bucket_header = "Bucket Name";
+    let index_col_width = index_header
+        .len()
+        .max(bucket_names.len().to_string().len())
+        .max(2);
+    let bucket_col_width = bucket_header
+        .len()
+        .max(bucket_names.iter().map(|name| name.len()).max().unwrap_or(0))
+        .max(11);
+
+    let mut out = String::new();
+    out.push_str("+");
+    out.push_str(&"-".repeat(index_col_width + 2));
+    out.push('+');
+    out.push_str(&"-".repeat(bucket_col_width + 2));
+    out.push_str("+\n");
+    out.push_str(&format!(
+        "| {:>index_width$} | {:<bucket_width$} |\n",
+        index_header,
+        bucket_header,
+        index_width = index_col_width,
+        bucket_width = bucket_col_width
+    ));
+    out.push_str("+");
+    out.push_str(&"-".repeat(index_col_width + 2));
+    out.push('+');
+    out.push_str(&"-".repeat(bucket_col_width + 2));
+    out.push_str("+\n");
+
+    for (idx, name) in bucket_names.iter().enumerate() {
+        out.push_str(&format!(
+            "| {:>index_width$} | {:<bucket_width$} |\n",
+            idx + 1,
+            name,
+            index_width = index_col_width,
+            bucket_width = bucket_col_width
+        ));
+    }
+
+    out.push_str("+");
+    out.push_str(&"-".repeat(index_col_width + 2));
+    out.push('+');
+    out.push_str(&"-".repeat(bucket_col_width + 2));
+    out.push('+');
+    out
 }
 
 /// Check if storage is disabled via environment variable

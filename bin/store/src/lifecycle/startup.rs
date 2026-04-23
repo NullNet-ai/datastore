@@ -690,7 +690,7 @@ impl StartupManager {
             .await;
 
         // Initialize database pool
-        let pool = db::establish_async_pool();
+        let pool = db::get_async_pool().clone();
         info!("[STARTUP] Database connection pool established");
 
         // Update DatabasePool status to running

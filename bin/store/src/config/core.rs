@@ -17,6 +17,9 @@ pub struct EnvConfig {
     // Database Configuration
     pub database_url: String,
     pub database_pool_size: usize,
+    pub db_pool_wait_timeout_ms: u64,
+    pub db_pool_create_timeout_ms: u64,
+    pub db_pool_recycle_timeout_ms: u64,
     pub postgres_user: String,
     pub postgres_password: String,
     pub postgres_db: String,
@@ -147,6 +150,18 @@ impl Default for EnvConfig {
                 .unwrap_or_else(|_| "20".to_string())
                 .parse()
                 .unwrap_or(20),
+            db_pool_wait_timeout_ms: std::env::var("DB_POOL_WAIT_TIMEOUT_MS")
+                .unwrap_or_else(|_| "15000".to_string())
+                .parse()
+                .unwrap_or(15_000),
+            db_pool_create_timeout_ms: std::env::var("DB_POOL_CREATE_TIMEOUT_MS")
+                .unwrap_or_else(|_| "10000".to_string())
+                .parse()
+                .unwrap_or(10_000),
+            db_pool_recycle_timeout_ms: std::env::var("DB_POOL_RECYCLE_TIMEOUT_MS")
+                .unwrap_or_else(|_| "5000".to_string())
+                .parse()
+                .unwrap_or(5_000),
             postgres_user: std::env::var("POSTGRES_USER").unwrap_or_else(|_| "admin".to_string()),
             postgres_password: std::env::var("POSTGRES_PASSWORD")
                 .unwrap_or_else(|_| "admin".to_string()),
@@ -334,5 +349,312 @@ impl Default for EnvConfig {
                 .parse()
                 .unwrap_or(100),
         }
+    }
+}
+
+impl EnvConfig {
+    pub fn render_loaded_env_table(&self) -> String {
+        let categories: Vec<(&str, Vec<(&str, String)>)> = vec![
+            (
+                "Server Configuration",
+                vec![
+                    ("HOST", self.host.clone()),
+                    ("PORT", self.port.clone()),
+                    ("GRPC_PORT", self.grpc_port.clone()),
+                    ("GRPC_URL", self.grpc_url.clone()),
+                    ("SOCKET_HOST", self.socket_host.clone()),
+                    ("SOCKET_PORT", self.socket_port.clone()),
+                    ("RUST_LOG", self.rust_log.clone()),
+                    ("DEBUG", self.debug.to_string()),
+                    ("TZ", self.tz.clone()),
+                    ("KEEP_ALIVE_SECS", self.server_keep_alive_secs.to_string()),
+                    (
+                        "WORKERS",
+                        self.server_workers
+                            .map(|workers| workers.to_string())
+                            .unwrap_or_else(|| "<unset>".to_string()),
+                    ),
+                ],
+            ),
+            (
+                "Database Configuration",
+                vec![
+                    ("DATABASE_URL", Self::mask_secret(&self.database_url)),
+                    ("DATABASE_POOL_SIZE", self.database_pool_size.to_string()),
+                    (
+                        "DB_POOL_WAIT_TIMEOUT_MS",
+                        self.db_pool_wait_timeout_ms.to_string(),
+                    ),
+                    (
+                        "DB_POOL_CREATE_TIMEOUT_MS",
+                        self.db_pool_create_timeout_ms.to_string(),
+                    ),
+                    (
+                        "DB_POOL_RECYCLE_TIMEOUT_MS",
+                        self.db_pool_recycle_timeout_ms.to_string(),
+                    ),
+                    ("POSTGRES_USER", self.postgres_user.clone()),
+                    ("POSTGRES_PASSWORD", Self::mask_secret(&self.postgres_password)),
+                    ("POSTGRES_DB", self.postgres_db.clone()),
+                    ("POSTGRES_HOST", self.postgres_host.clone()),
+                    ("POSTGRES_PORT", self.postgres_port.clone()),
+                ],
+            ),
+            (
+                "Security",
+                vec![
+                    ("JWT_SECRET", Self::mask_secret(&self.jwt_secret)),
+                    ("JWT_EXPIRES_IN", self.jwt_expires_in.clone()),
+                    ("CLEANUP_PASSWORD", Self::mask_secret(&self.cleanup_password)),
+                    ("SESSION_EXPIRES_IN", self.session_expires_in.clone()),
+                    (
+                        "DEFAULT_SENSITIVITY_LEVEL",
+                        self.default_sensitivity_level.to_string(),
+                    ),
+                    (
+                        "ROOT_ACCOUNT_PASSWORD",
+                        Self::mask_secret(&self.root_account_password),
+                    ),
+                    ("PGP_SYM_KEY", Self::mask_secret(&self.pgp_sym_key)),
+                ],
+            ),
+            (
+                "Organization Settings",
+                vec![
+                    (
+                        "DEFAULT_ORGANIZATION_ID",
+                        self.default_organization_id.clone(),
+                    ),
+                    (
+                        "DEFAULT_ORGANIZATION_NAME",
+                        self.default_organization_name.clone(),
+                    ),
+                    (
+                        "DEFAULT_ORGANIZATION_ADMIN_PASSWORD",
+                        Self::mask_secret(&self.default_organization_admin_password),
+                    ),
+                    ("GROUP_ID", self.group_id.clone()),
+                ],
+            ),
+            (
+                "Sync Configuration",
+                vec![
+                    ("SYNC_ENABLED", self.sync_enabled.to_string()),
+                    ("SYNC_TIMER_MS", self.sync_timer_ms.to_string()),
+                    ("BATCH_SYNC_ENABLED", self.batch_sync_enabled.to_string()),
+                    ("BATCH_SYNC_TYPE", self.batch_sync_type.clone()),
+                    ("BATCH_SYNC_SIZE", self.batch_sync_size.to_string()),
+                ],
+            ),
+            (
+                "Cache Configuration",
+                vec![
+                    ("CACHE_TYPE", format!("{:?}", self.cache_type)),
+                    (
+                        "REDIS_CONNECTION",
+                        self.redis_connection
+                            .as_deref()
+                            .map(Self::mask_secret)
+                            .unwrap_or_else(|| "<unset>".to_string()),
+                    ),
+                    (
+                        "CACHE_TTL",
+                        self.ttl
+                            .map(|d| format!("{}s", d.as_secs()))
+                            .unwrap_or_else(|| "<unset>".to_string()),
+                    ),
+                ],
+            ),
+            (
+                "Storage Configuration",
+                vec![
+                    ("DISABLE_STORAGE", self.disable_storage.to_string()),
+                    ("STORAGE_ENDPOINT", self.storage_endpoint.clone()),
+                    (
+                        "STORAGE_ACCESS_KEY",
+                        Self::mask_secret(&self.storage_access_key),
+                    ),
+                    (
+                        "STORAGE_SECRET_KEY",
+                        Self::mask_secret(&self.storage_secret_key),
+                    ),
+                    ("STORAGE_BUCKET_NAME", self.storage_bucket_name.clone()),
+                    ("STORAGE_REGION", self.storage_region.clone()),
+                    (
+                        "STORAGE_DISABLE_SSL_VERIFICATION",
+                        self.storage_disable_ssl_verification.to_string(),
+                    ),
+                    (
+                        "TEMPORARY_FILE_TTL_IN_SECS",
+                        self.temporary_file_ttl_secs.to_string(),
+                    ),
+                ],
+            ),
+            (
+                "Search Suggestion",
+                vec![
+                    ("DEFAULT_SEARCH_PATTERN", self.default_search_pattern.clone()),
+                    (
+                        "SEARCH_SUGGESTION_CACHE_TTL_MS",
+                        self.search_suggestion_cache_ttl_ms.to_string(),
+                    ),
+                    ("FIND_CACHE_TTL_MS", self.find_cache_ttl_ms.to_string()),
+                ],
+            ),
+            ("Log", vec![("LOG_FILE_PATH", self.log_file_path.clone())]),
+            (
+                "Code Generation",
+                vec![
+                    ("GENERATE_PROTO", self.generate_proto.to_string()),
+                    ("GENERATE_GRPC", self.generate_grpc.to_string()),
+                    ("GENERATE_TABLE_ENUM", self.generate_table_enum.to_string()),
+                    ("CREATE_SCHEMA", self.create_schema.to_string()),
+                ],
+            ),
+            (
+                "Session Management",
+                vec![
+                    ("SESSION_COOKIE_NAME", self.session_cookie_name.clone()),
+                    (
+                        "SESSION_COOKIE_MAX_AGE",
+                        self.session_cookie_max_age.to_string(),
+                    ),
+                    ("SESSION_HEADER_NAME", self.session_header_name.clone()),
+                    (
+                        "SESSION_PRUNE_INTERVAL",
+                        self.session_prune_interval.to_string(),
+                    ),
+                    ("SESSION_COOKIE_SECURE", self.session_cookie_secure.to_string()),
+                ],
+            ),
+            (
+                "Device & Identity",
+                vec![
+                    ("DEFAULT_DEVICE_ID", self.default_device_id.clone()),
+                    (
+                        "DEFAULT_DEVICE_SECRET",
+                        Self::mask_secret(&self.default_device_secret),
+                    ),
+                    (
+                        "DEFAULT_ORGANIZATION_ADMIN_EMAIL",
+                        self.default_organization_admin_email.clone(),
+                    ),
+                    ("SUPER_ADMIN_ID", Self::mask_secret(&self.super_admin_id)),
+                    ("SYSTEM_DEVICE_ULID", self.system_device_ulid.clone()),
+                    ("INITIALIZE_DEVICE", self.initialize_device.to_string()),
+                ],
+            ),
+            (
+                "System Configuration",
+                vec![
+                    (
+                        "EXPERIMENTAL_PERMISSIONS",
+                        self.experimental_permissions.to_string(),
+                    ),
+                    (
+                        "INITIALIZE_ENTITY_DATA",
+                        self.initialize_entity_data.to_string(),
+                    ),
+                    ("MERKLE_SAVE_INTERVAL", self.merkle_save_interval.to_string()),
+                    (
+                        "MAX_CONCURRENT_FLUSHES",
+                        self.max_concurrent_flushes.to_string(),
+                    ),
+                    ("BUCKET_CAPACITY", self.bucket_capacity.to_string()),
+                    ("INSERT_QUEUE_CAPACITY", self.insert_queue_capacity.to_string()),
+                ],
+            ),
+            (
+                "Test & Monitoring",
+                vec![
+                    ("STRICT_VALIDATION", self.strict_validation.to_string()),
+                    ("PROMETHEUS_BASE_URL", self.prometheus_base_url.clone()),
+                ],
+            ),
+        ];
+
+        categories
+            .into_iter()
+            .map(|(name, rows)| {
+                Self::render_table(&format!("Loaded Environment Configuration - {name}"), &rows)
+            })
+            .collect::<Vec<_>>()
+            .join("\n\n")
+    }
+
+    fn render_table(title: &str, rows: &[(&str, String)]) -> String {
+        let key_col_width = rows
+            .iter()
+            .map(|(key, _)| key.len())
+            .max()
+            .unwrap_or(3)
+            .max("ENV".len());
+
+        let value_col_width = rows
+            .iter()
+            .map(|(_, value)| value.len())
+            .max()
+            .unwrap_or(5)
+            .max("VALUE".len())
+            .min(100);
+
+        let mut out = String::new();
+        out.push_str(title);
+        out.push('\n');
+        out.push_str(&format!(
+            "+-{:-<key$}-+-{:-<val$}-+\n",
+            "",
+            "",
+            key = key_col_width,
+            val = value_col_width
+        ));
+        out.push_str(&format!(
+            "| {:<key$} | {:<val$} |\n",
+            "ENV",
+            "VALUE",
+            key = key_col_width,
+            val = value_col_width
+        ));
+        out.push_str(&format!(
+            "+-{:-<key$}-+-{:-<val$}-+\n",
+            "",
+            "",
+            key = key_col_width,
+            val = value_col_width
+        ));
+
+        for (key, value) in rows {
+            let printable = if value.len() > value_col_width {
+                format!("{}...", &value[..value_col_width.saturating_sub(3)])
+            } else {
+                value.clone()
+            };
+            out.push_str(&format!(
+                "| {:<key$} | {:<val$} |\n",
+                key,
+                printable,
+                key = key_col_width,
+                val = value_col_width
+            ));
+        }
+
+        out.push_str(&format!(
+            "+-{:-<key$}-+-{:-<val$}-+",
+            "",
+            "",
+            key = key_col_width,
+            val = value_col_width
+        ));
+        out
+    }
+
+    fn mask_secret(value: &str) -> String {
+        if value.is_empty() {
+            return "<empty>".to_string();
+        }
+        if value.len() <= 4 {
+            return "****".to_string();
+        }
+        format!("{}***{}", &value[..2], &value[value.len() - 2..])
     }
 }

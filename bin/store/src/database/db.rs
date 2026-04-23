@@ -2,14 +2,15 @@ use crate::config::core::EnvConfig;
 use crate::database::schema::database_setup::DatabaseSetupFlags;
 use crate::structs::core::CommandArgs;
 use base64::prelude::*;
+use deadpool::Runtime;
 use diesel_async::pooled_connection::deadpool::Pool as PoolAsync;
 use diesel_async::pooled_connection::AsyncDieselConnectionManager;
 use diesel_async::AsyncPgConnection;
-use dotenv::dotenv;
 use log::{error, info};
 use once_cell::sync::Lazy;
 use serde_json::{json, Value};
 use std::collections::HashMap;
+use std::time::Duration;
 use tokio_postgres::types::Type;
 use tokio_postgres::{Client, NoTls};
 
@@ -21,13 +22,22 @@ pub type AsyncDbPooledConnection =
 static ASYNC_POOL: Lazy<AsyncDbPool> = Lazy::new(|| establish_async_pool());
 
 pub fn establish_async_pool() -> AsyncDbPool {
-    dotenv().ok();
     let config_env = EnvConfig::default();
-    println!("######{}", config_env.database_url);
     let config =
         AsyncDieselConnectionManager::<AsyncPgConnection>::new(config_env.database_url.clone());
+
     PoolAsync::builder(config)
         .max_size(config_env.database_pool_size)
+        .runtime(Runtime::Tokio1)
+        .wait_timeout(Some(Duration::from_millis(
+            config_env.db_pool_wait_timeout_ms,
+        )))
+        .create_timeout(Some(Duration::from_millis(
+            config_env.db_pool_create_timeout_ms,
+        )))
+        .recycle_timeout(Some(Duration::from_millis(
+            config_env.db_pool_recycle_timeout_ms,
+        )))
         .build()
         .unwrap_or_else(|e| {
             log::error!(
@@ -51,28 +61,41 @@ pub fn get_async_pool() -> &'static AsyncDbPool {
     &ASYNC_POOL
 }
 
-pub async fn get_async_connection() -> AsyncDbPooledConnection {
-    get_async_pool().get().await.unwrap_or_else(|e| {
-        {
+pub async fn try_get_async_connection() -> Result<AsyncDbPooledConnection, String> {
+    match get_async_pool().get().await {
+        Ok(conn) => Ok(conn),
+        Err(e) => {
             let c = metrics::counter!("db_connection_errors_total");
             c.increment(1);
+
+            log::error!("Failed to get async connection: {}", e);
+            let error_msg = e.to_string();
+            if error_msg.contains("Connection refused") || error_msg.contains("connection refused")
+            {
+                log::error!("Database is not available. Please ensure PostgreSQL is running and accessible at the configured host and port.");
+            } else if error_msg.contains("timeout") {
+                log::error!(
+                    "Database connection timeout. The database may be overloaded or network issues exist."
+                );
+            } else if error_msg.contains("authentication") || error_msg.contains("password") {
+                log::error!(
+                    "Database authentication failed. Please check your database credentials."
+                );
+            } else {
+                log::error!(
+                    "Database connection failed: {}. Please check your database configuration and ensure PostgreSQL is running.",
+                    e
+                );
+            }
+            Err(error_msg)
         }
-        log::error!("Failed to get async connection: {}", e);
-        // Check if it's a connection refused error (database not available)
-        let error_msg = e.to_string();
-        if error_msg.contains("Connection refused") || error_msg.contains("connection refused") {
-            log::error!("Database is not available. Please ensure PostgreSQL is running and accessible at the configured host and port.");
-        } else if error_msg.contains("timeout") {
-            log::error!("Database connection timeout. The database may be overloaded or network issues exist.");
-        } else if error_msg.contains("authentication") || error_msg.contains("password") {
-            log::error!("Database authentication failed. Please check your database credentials.");
-        } else {
-            log::error!("Database connection failed: {}. Please check your database configuration and ensure PostgreSQL is running.", e);
-        }
-        // Instead of panicking, we'll let the caller handle the connection failure
-        // The connection pool will return an error when trying to use the connection
-        panic!("Database connection failed: {}", e);
-    })
+    }
+}
+
+pub async fn get_async_connection() -> AsyncDbPooledConnection {
+    try_get_async_connection()
+        .await
+        .unwrap_or_else(|e| panic!("Database connection failed: {}", e))
 }
 
 //raw database connection
