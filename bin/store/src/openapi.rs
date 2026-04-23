@@ -10,7 +10,9 @@ struct StandardOkResponse {
     message: String,
     #[schema(example = "success")]
     status: String,
-    #[schema(example = json!({"id": "123", "result": "done"}))]
+    #[schema(example = 1)]
+    count: Option<u64>,
+    #[schema(example = json!([{"id": "123", "result": "done"}]))]
     data: Option<serde_json::Value>,
 }
 
