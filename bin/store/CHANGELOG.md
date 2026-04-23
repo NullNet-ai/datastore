@@ -5,6 +5,24 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.86
+
+### Author
+Jean
+
+### Changed
+  - ***Root store API — advanced upsert routed via root wrapper***:
+    - `src/controllers/root_controller.rs`
+      - Add `root_upsert_advanced` wrapper that marks the request as root and delegates to `store_controller::upsert_advanced`.
+    - `src/routers/root_store_router.rs`
+      - Route `POST /api/store/root/advance_upsert/{table}` through `root_upsert_advanced`.
+    - `src/routers/store_router.rs`
+      - Remove the non-root advanced upsert route so advanced upsert is handled via the root scope.
+
+### Added
+  - `src/controllers/root_controller_test.rs`
+    - Add integration tests for root advanced upsert with different conflict actions.
+
 ## 0.2.85
 
 ### Author
