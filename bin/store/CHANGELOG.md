@@ -5,6 +5,40 @@ All notable changes to the CRDT Store project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.2.86
+
+### Author
+Jean
+
+### Changed
+  - ***Root store API — advanced upsert routed via root wrapper***:
+    - `src/controllers/root_controller.rs`
+      - Add `root_upsert_advanced` wrapper that marks the request as root and delegates to `store_controller::upsert_advanced`.
+    - `src/routers/root_store_router.rs`
+      - Route `POST /api/store/root/advance_upsert/{table}` through `root_upsert_advanced`.
+    - `src/routers/store_router.rs`
+      - Remove the non-root advanced upsert route so advanced upsert is handled via the root scope.
+
+### Added
+  - `src/controllers/root_controller_test.rs`
+    - Add integration tests for root advanced upsert with different conflict actions.
+
+## 0.2.85
+
+### Author
+Jean
+
+### Added
+  - ***Advanced upsert API — conflict-aware upsert endpoint and core types***:
+    - `src/controllers/common_controller.rs`
+      - Add `perform_upsert_advanced` helper to handle conflict-aware upserts with configurable conflict columns, update-field sets, and optional pluck selections.
+    - `src/controllers/store_controller.rs`
+      - Add `upsert_advanced` controller that parses `AdvancedUpsertRequestBody`, derives `OnConflictAction`, supports optional `pluck` fields via `QueryParams`, and delegates to `perform_upsert_advanced`.
+    - `src/routers/store_router.rs`
+      - Register `POST /api/store/advance_upsert/{table}` route and wire it to the new `upsert_advanced` controller.
+    - `src/structs/core.rs`
+      - Introduce/extend core structs (`AdvancedUpsertRequestBody`, `OnConflictAction`, `QueryParams`) used by the advanced upsert controller and helpers.
+
 ## 0.2.84
 
 ### Author

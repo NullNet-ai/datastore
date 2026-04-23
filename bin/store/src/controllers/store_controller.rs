@@ -18,9 +18,9 @@ use crate::providers::storage::cache::cache;
 use crate::providers::storage::get_valid_bucket_name;
 use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::core::{
-    AggregationFilter, ApiResponse, Auth, BatchUpdateBody, GetByFilter, GroupAdvanceFilter,
-    LogicalOperator, QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest,
-    UpsertRequestBody,
+    AggregationFilter, AdvancedUpsertRequestBody, ApiResponse, Auth, BatchUpdateBody,
+    GetByFilter, GroupAdvanceFilter, LogicalOperator, OnConflictAction, QueryParams, RequestBody,
+    SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
 };
 use crate::structs::core::{FilterCriteria, FilterOperator};
 use crate::utils::helpers::normalize_date_format;
@@ -48,7 +48,7 @@ use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
 use ulid::Ulid;
 
-use super::common_controller::{perform_upsert, sanitize_updates};
+use super::common_controller::{perform_upsert, perform_upsert_advanced, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
 use mime_guess; // For MIME type detection from file extensions
 #[derive(Serialize, Debug)]
@@ -1087,6 +1087,106 @@ pub async fn upsert(
         Err(error) => {
             log::error!(
                 "Error performing upsert in table '{}': {}",
+                table_name,
+                error.message
+            );
+            let status_code = http::StatusCode::from_u16(error.status)
+                .unwrap_or(http::StatusCode::INTERNAL_SERVER_ERROR);
+            HttpResponse::build(status_code).json(ApiResponse {
+                success: false,
+                message: error.message,
+                count: 0,
+                data: vec![],
+            })
+        }
+    }
+}
+
+pub async fn upsert_advanced(
+    auth: HttpRequest,
+    table_name: web::Path<String>,
+    request_body: web::Json<AdvancedUpsertRequestBody>,
+    query: web::Query<QueryParams>,
+) -> impl Responder {
+    let extensions = auth.extensions();
+    let auth_data = match extensions.get::<Auth>() {
+        Some(data) => data,
+        None => {
+            log::warn!("Auth data not found in request extensions");
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: "Authentication information not available".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+
+    if is_root_controller {
+        log::info!(
+            "Processing advanced upsert via root controller for table: {}",
+            table_name
+        );
+    } else {
+        log::info!(
+            "Processing advanced upsert via simple controller for table: {}",
+            table_name
+        );
+    }
+
+    let table_name = table_name.into_inner();
+    let request_body = request_body.into_inner();
+
+    let pluck_fields = if !query.pluck.is_empty() {
+        Some(
+            query
+                .pluck
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect(),
+        )
+    } else {
+        None
+    };
+
+    let action = match request_body.action.as_str() {
+        "do_nothing" => OnConflictAction::DoNothing,
+        "update_fields" => OnConflictAction::UpdateFields(request_body.update_fields.clone()),
+        "update_all" => OnConflictAction::UpdateAll,
+        other => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!(
+                    "Invalid action '{}'. Supported values: do_nothing, update_fields, update_all.",
+                    other
+                ),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    match perform_upsert_advanced(
+        &table_name,
+        request_body.conflict_columns,
+        request_body.data,
+        pluck_fields,
+        &auth_data,
+        is_root_controller,
+        action,
+    )
+    .await
+    {
+        Ok(response) => HttpResponse::Ok().json(response),
+        Err(error) => {
+            log::error!(
+                "Error performing advanced upsert in table '{}': {}",
                 table_name,
                 error.message
             );
