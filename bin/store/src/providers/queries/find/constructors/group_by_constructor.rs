@@ -135,6 +135,7 @@ impl<'a> GroupByConstructor<'a> {
         if is_hypertable(self.table) {
             group_fields.push("timestamp".to_string());
         }
+
         format!(" GROUP BY {}", group_fields.join(", "))
     }
 

@@ -1,0 +1,35 @@
+{
+  "materialized_view": {
+    "unsafe_query": "SELECT id, first_name FROM contacts WHERE status = 'Active' LIMIT 100;"
+  },
+  "procedure": {
+    "arguments": ["id integer"],
+    "unsafe_query": "UPDATE counters SET value = value + 1 WHERE id = id;"
+  },
+  "function": {
+    "arguments": ["a integer", "b integer"],
+    "unsafe_query": "RETURN a + b;",
+    "returns": "integer"
+  },
+  "trigger_structured": {
+    "trigger": {
+      "name": "trg_contacts_touch",
+      "timing": "BEFORE",
+      "event": ["UPDATE"],
+      "level": "ROW",
+      "condition": "NEW.status IS NOT NULL",
+      "transition_relations": {
+        "old_table": "old_rows",
+        "new_table": "new_rows"
+      },
+      "constraint": false,
+      "deferrable": false,
+      "initially_deferred": false,
+      "referenced_table": "other_table"
+    },
+    "unsafe_query": "RETURN NEW;"
+  },
+  "trigger_raw": {
+    "unsafe_query": "CREATE TRIGGER trg_contacts_after_insert AFTER INSERT ON contacts FOR EACH ROW EXECUTE FUNCTION fn_after_contacts_insert();"
+  }
+}

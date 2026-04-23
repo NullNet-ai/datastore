@@ -803,6 +803,7 @@ mod tests {
             is_case_sensitive_sorting: Some(true),
             timezone: Some("UTC".to_string()),
             time_format: "HH24:MI".to_string(),
+            ..Default::default()
         };
 
         println!("  ✓ Testing limit access");
@@ -932,6 +933,7 @@ mod tests {
             distinct_by: None,
             timezone: None,
             time_format: "HH24:MI".to_string(),
+            ..Default::default()
         }
     }
 

@@ -18,13 +18,14 @@ use crate::structs::organizations_structs::VerifyPasswordParams;
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
 use std::{env, time::Duration};
+use utoipa::ToSchema;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AuthDto {
     pub data: AuthData,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AuthData {
     pub account_id: Option<String>,
     pub account_secret: Option<String>,
@@ -33,12 +34,12 @@ pub struct AuthData {
     pub expiry_in_ms: Option<u64>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct AuthByTokenDto {
     pub expiry_in_ms: Option<u64>,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
 pub struct RegisterDto {
     pub data: Register,
 }

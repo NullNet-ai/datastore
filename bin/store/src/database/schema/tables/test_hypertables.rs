@@ -20,7 +20,6 @@ define_table_schema! {
         timestamp: nullable(timestamptz()), primary_key: true,
 
         hypertable_timestamp: nullable(text()), primary_key: false,
-
         // Additional fields for time-series data
         sensor_id: nullable(text()),
         temperature: nullable(integer()),

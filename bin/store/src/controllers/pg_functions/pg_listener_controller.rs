@@ -2,7 +2,7 @@ use crate::controllers::common_controller::process_and_insert_record;
 use crate::database::db::get_async_connection;
 use crate::structs::core::{ApiResponse, Auth};
 use actix_web::{web, HttpMessage, HttpRequest, HttpResponse, Responder};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 // use regex::Regex;
 use super::function_validators::FunctionValidator;
@@ -11,6 +11,7 @@ use diesel::sql_types::Text;
 use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
 use std::collections::HashMap;
+use utoipa::ToSchema;
 
 #[derive(QueryableByName, Debug)]
 struct FunctionRow {
@@ -26,14 +27,14 @@ struct TriggerRow {
     table_name: String,
 }
 
-#[derive(Deserialize, Clone)]
+#[derive(Deserialize, Serialize, Clone, ToSchema)]
 pub struct CreateFunctionRequest {
     #[serde(rename = "function")]
     function_string: String,
     table_name: String,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct TestFunctionRequest {
     #[serde(rename = "function")]
     function_string: String,

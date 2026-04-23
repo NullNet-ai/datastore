@@ -4,7 +4,7 @@ use crate::controllers::common_controller::{
     process_and_get_record_by_id, process_and_insert_record, process_and_update_record,
     process_records,
 };
-use crate::database::db::create_connection;
+use crate::database::db::{create_connection, DatabaseTypeConverter};
 use crate::providers::operations::batch_sync::batch_sync::BatchSyncService;
 use crate::providers::queries::aggregation_filter::AggregationSQLConstructor;
 use crate::providers::queries::batch_update::BatchUpdateSQLConstructor;
@@ -18,12 +18,20 @@ use crate::providers::storage::cache::cache;
 use crate::providers::storage::get_valid_bucket_name;
 use crate::providers::storage::minio::is_storage_disabled;
 use crate::structs::core::{
-    AggregationFilter, AdvancedUpsertRequestBody, ApiResponse, Auth, BatchUpdateBody,
-    GetByFilter, GroupAdvanceFilter, LogicalOperator, OnConflictAction, QueryParams, RequestBody,
-    SearchSuggestionParams, SwitchAccountRequest, UpsertRequestBody,
+    AdvancedUpsertRequestBody, AggregationFilter, ApiResponse, Auth, BatchUpdateBody,
+    FilterCriteria, FilterOperator, GetByFilter, GroupAdvanceFilter, LogicalOperator,
+    OnConflictAction, QueryParams, RequestBody, SearchSuggestionParams, SwitchAccountRequest,
+    UpsertRequestBody,
 };
-use crate::structs::core::{FilterCriteria, FilterOperator};
-use crate::utils::helpers::normalize_date_format;
+use crate::utils::helpers::{
+    ensure_root_access, format_diesel_error, normalize_date_format, require_unsafe_query_raw,
+    validate_identifier,
+};
+use crate::utils::sql_sanitizer::{
+    contains_dangerous_removal_statements, normalize_whitespace_outside_strings, sanitize_values,
+    strip_strings_and_comments, validate_execute_payloads, validate_query_safety,
+    validate_select_limits, validate_update_has_where,
+};
 use crate::{db, providers};
 use actix_multipart::Multipart;
 use actix_web::error::BlockingError;
@@ -32,6 +40,13 @@ use actix_web::{HttpMessage, HttpRequest};
 use aws_sdk_s3::primitives::ByteStream;
 use chrono;
 use chrono::Local;
+use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
+use std::fmt;
+use tokio::fs::OpenOptions;
+use tokio::io::AsyncWriteExt;
+// use diesel::sql_types::*;
+// use diesel::QueryableByName;
 use diesel::result::Error as DieselError;
 use diesel::sql_query;
 use diesel_async::RunQueryDsl;
@@ -39,14 +54,11 @@ use once_cell::sync::Lazy;
 use serde::Deserialize;
 use serde::Serialize;
 use serde_json::Value;
-use sha1::{Digest, Sha1};
-use std::collections::BTreeMap;
+use sha1::Sha1;
 use std::collections::HashSet;
-use std::fmt;
 use std::sync::Mutex;
-use tokio::fs::OpenOptions;
-use tokio::io::AsyncWriteExt;
 use ulid::Ulid;
+use utoipa::ToSchema;
 
 use super::common_controller::{perform_upsert, perform_upsert_advanced, sanitize_updates};
 use futures_util::stream::StreamExt; // For processing multipart stream
@@ -55,6 +67,21 @@ use mime_guess; // For MIME type detection from file extensions
 pub struct ApiError {
     pub message: String,
     pub status: u16,
+}
+
+fn ensure_mv_prefix_on_last_ident(name: &str) -> String {
+    if let Some((schema, rel)) = name.rsplit_once('.') {
+        let rel_with = if rel.starts_with("mv_") {
+            rel.to_string()
+        } else {
+            format!("mv_{}", rel)
+        };
+        format!("{}.{}", schema, rel_with)
+    } else if name.starts_with("mv_") {
+        name.to_string()
+    } else {
+        format!("mv_{}", name)
+    }
 }
 
 impl From<Box<dyn std::error::Error>> for ApiError {
@@ -137,28 +164,6 @@ pub async fn update_record(
             });
         }
     };
-    // Check if this is a root controller call
-    let controller_type = extensions.get::<Option<String>>();
-    let is_root_controller = controller_type
-        .and_then(|opt| opt.as_ref())
-        .map(|s| s == "root")
-        .unwrap_or(false);
-
-    // Perform different operations based on controller type
-    if is_root_controller {
-        log::info!(
-            "Processing batch_update_records via root controller for table: {}",
-            table_name.as_str()
-        );
-        // Add any root-specific logic here
-    } else {
-        log::info!(
-            "Processing batch_update_records via simple controller for table: {}",
-            table_name.as_str()
-        );
-        // Add any simple controller-specific logic here
-    }
-
     // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
@@ -454,7 +459,7 @@ pub async fn get_by_id(
 
 // ... existing code ...
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct BatchInsertBody {
     records: Vec<Value>,
 }
@@ -1368,26 +1373,33 @@ pub async fn get_by_filter(
         }
     };
 
-    // Check if this is a root controller call
     let controller_type = extensions.get::<Option<String>>();
     let is_root_controller = controller_type
         .and_then(|opt| opt.as_ref())
         .map(|s| s == "root")
         .unwrap_or(false);
+    if !is_root_controller
+        && (table == "pg_matviews"
+            || table == "procedures"
+            || table == "triggers"
+            || table == "functions")
+    {
+        return HttpResponse::Forbidden().json(ApiResponse {
+            success: false,
+            message: "Access denied: root privileges required".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
 
-    // Perform different operations based on controller type
     if is_root_controller {
-        log::info!(
-            "Processing get_by_filter via root controller for table: {}",
-            table
-        );
-        // Add any root-specific logic here
-    } else {
-        log::info!(
-            "Processing get_by_filter via simple controller for table: {}",
-            table
-        );
-        // Add any simple controller-specific logic here
+        match table.as_str() {
+            "pg_matviews" => return exec_pg_matviews_filter(parameters.clone()).await,
+            "procedures" => return exec_procedures_filter(parameters.clone()).await,
+            "triggers" => return exec_triggers_filter(parameters.clone()).await,
+            "functions" => return exec_functions_filter(parameters.clone()).await,
+            _ => {}
+        }
     }
 
     let validation = Validation::new(&parameters, &table);
@@ -1410,6 +1422,11 @@ pub async fn get_by_filter(
 
     // Clone parameters for debug logging (since they will be moved to SQLConstructor)
     let parameters_for_debug = parameters.clone();
+    let is_materialized_view_request = parameters_for_debug
+        .materialized_view
+        .as_ref()
+        .and_then(|mv| mv.enabled)
+        .unwrap_or(false);
 
     let filter_key_payload = serde_json::json!({
         "params": &parameters_for_debug,
@@ -1424,16 +1441,20 @@ pub async fn get_by_filter(
     let cache_prefix = format!("{}_cache", table);
     let version = cache.get_prefix_version(&cache_prefix);
     let cache_key = format!("{}_v{}_{}", cache_prefix, version, filter_hash);
-
     if !no_caching {
         if let Some(cached) = cache.get(&cache_key) {
             if let Some(arr) = cached.as_array() {
                 let data: Vec<Value> = arr.clone();
+                let cache_message_suffix = if is_materialized_view_request {
+                    "using materialized view cache"
+                } else {
+                    "from cache"
+                };
                 return HttpResponse::Ok().json(ApiResponse {
                     success: true,
                     message: format!(
-                        "Filter operation completed for table: {} (from cache)",
-                        &table
+                        "Filter operation completed for table: {} ({})",
+                        &table, cache_message_suffix
                     ),
                     count: data.len() as i32,
                     data,
@@ -1442,6 +1463,92 @@ pub async fn get_by_filter(
         }
     }
 
+    // Precompute materialized view name from parameters and return early if it already exists and is enabled
+    let mut precomputed_mv_name: Option<String> = None;
+    if let Some(mv_cfg) = parameters_for_debug.materialized_view.clone() {
+        let base_name =
+            ensure_mv_prefix_on_last_ident(&mv_cfg.name.clone().unwrap_or_else(|| table.clone()));
+        let mut hash_source = parameters_for_debug.clone();
+        hash_source.materialized_view = None;
+        let hash_input = serde_json::to_string(&hash_source).unwrap_or_default();
+        let mut hasher = Sha256::new();
+        hasher.update(hash_input.as_bytes());
+        let digest = hasher.finalize();
+        let mut hash_hex = hex::encode(digest);
+        if hash_hex.len() > 16 {
+            hash_hex.truncate(16);
+        }
+        let candidate_name = format!("{}_{}", base_name, hash_hex);
+        if validate_identifier(&candidate_name, true) {
+            precomputed_mv_name = Some(candidate_name.clone());
+            if mv_cfg.enabled.unwrap_or(false) {
+                let mut conn_for_ops = db::get_async_connection().await;
+                let exists_sql = format!(
+                    "SELECT row_to_json(t) FROM (SELECT to_regclass('{}') IS NOT NULL AS exists) t",
+                    candidate_name
+                );
+                let mv_exists = match diesel::dsl::sql_query(&exists_sql)
+                    .load::<DynamicResult>(&mut conn_for_ops)
+                    .await
+                {
+                    Ok(rows) => rows
+                        .into_iter()
+                        .filter_map(|r| r.row_to_json)
+                        .next()
+                        .and_then(|v| v.get("exists").and_then(|b| b.as_bool()))
+                        .unwrap_or(false),
+                    Err(_) => false,
+                };
+                if mv_exists {
+                    let final_query = format!(
+                        "SELECT row_to_json(t) FROM (SELECT * FROM {}) t",
+                        candidate_name
+                    );
+                    if EnvConfig::default().debug {
+                        log::debug!("FINAL_QUERY (MV): {}", final_query);
+                        if let Err(e) = write_query_to_debug_log(&final_query, &table, false).await
+                        {
+                            log::warn!("Failed to write debug final query log: {}", e);
+                        }
+                    }
+                    let mut conn = db::get_async_connection().await;
+                    let results = match diesel::dsl::sql_query(&final_query)
+                        .load::<DynamicResult>(&mut conn)
+                        .await
+                    {
+                        Ok(results) => results,
+                        Err(e) => {
+                            return HttpResponse::InternalServerError().json(ApiResponse {
+                                success: false,
+                                message: format!("Query execution error: {}", e),
+                                count: 0,
+                                data: vec![],
+                            });
+                        }
+                    };
+                    let data: Vec<serde_json::Value> =
+                        results.into_iter().filter_map(|r| r.row_to_json).collect();
+                    if !no_caching {
+                        cache.insert_with_ttl(
+                            cache_key.clone(),
+                            serde_json::Value::Array(data.clone()),
+                            std::time::Duration::from_millis(EnvConfig::default().find_cache_ttl_ms),
+                        );
+                        cache.add_index_key(&cache_prefix, &cache_key);
+                    }
+                    return HttpResponse::Ok().json(ApiResponse {
+                        success: true,
+                        message: format!(
+                            "Filter operation completed for table: {} (using materialized view)",
+                            &table
+                        ),
+                        count: data.len() as i32,
+                        data,
+                    });
+                }
+            }
+        }
+    }
     // Create SQLConstructor with organization_id if available
     let mut sql_constructor = SQLConstructor::new(parameters, table.clone(), is_root, timezone);
     if let Some(org_id) = organization_id {
@@ -1485,7 +1592,506 @@ pub async fn get_by_filter(
     }
 
     log::debug!("@@@parameters: {:?}", parameters_for_debug.clone());
-    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    let mut use_mv = false;
+    let mut mv_name = String::new();
+    if let Some(mv) = parameters_for_debug.materialized_view.clone() {
+        let candidate_name = precomputed_mv_name.clone().unwrap_or_else(|| {
+            let base_name =
+                ensure_mv_prefix_on_last_ident(&mv.name.clone().unwrap_or_else(|| table.clone()));
+            let mut hash_src = parameters_for_debug.clone();
+            hash_src.materialized_view = None;
+            let input = serde_json::to_string(&hash_src).unwrap_or_default();
+            let mut hasher = Sha256::new();
+            hasher.update(input.as_bytes());
+            let digest = hasher.finalize();
+            let mut hash_hex = hex::encode(digest);
+            if hash_hex.len() > 16 {
+                hash_hex.truncate(16);
+            }
+            format!("{}_{}", base_name, hash_hex)
+        });
+        if validate_identifier(&candidate_name, true) {
+            let mut conn_for_ops = db::get_async_connection().await;
+            let exists_sql = format!(
+                "SELECT row_to_json(t) FROM (SELECT to_regclass('{}') IS NOT NULL AS exists) t",
+                candidate_name
+            );
+            let mv_exists = match diesel::dsl::sql_query(&exists_sql)
+                .load::<DynamicResult>(&mut conn_for_ops)
+                .await
+            {
+                Ok(rows) => rows
+                    .into_iter()
+                    .filter_map(|r| r.row_to_json)
+                    .next()
+                    .and_then(|v| v.get("exists").and_then(|b| b.as_bool()))
+                    .unwrap_or(false),
+                Err(_) => false,
+            };
+            if mv.create.unwrap_or(false) {
+                if !mv_exists {
+                    let create_sql = format!(
+                        "CREATE MATERIALIZED VIEW IF NOT EXISTS {} AS {}",
+                        candidate_name, query
+                    );
+                    log::debug!("MV CREATE SQL: {}", create_sql);
+                    let _ = sql_query(&create_sql).execute(&mut conn_for_ops).await;
+                }
+                if let Some(idx_str) = mv.index_column_name.clone() {
+                    let s = idx_str.trim();
+                    let (maybe_name, cols_inside) = if let Some(paren_start) = s.find('(') {
+                        if let Some(paren_end) = s.rfind(')') {
+                            let nm = s[..paren_start].trim();
+                            let cols = s[paren_start + 1..paren_end].trim();
+                            (
+                                if nm.is_empty() {
+                                    None
+                                } else {
+                                    Some(nm.to_string())
+                                },
+                                cols.to_string(),
+                            )
+                        } else {
+                            return HttpResponse::BadRequest().json(ApiResponse {
+                                success: false,
+                                message: "Invalid materialized_view.index_column_name: missing ')'"
+                                    .to_string(),
+                                count: 0,
+                                data: vec![],
+                            });
+                        }
+                    } else {
+                        (None, s.to_string())
+                    };
+                    let rel_name_str = if let Some((_, r)) = candidate_name.split_once('.') {
+                        r.to_string()
+                    } else {
+                        candidate_name.clone()
+                    };
+                    let name_part = maybe_name.unwrap_or_else(|| format!("{}_uniq", rel_name_str));
+                    let cols_part = if cols_inside.trim_start().starts_with('(')
+                        && cols_inside.trim_end().ends_with(')')
+                    {
+                        cols_inside.clone()
+                    } else {
+                        format!("({})", cols_inside)
+                    };
+                    if !validate_identifier(&name_part, false)
+                        || !cols_part.chars().all(|c| {
+                            c.is_ascii_alphanumeric()
+                                || c == '_'
+                                || c == '"'
+                                || c == ' '
+                                || c == ','
+                                || c == '('
+                                || c == ')'
+                                || c == '.'
+                        })
+                    {
+                        return HttpResponse::BadRequest().json(ApiResponse {
+                            success: false,
+                            message:
+                                "Invalid materialized_view.index_column_name format or identifier"
+                                    .to_string(),
+                            count: 0,
+                            data: vec![],
+                        });
+                    }
+                    let idx_sql = format!(
+                        "CREATE UNIQUE INDEX IF NOT EXISTS {} ON {} {}",
+                        name_part, candidate_name, cols_part
+                    );
+                    log::debug!("MV UNIQUE INDEX SQL: {}", idx_sql);
+                    match sql_query(&idx_sql).execute(&mut conn_for_ops).await {
+                        Ok(_) => {
+                            let (schema_name, rel_name) =
+                                if let Some((sch, rel)) = candidate_name.split_once('.') {
+                                    (sch.to_string(), rel.to_string())
+                                } else {
+                                    ("public".to_string(), candidate_name.clone())
+                                };
+                            let uniq_sql = format!(
+                                "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
+                                schema_name, rel_name
+                            );
+                            let has_unique = match diesel::dsl::sql_query(&uniq_sql)
+                                .load::<DynamicResult>(&mut conn_for_ops)
+                                .await
+                            {
+                                Ok(rows) => rows
+                                    .into_iter()
+                                    .filter_map(|r| r.row_to_json)
+                                    .next()
+                                    .and_then(|v| v.get("has_unique").and_then(|b| b.as_bool()))
+                                    .unwrap_or(false),
+                                Err(_) => false,
+                            };
+                            if !has_unique {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: format!(
+                                        "Materialized view {} requires a UNIQUE index to support REFRESH CONCURRENTLY. Tried to create index {} {}; verify the columns uniquely identify rows or create the index manually.",
+                                        candidate_name, name_part, cols_part
+                                    ),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                        Err(e) => {
+                            return HttpResponse::BadRequest().json(ApiResponse {
+                                success: false,
+                                message: format!(
+                                    "Failed to create UNIQUE index {} on {} {}: {}",
+                                    name_part, candidate_name, cols_part, e
+                                ),
+                                count: 0,
+                                data: vec![],
+                            });
+                        }
+                    }
+                } else {
+                    let (schema_name, rel_name) =
+                        if let Some((sch, rel)) = candidate_name.split_once('.') {
+                            (sch.to_string(), rel.to_string())
+                        } else {
+                            ("public".to_string(), candidate_name.clone())
+                        };
+                    let uniq_sql = format!(
+                        "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
+                        schema_name, rel_name
+                    );
+                    let has_unique = match diesel::dsl::sql_query(&uniq_sql)
+                        .load::<DynamicResult>(&mut conn_for_ops)
+                        .await
+                    {
+                        Ok(rows) => rows
+                            .into_iter()
+                            .filter_map(|r| r.row_to_json)
+                            .next()
+                            .and_then(|v| v.get("has_unique").and_then(|b| b.as_bool()))
+                            .unwrap_or(false),
+                        Err(_) => false,
+                    };
+                    if !has_unique {
+                        return HttpResponse::BadRequest().json(ApiResponse {
+                            success: false,
+                            message: format!(
+                                "Materialized view {} requires a UNIQUE index to support REFRESH CONCURRENTLY. Provide materialized_view.index_column_name like \"{}_uniq (id)\" or create the index manually.",
+                                candidate_name, rel_name
+                            ),
+                            count: 0,
+                            data: vec![],
+                        });
+                    }
+                }
+                if let Some(strategy) = mv.refresh_strategy.clone() {
+                    match strategy.r#type.as_str() {
+                        "scheduled" => {
+                            if let Some(cron) = strategy.cron.clone() {
+                                let _ = sql_query("CREATE EXTENSION IF NOT EXISTS pg_cron;")
+                                    .execute(&mut conn_for_ops)
+                                    .await;
+                                if !mv.create.unwrap_or(false) {
+                                    let (schema_name, rel_name) =
+                                        if let Some((sch, rel)) = candidate_name.split_once('.') {
+                                            (sch.to_string(), rel.to_string())
+                                        } else {
+                                            ("public".to_string(), candidate_name.clone())
+                                        };
+                                    let uniq_sql = format!(
+                                        "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
+                                        schema_name, rel_name
+                                    );
+                                    let has_unique = match diesel::dsl::sql_query(&uniq_sql)
+                                        .load::<DynamicResult>(&mut conn_for_ops)
+                                        .await
+                                    {
+                                        Ok(rows) => rows
+                                            .into_iter()
+                                            .filter_map(|r| r.row_to_json)
+                                            .next()
+                                            .and_then(|v| {
+                                                v.get("has_unique").and_then(|b| b.as_bool())
+                                            })
+                                            .unwrap_or(false),
+                                        Err(_) => false,
+                                    };
+                                    if !has_unique {
+                                        return HttpResponse::BadRequest().json(ApiResponse {
+                                            success: false,
+                                            message: format!("Materialized view {} requires a UNIQUE index to support REFRESH CONCURRENTLY. Provide materialized_view.index_column_name like \"{}_uniq (id)\" or create the index manually.", candidate_name, rel_name),
+                                            count: 0,
+                                            data: vec![],
+                                        });
+                                    }
+                                }
+                                let proc_name =
+                                    if let Some((schema, rel)) = candidate_name.split_once('.') {
+                                        format!("{}.udp_refresh_{}", schema, rel)
+                                    } else {
+                                        format!("udp_refresh_{}", candidate_name)
+                                    };
+                                if validate_identifier(&proc_name, true) {
+                                    let mut lk_hasher = Sha256::new();
+                                    lk_hasher.update(candidate_name.as_bytes());
+                                    let lk_digest = lk_hasher.finalize();
+                                    let mut lk_bytes = [0u8; 8];
+                                    lk_bytes.copy_from_slice(&lk_digest[..8]);
+                                    let lock_key = i64::from_be_bytes(lk_bytes);
+                                    let proc_sql = format!(
+                                        "CREATE OR REPLACE PROCEDURE {}() LANGUAGE plpgsql AS $$ BEGIN IF pg_try_advisory_lock({}) THEN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; PERFORM pg_advisory_unlock({}); END IF; END; $$;",
+                                        proc_name, lock_key, candidate_name, lock_key
+                                    );
+                                    if EnvConfig::default().debug {
+                                        log::debug!("MV REFRESH PROCEDURE SQL: {}", proc_sql);
+                                    }
+                                    let _ = sql_query(&proc_sql).execute(&mut conn_for_ops).await;
+                                    let job_name =
+                                        format!("refresh_{}", candidate_name.replace('.', "_"));
+                                    let schedule_sql = format!(
+                                        "SELECT cron.schedule('{}', '{}', $$ CALL {}(); $$);",
+                                        job_name, cron, proc_name
+                                    );
+                                    let _ =
+                                        sql_query(&schedule_sql).execute(&mut conn_for_ops).await;
+                                }
+                            }
+                        }
+                        "trigger" | "incremental" => {
+                            let base_fn = format!("fn_trg_refresh_{}", Ulid::new());
+                            let fn_name = if let Some((schema, _)) = candidate_name.split_once('.')
+                            {
+                                format!("{}.{}", schema, base_fn)
+                            } else {
+                                base_fn.clone()
+                            };
+                            if validate_identifier(&fn_name, true) {
+                                if !mv.create.unwrap_or(false) {
+                                    let (schema_name, rel_name) =
+                                        if let Some((sch, rel)) = candidate_name.split_once('.') {
+                                            (sch.to_string(), rel.to_string())
+                                        } else {
+                                            ("public".to_string(), candidate_name.clone())
+                                        };
+                                    let uniq_sql = format!(
+                                        "SELECT row_to_json(t) FROM (SELECT EXISTS(SELECT 1 FROM pg_index i JOIN pg_class c ON c.oid=i.indrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='{}' AND c.relname='{}' AND i.indisunique) AS has_unique) t",
+                                        schema_name, rel_name
+                                    );
+                                    let has_unique = match diesel::dsl::sql_query(&uniq_sql)
+                                        .load::<DynamicResult>(&mut conn_for_ops)
+                                        .await
+                                    {
+                                        Ok(rows) => rows
+                                            .into_iter()
+                                            .filter_map(|r| r.row_to_json)
+                                            .next()
+                                            .and_then(|v| {
+                                                v.get("has_unique").and_then(|b| b.as_bool())
+                                            })
+                                            .unwrap_or(false),
+                                        Err(_) => false,
+                                    };
+                                    if !has_unique {
+                                        return HttpResponse::BadRequest().json(ApiResponse {
+                                            success: false,
+                                            message: format!("Materialized view {} requires a UNIQUE index to support REFRESH CONCURRENTLY. Provide materialized_view.index_column_name like \"{}_uniq (id)\" or create the index manually.", candidate_name, rel_name),
+                                            count: 0,
+                                            data: vec![],
+                                        });
+                                    }
+                                }
+                                let fn_sql = format!(
+                                    "CREATE OR REPLACE FUNCTION {}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; RETURN NULL; END; $$;",
+                                    fn_name, candidate_name
+                                );
+                                let _ = sql_query(&fn_sql).execute(&mut conn_for_ops).await;
+                            }
+                            if let Some(trig) = strategy.trigger.clone() {
+                                let timing = trig
+                                    .timing
+                                    .unwrap_or_else(|| "AFTER".to_string())
+                                    .trim()
+                                    .to_uppercase();
+                                if timing != "BEFORE" && timing != "AFTER" && timing != "INSTEAD OF"
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid trigger timing".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                let level = trig
+                                    .level
+                                    .unwrap_or_else(|| "STATEMENT".to_string())
+                                    .trim()
+                                    .to_uppercase();
+                                if level != "ROW" && level != "STATEMENT" {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid trigger level".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                let events_vec = trig.event.unwrap_or_else(|| {
+                                    vec![
+                                        "INSERT".to_string(),
+                                        "UPDATE".to_string(),
+                                        "DELETE".to_string(),
+                                    ]
+                                });
+                                let mut event_parts: Vec<String> = Vec::new();
+                                for e in events_vec {
+                                    let up = e.trim().to_uppercase();
+                                    if up == "INSERT"
+                                        || up == "UPDATE"
+                                        || up == "DELETE"
+                                        || up == "TRUNCATE"
+                                    {
+                                        event_parts.push(up);
+                                    } else {
+                                        return HttpResponse::BadRequest().json(ApiResponse {
+                                            success: false,
+                                            message: "Invalid trigger event".to_string(),
+                                            count: 0,
+                                            data: vec![],
+                                        });
+                                    }
+                                }
+                                let events = if event_parts.is_empty() {
+                                    "INSERT OR UPDATE OR DELETE".to_string()
+                                } else {
+                                    event_parts.join(" OR ")
+                                };
+                                let trig_name = trig
+                                    .name
+                                    .unwrap_or_else(|| format!("trg_refresh_{}", Ulid::new()));
+                                let target_table = trig.table.unwrap_or_else(|| table.clone());
+                                let mut referenced_table = trig.referenced_table;
+                                let constraint = trig.constraint.unwrap_or(false);
+                                let deferrable = trig.deferrable.unwrap_or(false);
+                                let initially_deferred = trig.initially_deferred.unwrap_or(false);
+                                if constraint && referenced_table.is_none() {
+                                    referenced_table = Some(target_table.clone());
+                                }
+                                if validate_identifier(&trig_name, false)
+                                    && validate_identifier(&target_table, true)
+                                {
+                                    if let Some(ref rt) = referenced_table {
+                                        if !validate_identifier(rt, true) {
+                                            return HttpResponse::BadRequest().json(ApiResponse {
+                                                success: false,
+                                                message: "Invalid referenced table".to_string(),
+                                                count: 0,
+                                                data: vec![],
+                                            });
+                                        }
+                                    }
+                                    let mut trig_sql = String::new();
+                                    if constraint {
+                                        trig_sql.push_str("CREATE OR REPLACE CONSTRAINT TRIGGER ");
+                                    } else {
+                                        trig_sql.push_str("CREATE OR REPLACE TRIGGER ");
+                                    }
+                                    trig_sql.push_str(&trig_name);
+                                    trig_sql.push(' ');
+                                    trig_sql.push_str(&timing);
+                                    trig_sql.push(' ');
+                                    trig_sql.push_str(&events);
+                                    trig_sql.push_str(" ON ");
+                                    trig_sql.push_str(&target_table);
+                                    if let Some(rt) = referenced_table {
+                                        trig_sql.push_str(" FROM ");
+                                        trig_sql.push_str(&rt);
+                                    }
+                                    if constraint {
+                                        if deferrable && initially_deferred {
+                                            trig_sql.push_str(" DEFERRABLE INITIALLY DEFERRED");
+                                        } else if deferrable {
+                                            trig_sql.push_str(" DEFERRABLE");
+                                        } else {
+                                            trig_sql.push_str(" NOT DEFERRABLE");
+                                        }
+                                    }
+                                    if let Some(tr) = trig.transition_relations {
+                                        let mut parts: Vec<String> = Vec::new();
+                                        if let Some(ot) = tr.old_table {
+                                            let alias = ot.trim().to_string();
+                                            if !validate_identifier(&alias, false) {
+                                                return HttpResponse::BadRequest().json(ApiResponse {
+                                                    success: false,
+                                                    message: "Invalid old_table alias".to_string(),
+                                                    count: 0,
+                                                    data: vec![],
+                                                });
+                                            }
+                                            parts.push(format!("OLD TABLE AS {}", alias));
+                                        }
+                                        if let Some(nt) = tr.new_table {
+                                            let alias = nt.trim().to_string();
+                                            if !validate_identifier(&alias, false) {
+                                                return HttpResponse::BadRequest().json(ApiResponse {
+                                                    success: false,
+                                                    message: "Invalid new_table alias".to_string(),
+                                                    count: 0,
+                                                    data: vec![],
+                                                });
+                                            }
+                                            parts.push(format!("NEW TABLE AS {}", alias));
+                                        }
+                                        if !parts.is_empty() {
+                                            trig_sql.push_str(" REFERENCING ");
+                                            trig_sql.push_str(&parts.join(" "));
+                                        }
+                                    }
+                                    trig_sql.push_str(" FOR EACH ");
+                                    trig_sql.push_str(&level);
+                                    if let Some(cond) = trig.condition {
+                                        let c = cond.trim();
+                                        if !c.is_empty() {
+                                            trig_sql.push_str(" WHEN ( ");
+                                            trig_sql.push_str(c);
+                                            trig_sql.push_str(" )");
+                                        }
+                                    }
+                                    trig_sql.push_str(" EXECUTE FUNCTION ");
+                                    trig_sql.push_str(&fn_name);
+                                    trig_sql.push_str("();");
+                                    let _ = sql_query(&trig_sql).execute(&mut conn_for_ops).await;
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+                return HttpResponse::Ok().json(ApiResponse {
+                    success: true,
+                    message: format!("Materialized view prepared: {}", candidate_name),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+            if !mv.create.unwrap_or(false) {
+                // For existing MVs, only validate presence of a UNIQUE index; do not create it.
+            }
+            mv_name = candidate_name;
+            use_mv = mv.enabled.unwrap_or(false) && mv_exists;
+        }
+    }
+    let final_query = if use_mv {
+        format!("SELECT row_to_json(t) FROM (SELECT * FROM {}) t", mv_name)
+    } else {
+        format!("SELECT row_to_json(t) FROM ({}) t", query)
+    };
+
+    if EnvConfig::default().debug {
+        log::debug!("FINAL_QUERY: {}", final_query);
+        if let Err(e) = write_query_to_debug_log(&final_query, &table, false).await {
+            log::warn!("Failed to write debug final query log: {}", e);
+        }
+    }
 
     let results = match diesel::dsl::sql_query(&final_query)
         .load::<DynamicResult>(&mut conn)
@@ -1522,6 +2128,241 @@ pub async fn get_by_filter(
         message: format!("Filter operation completed for table: {}", &table),
         count: data.len() as i32,
         data,
+    })
+}
+
+pub async fn unsafe_select_query(
+    _auth: HttpRequest,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    // if let Err(resp) = ensure_root_access(&auth) {
+    //     return resp;
+    // }
+
+    let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    log::debug!("@@@unsafe_query_raw: {:?}", unsafe_query_raw);
+
+    let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if contains_dangerous_removal_statements(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let cleaned = strip_strings_and_comments(unsafe_query_for_validation);
+    let statements: Vec<&str> = cleaned
+        .split(';')
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+        .collect();
+    if statements.len() != 1 {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Only one SELECT statement is allowed".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let s_upper = statements[0].to_uppercase();
+    let mut first_token = String::new();
+    for c in s_upper.chars() {
+        if c.is_ascii_alphabetic() {
+            first_token.push(c);
+        } else {
+            if !first_token.is_empty() {
+                break;
+            }
+        }
+    }
+    if !(first_token == "SELECT" || first_token == "WITH") {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Only SELECT statements are allowed".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let tokens: Vec<&str> = s_upper
+        .split(|c: char| !c.is_ascii_alphabetic())
+        .filter(|t| !t.is_empty())
+        .collect();
+    if tokens.iter().any(|t| {
+        *t == "INSERT"
+            || *t == "UPDATE"
+            || *t == "DELETE"
+            || *t == "TRUNCATE"
+            || *t == "DROP"
+            || *t == "ALTER"
+            || *t == "CREATE"
+            || *t == "GRANT"
+            || *t == "REVOKE"
+            || *t == "CALL"
+            || *t == "DO"
+            || *t == "BEGIN"
+            || *t == "COMMIT"
+    }) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Query contains non-SELECT operations".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_select_limits(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(unsafe_query_for_validation)
+        .trim()
+        .trim_end_matches(';')
+        .to_string();
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", unsafe_query);
+    let mut conn = db::get_async_connection().await;
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .collect();
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Unsafe select query executed".to_string(),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+pub async fn unsafe_transaction_query(
+    auth: HttpRequest,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    let unsafe_sql = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_sql) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if contains_dangerous_removal_statements(unsafe_sql) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_update_has_where(unsafe_sql) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_sql) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let normalized = normalize_whitespace_outside_strings(unsafe_sql)
+        .trim()
+        .trim_end_matches(';')
+        .to_string();
+    let client = match create_connection().await {
+        Ok(c) => c,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to connect to database: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    if let Err(e) = client.batch_execute("BEGIN").await {
+        return HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to start transaction: {}", e),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let exec_result = client.batch_execute(&normalized).await;
+    if exec_result.is_err() {
+        let _ = client.batch_execute("ROLLBACK").await;
+        return HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!(
+                "Query execution error: {}",
+                exec_result.err().map(|e| e.to_string()).unwrap_or_default()
+            ),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = client.batch_execute("COMMIT").await {
+        let _ = client.batch_execute("ROLLBACK").await;
+        return HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to commit transaction: {}", e),
+            count: 0,
+            data: vec![],
+        });
+    }
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Transaction executed".to_string(),
+        count: 0,
+        data: vec![],
     })
 }
 
@@ -1583,6 +2424,33 @@ pub async fn count_by_filter(
             None
         }
     };
+    let controller_type = extensions.get::<Option<String>>();
+    let is_root_controller = controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false);
+    if !is_root_controller
+        && (table == "pg_matviews"
+            || table == "procedures"
+            || table == "triggers"
+            || table == "functions")
+    {
+        return HttpResponse::Forbidden().json(ApiResponse {
+            success: false,
+            message: "Access denied: root privileges required".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if is_root_controller {
+        match table.as_str() {
+            "pg_matviews" => return exec_pg_matviews_count(parameters.clone()).await,
+            "procedures" => return exec_procedures_count(parameters.clone()).await,
+            "triggers" => return exec_triggers_count(parameters.clone()).await,
+            "functions" => return exec_functions_count(parameters.clone()).await,
+            _ => {}
+        }
+    }
 
     let validation = Validation::new(&parameters, &table);
     let ApiResponse {
@@ -2079,6 +2947,7 @@ pub async fn download_file_by_id(
             distinct_by: None,
             timezone: None,
             time_format: "HH24:MI".to_string(),
+            materialized_view: None,
         };
         let mut sql_constructor = SQLConstructor::new(
             parameters.clone(),
@@ -2201,6 +3070,7 @@ pub async fn download_file_by_id(
             distinct_by: None,
             timezone: None,
             time_format: "HH24:MI".to_string(),
+            materialized_view: None,
         };
         let mut sql_constructor = SQLConstructor::new(
             parameters.clone(),
@@ -2416,6 +3286,7 @@ pub async fn download_file_by_id(
                 distinct_by: None,
                 timezone: None,
                 time_format: "HH24:MI".to_string(),
+                materialized_view: None,
             };
             let mut sql_constructor = SQLConstructor::new(
                 parameters.clone(),
@@ -3654,13 +4525,13 @@ async fn refresh_materialized_view_once(mv_name: String) -> Result<(), ApiError>
 }
 /// Schema verification endpoint
 /// Verifies that a table exists and optionally checks if specified fields exist in the table
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, ToSchema)]
 pub struct SchemaVerificationRequest {
     pub entity: String,
     pub fields: Option<Vec<String>>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct SchemaVerificationResponse {
     pub exists: bool,
     pub available_fields: Vec<String>,
@@ -3704,5 +4575,2920 @@ pub async fn verify_schema(
         exists: true,
         available_fields,
         missing_fields,
+    })
+}
+
+pub async fn create_materialized_view(
+    auth: HttpRequest,
+    table: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let table_name_raw = table.into_inner();
+    let table_name = ensure_mv_prefix_on_last_ident(&table_name_raw);
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&table_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid materialized view name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    if let Err(e) = validate_query_safety(unsafe_query_raw.as_str()) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(&unsafe_query_raw);
+    let sql = format!(
+        "CREATE MATERIALIZED VIEW IF NOT EXISTS {} AS {}",
+        table_name, unsafe_query
+    );
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => {
+            if let Some(idx_val) = request_body
+                .get("index_column_name")
+                .and_then(|v| v.as_str())
+                .or_else(|| {
+                    request_body
+                        .get("materialized_view")
+                        .and_then(|v| v.get("index_column_name"))
+                        .and_then(|v| v.as_str())
+                })
+            {
+                let s = idx_val.trim();
+                if let Some(paren_start) = s.find('(') {
+                    if let Some(paren_end) = s.rfind(')') {
+                        let name_part = s[..paren_start].trim();
+                        let cols_part = &s[paren_start..=paren_end];
+                        if validate_identifier(name_part, false)
+                            && cols_part.chars().all(|c| {
+                                c.is_ascii_alphanumeric()
+                                    || c == '_'
+                                    || c == '"'
+                                    || c == ' '
+                                    || c == ','
+                                    || c == '('
+                                    || c == ')'
+                                    || c == '.'
+                            })
+                        {
+                            let idx_sql = format!(
+                                "CREATE UNIQUE INDEX IF NOT EXISTS {} ON {} {}",
+                                name_part, table_name, cols_part
+                            );
+                            let _ = sql_query(&idx_sql).execute(&mut conn).await;
+                        }
+                    }
+                }
+            }
+            if let Some(strategy_val) = request_body.get("refresh_strategy") {
+                if let Some(obj) = strategy_val.as_object() {
+                    let ty = obj
+                        .get("type")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or_default()
+                        .to_string();
+                    if ty == "scheduled" {
+                        if let Some(cron) = obj.get("cron").and_then(|v| v.as_str()) {
+                            let _ = sql_query("CREATE EXTENSION IF NOT EXISTS pg_cron;")
+                                .execute(&mut conn)
+                                .await;
+                            let proc_name = if let Some((schema, rel)) = table_name.split_once('.')
+                            {
+                                format!("{}.udp_refresh_{}", schema, rel)
+                            } else {
+                                format!("udp_refresh_{}", table_name)
+                            };
+                            if validate_identifier(&proc_name, true) {
+                                let proc_sql = format!(
+                                    "CREATE OR REPLACE PROCEDURE {}() LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; END; $$;",
+                                    proc_name, table_name
+                                );
+                                let _ = sql_query(&proc_sql).execute(&mut conn).await;
+                                let job_name = format!("refresh_{}", table_name.replace('.', "_"));
+                                let schedule_sql = format!(
+                                    "SELECT cron.schedule('{}', '{}', $$ CALL {}(); $$);",
+                                    job_name, cron, proc_name
+                                );
+                                let _ = sql_query(&schedule_sql).execute(&mut conn).await;
+                            }
+                        }
+                    } else if ty == "trigger" || ty == "incremental" {
+                        let base_fn = format!("fn_trg_refresh_{}", Ulid::new());
+                        let fn_name = if let Some((schema, _)) = table_name.split_once('.') {
+                            format!("{}.{}", schema, base_fn)
+                        } else {
+                            base_fn.clone()
+                        };
+                        if validate_identifier(&fn_name, true) {
+                            let fn_sql = format!(
+                                "CREATE OR REPLACE FUNCTION {}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN REFRESH MATERIALIZED VIEW CONCURRENTLY {}; RETURN NULL; END; $$;",
+                                fn_name, table_name
+                            );
+                            let _ = sql_query(&fn_sql).execute(&mut conn).await;
+                        }
+                        if let Some(trig_val) = obj.get("trigger").and_then(|v| v.as_object()) {
+                            let timing = trig_val
+                                .get("timing")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("AFTER")
+                                .trim()
+                                .to_uppercase();
+                            if timing != "BEFORE" && timing != "AFTER" && timing != "INSTEAD OF" {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: "Invalid trigger timing".to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                            let level = trig_val
+                                .get("level")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("STATEMENT")
+                                .trim()
+                                .to_uppercase();
+                            if level != "ROW" && level != "STATEMENT" {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: "Invalid trigger level".to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                            let events_vec: Vec<String> = if let Some(arr) = trig_val
+                                .get("event")
+                                .and_then(|v| v.as_array())
+                                .or_else(|| trig_val.get("events").and_then(|v| v.as_array()))
+                            {
+                                arr.iter()
+                                    .filter_map(|v| v.as_str().map(|s| s.to_string()))
+                                    .collect()
+                            } else {
+                                vec![
+                                    "INSERT".to_string(),
+                                    "UPDATE".to_string(),
+                                    "DELETE".to_string(),
+                                ]
+                            };
+                            let mut event_parts: Vec<String> = Vec::new();
+                            for e in events_vec {
+                                let up = e.trim().to_uppercase();
+                                if up == "INSERT"
+                                    || up == "UPDATE"
+                                    || up == "DELETE"
+                                    || up == "TRUNCATE"
+                                {
+                                    event_parts.push(up);
+                                } else {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid trigger event".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                            }
+                            let events = if event_parts.is_empty() {
+                                "INSERT OR UPDATE OR DELETE".to_string()
+                            } else {
+                                event_parts.join(" OR ")
+                            };
+                            let trig_name = trig_val
+                                .get("name")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.to_string())
+                                .unwrap_or_else(|| format!("trg_refresh_{}", Ulid::new()));
+                            let target_table = trig_val
+                                .get("table")
+                                .and_then(|v| v.as_str())
+                                .unwrap_or("")
+                                .to_string();
+                            let referenced_table = trig_val
+                                .get("referenced_table")
+                                .and_then(|v| v.as_str())
+                                .map(|s| s.trim().to_string());
+                            let constraint = trig_val
+                                .get("constraint")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false);
+                            let deferrable = trig_val
+                                .get("deferrable")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false);
+                            let initially_deferred = trig_val
+                                .get("initially_deferred")
+                                .and_then(|v| v.as_bool())
+                                .unwrap_or(false);
+                            if validate_identifier(&trig_name, false)
+                                && validate_identifier(&target_table, true)
+                            {
+                                if let Some(ref rt) = referenced_table {
+                                    if !validate_identifier(rt, true) {
+                                        return HttpResponse::BadRequest().json(ApiResponse {
+                                            success: false,
+                                            message: "Invalid referenced table".to_string(),
+                                            count: 0,
+                                            data: vec![],
+                                        });
+                                    }
+                                }
+                                let mut trig_sql = String::new();
+                                if constraint {
+                                    trig_sql.push_str("CREATE OR REPLACE CONSTRAINT TRIGGER ");
+                                } else {
+                                    trig_sql.push_str("CREATE OR REPLACE TRIGGER ");
+                                }
+                                trig_sql.push_str(&trig_name);
+                                trig_sql.push(' ');
+                                trig_sql.push_str(&timing);
+                                trig_sql.push(' ');
+                                trig_sql.push_str(&events);
+                                trig_sql.push_str(" ON ");
+                                trig_sql.push_str(&target_table);
+                                if let Some(rt) = referenced_table {
+                                    trig_sql.push_str(" FROM ");
+                                    trig_sql.push_str(&rt);
+                                }
+                                if constraint {
+                                    if deferrable && initially_deferred {
+                                        trig_sql.push_str(" DEFERRABLE INITIALLY DEFERRED");
+                                    } else if deferrable {
+                                        trig_sql.push_str(" DEFERRABLE");
+                                    } else {
+                                        trig_sql.push_str(" NOT DEFERRABLE");
+                                    }
+                                }
+                                if let Some(tr) = trig_val
+                                    .get("transition_relations")
+                                    .and_then(|v| v.as_object())
+                                {
+                                    let mut parts: Vec<String> = Vec::new();
+                                    if let Some(ot) = tr.get("old_table").and_then(|v| v.as_str()) {
+                                        let alias = ot.trim().to_string();
+                                        if !validate_identifier(&alias, false) {
+                                            return HttpResponse::BadRequest().json(ApiResponse {
+                                                success: false,
+                                                message: "Invalid old_table alias".to_string(),
+                                                count: 0,
+                                                data: vec![],
+                                            });
+                                        }
+                                        parts.push(format!("OLD TABLE AS {}", alias));
+                                    }
+                                    if let Some(nt) = tr.get("new_table").and_then(|v| v.as_str()) {
+                                        let alias = nt.trim().to_string();
+                                        if !validate_identifier(&alias, false) {
+                                            return HttpResponse::BadRequest().json(ApiResponse {
+                                                success: false,
+                                                message: "Invalid new_table alias".to_string(),
+                                                count: 0,
+                                                data: vec![],
+                                            });
+                                        }
+                                        parts.push(format!("NEW TABLE AS {}", alias));
+                                    }
+                                    if !parts.is_empty() {
+                                        trig_sql.push_str(" REFERENCING ");
+                                        trig_sql.push_str(&parts.join(" "));
+                                    }
+                                }
+                                trig_sql.push_str(" FOR EACH ");
+                                trig_sql.push_str(&level);
+                                if let Some(cond) = trig_val.get("condition").and_then(|v| v.as_str())
+                                {
+                                    let c = cond.trim();
+                                    if !c.is_empty() {
+                                        trig_sql.push_str(" WHEN ( ");
+                                        trig_sql.push_str(c);
+                                        trig_sql.push_str(" )");
+                                    }
+                                }
+                                trig_sql.push_str(" EXECUTE FUNCTION ");
+                                trig_sql.push_str(&fn_name);
+                                trig_sql.push_str("();");
+                                let _ = sql_query(&trig_sql).execute(&mut conn).await;
+                            }
+                        }
+                    }
+                }
+            }
+            HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: "Materialized view created".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!(
+                "Failed to create materialized view: {}",
+                format_diesel_error(&e)
+            ),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn create_procedure(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let procedure_name_raw = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&procedure_name_raw, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid procedure name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let procedure_name = if procedure_name_raw.starts_with("udp_") {
+        procedure_name_raw
+    } else {
+        format!("udp_{}", procedure_name_raw)
+    };
+    let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if contains_dangerous_removal_statements(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_select_limits(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_update_has_where(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(unsafe_query_for_validation);
+    let args_signature = if let Some(args_val) = request_body.get("arguments") {
+        match args_val {
+            Value::Array(arr) => {
+                if arr.is_empty() {
+                    "()".to_string()
+                } else {
+                    let mut parts: Vec<String> = Vec::new();
+                    for item in arr {
+                        match item {
+                            Value::String(spec) => {
+                                let s = spec.trim();
+                                if s.is_empty()
+                                    || !s.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument specification".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(s.to_string());
+                            }
+                            Value::Object(obj) => {
+                                let name = obj
+                                    .get("name")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                let ty = obj
+                                    .get("type")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                if name.is_empty()
+                                    || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+                                    || ty.is_empty()
+                                    || !ty.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument object".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(format!("{} {}", name, ty));
+                            }
+                            _ => {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: "Arguments must be strings or {name,type} objects"
+                                        .to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                    }
+                    format!("({})", parts.join(", "))
+                }
+            }
+            _ => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "arguments must be an array".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    } else {
+        "()".to_string()
+    };
+    let starts = unsafe_query.trim_start().to_uppercase();
+    let sql = if starts.starts_with("DECLARE") || starts.starts_with("BEGIN") {
+        format!(
+            "CREATE OR REPLACE PROCEDURE {}{} LANGUAGE plpgsql AS $$ {} $$;",
+            procedure_name, args_signature, unsafe_query
+        )
+    } else {
+        format!(
+            "CREATE OR REPLACE PROCEDURE {}{} LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
+            procedure_name, args_signature, unsafe_query
+        )
+    };
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Procedure created".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to create procedure: {}", format_diesel_error(&e)),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn create_function(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let function_name = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&function_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid function name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query_raw = match require_unsafe_query_raw(&request_body) {
+        Ok(s) => s,
+        Err(resp) => return resp,
+    };
+    let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if contains_dangerous_removal_statements(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_select_limits(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_update_has_where(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(unsafe_query_for_validation);
+    let args_signature = if let Some(args_val) = request_body.get("arguments") {
+        match args_val {
+            Value::Array(arr) => {
+                if arr.is_empty() {
+                    "()".to_string()
+                } else {
+                    let mut parts: Vec<String> = Vec::new();
+                    for item in arr {
+                        match item {
+                            Value::String(spec) => {
+                                let s = spec.trim();
+                                if s.is_empty()
+                                    || !s.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument specification".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(s.to_string());
+                            }
+                            Value::Object(obj) => {
+                                let name = obj
+                                    .get("name")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                let ty = obj
+                                    .get("type")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                if name.is_empty()
+                                    || !name.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+                                    || ty.is_empty()
+                                    || !ty.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument object".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(format!("{} {}", name, ty));
+                            }
+                            _ => {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: "Arguments must be strings or {name,type} objects"
+                                        .to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                    }
+                    format!("({})", parts.join(", "))
+                }
+            }
+            _ => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "arguments must be an array".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    } else {
+        "()".to_string()
+    };
+    let returns_type = request_body
+        .get("returns")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| "void".to_string());
+    if returns_type.is_empty()
+        || !returns_type.chars().all(|c| {
+            c.is_ascii_alphanumeric()
+                || c == '_'
+                || c == ' '
+                || c == '('
+                || c == ')'
+                || c == '['
+                || c == ']'
+                || c == ','
+                || c == '.'
+        })
+    {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid returns type".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let starts = unsafe_query.trim_start().to_uppercase();
+    let sql = if starts.starts_with("DECLARE") || starts.starts_with("BEGIN") {
+        format!(
+            "CREATE OR REPLACE FUNCTION {}{} RETURNS {} LANGUAGE plpgsql AS $$ {} $$;",
+            function_name, args_signature, returns_type, unsafe_query
+        )
+    } else {
+        format!(
+            "CREATE OR REPLACE FUNCTION {}{} RETURNS {} LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
+            function_name, args_signature, returns_type, unsafe_query
+        )
+    };
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Function created".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to create function: {}", format_diesel_error(&e)),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn call_procedure(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let raw_name = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&raw_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid procedure name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let proc_name = if raw_name.contains('.') {
+        let mut parts: Vec<&str> = raw_name.split('.').collect();
+        let last = parts.pop().unwrap();
+        let last_prefixed = if last.starts_with("udp_") {
+            last.to_string()
+        } else {
+            format!("udp_{}", last)
+        };
+        format!("{}.{}", parts.join("."), last_prefixed)
+    } else if raw_name.starts_with("udp_") {
+        raw_name
+    } else {
+        format!("udp_{}", raw_name)
+    };
+    let args_vals: Vec<Value> = match request_body.get("arguments") {
+        Some(Value::Array(arr)) => arr.clone(),
+        Some(_) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "arguments must be an array".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+        None => Vec::new(),
+    };
+    let args_sql_parts = match sanitize_values(&args_vals, false) {
+        Ok(v) => v,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Invalid args: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let args_signature = if args_sql_parts.is_empty() {
+        "()".to_string()
+    } else {
+        format!("({})", args_sql_parts.join(", "))
+    };
+    let sql = format!("CALL {}{};", proc_name, args_signature);
+    let client = match create_connection().await {
+        Ok(c) => c,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to connect to database: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    match client.query(&sql, &[]).await {
+        Ok(rows) => {
+            let mut data = Vec::new();
+            for row in rows {
+                match DatabaseTypeConverter::row_to_json(&row) {
+                    Ok(json_value) => data.push(json_value),
+                    Err(err) => {
+                        return HttpResponse::InternalServerError().json(ApiResponse {
+                            success: false,
+                            message: format!("Failed to convert result row: {}", err),
+                            count: 0,
+                            data: vec![],
+                        })
+                    }
+                }
+            }
+            HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: "Procedure executed".to_string(),
+                count: data.len() as i32,
+                data,
+            })
+        }
+        Err(e) => {
+            let mut msg = format!("Failed to execute procedure: {}", e);
+            if let Some(db_err) = e.as_db_error() {
+                {
+                    let code = db_err.code();
+                    msg = format!("{} (SQLSTATE {})", msg, code.code());
+                }
+                if let Some(detail) = db_err.detail() {
+                    msg = format!("{}; detail: {}", msg, detail);
+                }
+                if let Some(hint) = db_err.hint() {
+                    msg = format!("{}; hint: {}", msg, hint);
+                }
+            }
+            HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: msg,
+                count: 0,
+                data: vec![],
+            })
+        }
+    }
+}
+
+pub async fn call_function(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let func_name = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&func_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid function name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let args_vals: Vec<Value> = match request_body.get("arguments") {
+        Some(Value::Array(arr)) => arr.clone(),
+        Some(_) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "arguments must be an array".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+        None => Vec::new(),
+    };
+    let args_sql_parts = match sanitize_values(&args_vals, false) {
+        Ok(v) => v,
+        Err(e) => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: format!("Invalid args: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let args_signature = if args_sql_parts.is_empty() {
+        "()".to_string()
+    } else {
+        format!("({})", args_sql_parts.join(", "))
+    };
+    let client = match create_connection().await {
+        Ok(c) => c,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to connect to database: {}", e),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let try_set_query = format!("SELECT * FROM {}{}", func_name, args_signature);
+    match client.query(&try_set_query, &[]).await {
+        Ok(rows) => {
+            let mut data = Vec::new();
+            for row in rows {
+                match DatabaseTypeConverter::row_to_json(&row) {
+                    Ok(json_value) => data.push(json_value),
+                    Err(err) => {
+                        return HttpResponse::InternalServerError().json(ApiResponse {
+                            success: false,
+                            message: format!("Failed to convert result row: {}", err),
+                            count: 0,
+                            data: vec![],
+                        })
+                    }
+                }
+            }
+            return HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: "Function executed".to_string(),
+                count: data.len() as i32,
+                data,
+            });
+        }
+        Err(e) => {
+            let scalar_query = format!("SELECT {}{} AS result", func_name, args_signature);
+            match client.query(&scalar_query, &[]).await {
+                Ok(rows) => {
+                    let mut data = Vec::new();
+                    for row in rows {
+                        match DatabaseTypeConverter::row_to_json(&row) {
+                            Ok(json_value) => data.push(json_value),
+                            Err(err) => {
+                                return HttpResponse::InternalServerError().json(ApiResponse {
+                                    success: false,
+                                    message: format!("Failed to convert result row: {}", err),
+                                    count: 0,
+                                    data: vec![],
+                                })
+                            }
+                        }
+                    }
+                    HttpResponse::Ok().json(ApiResponse {
+                        success: true,
+                        message: "Function executed".to_string(),
+                        count: data.len() as i32,
+                        data,
+                    })
+                }
+                Err(e2) => {
+                    let mut msg = format!("Failed to execute function: {}", e);
+                    if let Some(db_err) = e.as_db_error() {
+                        {
+                            let code = db_err.code();
+                            msg = format!("{} (SQLSTATE {})", msg, code.code());
+                        }
+                        if let Some(detail) = db_err.detail() {
+                            msg = format!("{}; detail: {}", msg, detail);
+                        }
+                        if let Some(hint) = db_err.hint() {
+                            msg = format!("{}; hint: {}", msg, hint);
+                        }
+                    }
+                    let mut msg2 = format!("Fallback scalar query failed: {}", e2);
+                    if let Some(db_err2) = e2.as_db_error() {
+                        {
+                            let code = db_err2.code();
+                            msg2 = format!("{} (SQLSTATE {})", msg2, code.code());
+                        }
+                        if let Some(detail) = db_err2.detail() {
+                            msg2 = format!("{}; detail: {}", msg2, detail);
+                        }
+                        if let Some(hint) = db_err2.hint() {
+                            msg2 = format!("{}; hint: {}", msg2, hint);
+                        }
+                    }
+                    HttpResponse::InternalServerError().json(ApiResponse {
+                        success: false,
+                        message: format!("{}; {}", msg, msg2),
+                        count: 0,
+                        data: vec![],
+                    })
+                }
+            }
+        }
+    }
+}
+
+pub async fn create_trigger(
+    auth: HttpRequest,
+    table: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let table_name = table.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&table_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid table name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let trigger_obj = request_body.get("trigger");
+    if trigger_obj.is_none() {
+        let raw = match request_body.get("unsafe_query").and_then(|v| v.as_str()) {
+            Some(s) => s.trim(),
+            None => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Either trigger object or unsafe_query is required".to_string(),
+                    count: 0,
+                    data: vec![],
+                })
+            }
+        };
+        let mut sql = normalize_whitespace_outside_strings(raw);
+        let trimmed = sql.trim_start();
+        let upper = trimmed.to_uppercase();
+        if upper.starts_with("CREATE TRIGGER ") {
+            let rest = &trimmed["CREATE TRIGGER ".len()..];
+            sql = format!("CREATE OR REPLACE TRIGGER {}", rest);
+        } else if upper.starts_with("CREATE CONSTRAINT TRIGGER ") {
+            let rest = &trimmed["CREATE CONSTRAINT TRIGGER ".len()..];
+            sql = format!("CREATE OR REPLACE CONSTRAINT TRIGGER {}", rest);
+        }
+        let mut conn = db::get_async_connection().await;
+        return match sql_query(&sql).execute(&mut conn).await {
+            Ok(_) => HttpResponse::Ok().json(ApiResponse {
+                success: true,
+                message: "Trigger created".to_string(),
+                count: 0,
+                data: vec![],
+            }),
+            Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to create trigger: {}", format_diesel_error(&e)),
+                count: 0,
+                data: vec![],
+            }),
+        };
+    }
+    let trig = trigger_obj.unwrap();
+    let timing = trig
+        .get("timing")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_uppercase())
+        .unwrap_or_default();
+    if timing != "BEFORE" && timing != "AFTER" && timing != "INSTEAD OF" {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid trigger timing".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let events = match trig.get("event") {
+        Some(Value::Array(arr)) if !arr.is_empty() => {
+            let mut parts: Vec<String> = Vec::new();
+            for v in arr {
+                if let Some(s) = v.as_str() {
+                    let e = s.trim().to_uppercase();
+                    if e == "INSERT" || e == "UPDATE" || e == "DELETE" || e == "TRUNCATE" {
+                        parts.push(e);
+                    } else {
+                        return HttpResponse::BadRequest().json(ApiResponse {
+                            success: false,
+                            message: "Invalid trigger event".to_string(),
+                            count: 0,
+                            data: vec![],
+                        });
+                    }
+                } else {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: "Invalid trigger event".to_string(),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+            parts.join(" OR ")
+        }
+        _ => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "Trigger event is required".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let level = trig
+        .get("level")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_uppercase())
+        .unwrap_or("STATEMENT".to_string());
+    if level != "ROW" && level != "STATEMENT" {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid trigger level".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let name = trig
+        .get("name")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| {
+            let base = table_name
+                .split('.')
+                .last()
+                .unwrap_or(&table_name)
+                .to_string();
+            format!("trg_{}_{}", base, Ulid::new())
+        });
+    if !validate_identifier(&name, false) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid trigger name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let mut referenced_table = trig
+        .get("referenced_table")
+        .and_then(|v| v.as_str())
+        .map(|s| s.trim().to_string());
+    let constraint = trig
+        .get("constraint")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    if constraint && referenced_table.is_none() {
+        referenced_table = Some(table_name.clone());
+    }
+    if let Some(ref rt) = referenced_table {
+        if !validate_identifier(rt, true) {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "Invalid referenced table".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+    }
+    let deferrable = trig
+        .get("deferrable")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let initially_deferred = trig
+        .get("initially_deferred")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(false);
+    let mut sql = String::new();
+    if constraint {
+        sql.push_str("CREATE OR REPLACE CONSTRAINT TRIGGER ");
+    } else {
+        sql.push_str("CREATE OR REPLACE TRIGGER ");
+    }
+    sql.push_str(&name);
+    sql.push(' ');
+    sql.push_str(&timing);
+    sql.push(' ');
+    sql.push_str(&events);
+    sql.push_str(" ON ");
+    sql.push_str(&table_name);
+    if let Some(rt) = referenced_table {
+        sql.push_str(" FROM ");
+        sql.push_str(&rt);
+    }
+    if constraint {
+        if deferrable && initially_deferred {
+            sql.push_str(" DEFERRABLE INITIALLY DEFERRED");
+        } else if deferrable {
+            sql.push_str(" DEFERRABLE");
+        } else {
+            sql.push_str(" NOT DEFERRABLE");
+        }
+    }
+    if let Some(tr) = trig.get("transition_relations").and_then(|v| v.as_object()) {
+        let mut parts: Vec<String> = Vec::new();
+        if let Some(ot) = tr.get("old_table").and_then(|v| v.as_str()) {
+            let alias = ot.trim().to_string();
+            if !validate_identifier(&alias, false) {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Invalid old_table alias".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+            parts.push(format!("OLD TABLE AS {}", alias));
+        }
+        if let Some(nt) = tr.get("new_table").and_then(|v| v.as_str()) {
+            let alias = nt.trim().to_string();
+            if !validate_identifier(&alias, false) {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "Invalid new_table alias".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+            parts.push(format!("NEW TABLE AS {}", alias));
+        }
+        if !parts.is_empty() {
+            sql.push_str(" REFERENCING ");
+            sql.push_str(&parts.join(" "));
+        }
+    }
+    sql.push_str(" FOR EACH ");
+    sql.push_str(&level);
+    if let Some(cond) = trig.get("condition").and_then(|v| v.as_str()) {
+        let c = cond.trim();
+        if !c.is_empty() {
+            sql.push_str(" WHEN ( ");
+            sql.push_str(c);
+            sql.push_str(" )");
+        }
+    }
+    let unsafe_query_raw = match request_body.get("unsafe_query").and_then(|v| v.as_str()) {
+        Some(s) => s.trim().to_string(),
+        None => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "unsafe_query is required to build trigger function".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    let unsafe_query_for_validation = unsafe_query_raw.as_str();
+    if let Err(e) = validate_query_safety(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if contains_dangerous_removal_statements(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_select_limits(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_update_has_where(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_query_for_validation) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(unsafe_query_for_validation);
+    let fn_name = format!("fn_trg_{}", Ulid::new());
+    let fn_sql = format!(
+        "CREATE OR REPLACE FUNCTION {}() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN {} END; $$;",
+        fn_name, unsafe_query
+    );
+    sql.push_str(" EXECUTE FUNCTION ");
+    sql.push_str(&fn_name);
+    sql.push_str("()");
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&fn_sql).execute(&mut conn).await {
+        Ok(_) => {}
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!(
+                    "Failed to create trigger function: {}",
+                    format_diesel_error(&e)
+                ),
+                count: 0,
+                data: vec![],
+            })
+        }
+    }
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Trigger created".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to create trigger: {}", format_diesel_error(&e)),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn delete_materialized_view(
+    auth: HttpRequest,
+    table: web::Path<String>,
+) -> impl Responder {
+    let table_name = table.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&table_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid materialized view name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let sql = format!("DROP MATERIALIZED VIEW IF EXISTS {} CASCADE;", table_name);
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Materialized view deleted".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!(
+                "Failed to delete materialized view: {}",
+                format_diesel_error(&e)
+            ),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn delete_procedure(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let procedure_name_raw = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&procedure_name_raw, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid procedure name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let procedure_name = if procedure_name_raw.contains('.') {
+        let mut parts: Vec<&str> = procedure_name_raw.split('.').collect();
+        let last = parts.pop().unwrap();
+        let last_prefixed = if last.starts_with("udp_") {
+            last.to_string()
+        } else {
+            format!("udp_{}", last)
+        };
+        format!("{}.{}", parts.join("."), last_prefixed)
+    } else if procedure_name_raw.starts_with("udp_") {
+        procedure_name_raw
+    } else {
+        format!("udp_{}", procedure_name_raw)
+    };
+    let args_signature = if let Some(args_val) = request_body.get("arguments") {
+        match args_val {
+            Value::Array(arr) => {
+                if arr.is_empty() {
+                    "()".to_string()
+                } else {
+                    let mut parts: Vec<String> = Vec::new();
+                    for item in arr {
+                        match item {
+                            Value::String(spec) => {
+                                let s = spec.trim();
+                                if s.is_empty()
+                                    || !s.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument type".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(s.to_string());
+                            }
+                            Value::Object(obj) => {
+                                let ty = obj
+                                    .get("type")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                if ty.is_empty()
+                                    || !ty.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument type".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(ty);
+                            }
+                            _ => {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: "Arguments must be strings or {type} objects"
+                                        .to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                    }
+                    format!("({})", parts.join(", "))
+                }
+            }
+            _ => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "arguments must be an array".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    } else {
+        "()".to_string()
+    };
+    let sql = format!(
+        "DROP PROCEDURE IF EXISTS {}{} CASCADE;",
+        procedure_name, args_signature
+    );
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Procedure deleted".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to delete procedure: {}", format_diesel_error(&e)),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn delete_function(
+    auth: HttpRequest,
+    name: web::Path<String>,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    let func_name = name.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&func_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid function name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let args_signature = if let Some(args_val) = request_body.get("arguments") {
+        match args_val {
+            Value::Array(arr) => {
+                if arr.is_empty() {
+                    "()".to_string()
+                } else {
+                    let mut parts: Vec<String> = Vec::new();
+                    for item in arr {
+                        match item {
+                            Value::String(spec) => {
+                                let s = spec.trim();
+                                if s.is_empty()
+                                    || !s.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument type".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(s.to_string());
+                            }
+                            Value::Object(obj) => {
+                                let ty = obj
+                                    .get("type")
+                                    .and_then(|v| v.as_str())
+                                    .map(|s| s.trim().to_string())
+                                    .unwrap_or_default();
+                                if ty.is_empty()
+                                    || !ty.chars().all(|c| {
+                                        c.is_ascii_alphanumeric()
+                                            || c == '_'
+                                            || c == ' '
+                                            || c == '('
+                                            || c == ')'
+                                            || c == '['
+                                            || c == ']'
+                                            || c == ','
+                                            || c == '.'
+                                    })
+                                {
+                                    return HttpResponse::BadRequest().json(ApiResponse {
+                                        success: false,
+                                        message: "Invalid argument type".to_string(),
+                                        count: 0,
+                                        data: vec![],
+                                    });
+                                }
+                                parts.push(ty);
+                            }
+                            _ => {
+                                return HttpResponse::BadRequest().json(ApiResponse {
+                                    success: false,
+                                    message: "Arguments must be strings or {type} objects"
+                                        .to_string(),
+                                    count: 0,
+                                    data: vec![],
+                                });
+                            }
+                        }
+                    }
+                    format!("({})", parts.join(", "))
+                }
+            }
+            _ => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: "arguments must be an array".to_string(),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    } else {
+        "()".to_string()
+    };
+    let sql = format!(
+        "DROP FUNCTION IF EXISTS {}{} CASCADE;",
+        func_name, args_signature
+    );
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Function deleted".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to delete function: {}", format_diesel_error(&e)),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+pub async fn delete_trigger(
+    auth: HttpRequest,
+    path: web::Path<(String, String)>,
+) -> impl Responder {
+    let (table_name, trigger_name) = path.into_inner();
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    if !validate_identifier(&table_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid table name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if !validate_identifier(&trigger_name, false) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid trigger name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let sql = format!(
+        "DROP TRIGGER IF EXISTS {} ON {} CASCADE;",
+        trigger_name, table_name
+    );
+    let mut conn = db::get_async_connection().await;
+    match sql_query(&sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: "Trigger deleted".to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to delete trigger: {}", format_diesel_error(&e)),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+#[derive(Deserialize, Serialize, ToSchema)]
+pub struct TriggerListQuery {
+    pub schema: Option<String>,
+    pub table: Option<String>,
+    pub name_like: Option<String>,
+}
+
+pub async fn list_triggers(
+    auth: HttpRequest,
+    query: web::Query<TriggerListQuery>,
+) -> impl Responder {
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+
+    let mut where_clauses: Vec<String> = vec![
+        "NOT t.tgisinternal".to_string(),
+        "n.nspname = 'public'".to_string(),
+    ];
+
+    if let Some(schema) = query
+        .schema
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+    {
+        if !validate_identifier(schema, false) {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "Invalid schema filter".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+        where_clauses.push(format!("n.nspname = '{}'", schema.replace('\'', "''")));
+    }
+
+    if let Some(table) = query
+        .table
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+    {
+        if !validate_identifier(table, false) {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "Invalid table filter".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+        where_clauses.push(format!("c.relname = '{}'", table.replace('\'', "''")));
+    }
+
+    if let Some(name_like) = query
+        .name_like
+        .as_ref()
+        .map(|s| s.trim())
+        .filter(|s| !s.is_empty())
+    {
+        if !name_like
+            .chars()
+            .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '%' || c == '-')
+        {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "Invalid name_like filter".to_string(),
+                count: 0,
+                data: vec![],
+            });
+        }
+        where_clauses.push(format!("t.tgname LIKE '{}'", name_like.replace('\'', "''")));
+    }
+
+    let sql = format!(
+        "SELECT row_to_json(t) FROM (
+            SELECT
+                n.nspname AS schema_name,
+                c.relname AS table_name,
+                t.tgname AS trigger_name,
+                pg_get_triggerdef(t.oid, true) AS definition
+            FROM pg_trigger t
+            JOIN pg_class c ON c.oid = t.tgrelid
+            JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE {}
+            ORDER BY n.nspname, c.relname, t.tgname
+        ) t",
+        where_clauses.join(" AND ")
+    );
+
+    let mut conn = db::get_async_connection().await;
+    let results = match diesel::dsl::sql_query(&sql)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Failed to list triggers: {}", format_diesel_error(&e)),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .collect();
+
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Triggers list retrieved".to_string(),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+pub async fn cron_schedule_job(
+    auth: HttpRequest,
+    request_body: web::Json<serde_json::Value>,
+) -> impl Responder {
+    if let Err(resp) = ensure_root_access(&auth) {
+        return resp;
+    }
+    let job_name = request_body
+        .get("name")
+        .and_then(|v| v.as_str())
+        .or_else(|| request_body.get("job_name").and_then(|v| v.as_str()))
+        .map(|s| s.trim().to_string())
+        .unwrap_or_default();
+    if job_name.is_empty() || !validate_identifier(&job_name, true) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid job name".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let schedule = match request_body.get("format").and_then(|v| v.as_str()) {
+        Some(s) => s.trim().to_string(),
+        None => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "format is required".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    if schedule.is_empty()
+        || !schedule.chars().all(|c| {
+            c.is_ascii_alphanumeric()
+                || c == ' '
+                || c == '*'
+                || c == '/'
+                || c == ','
+                || c == '-'
+                || c == '?'
+        })
+    {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "Invalid schedule format".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query_raw = match request_body.get("statement").and_then(|v| v.as_str()) {
+        Some(s) => s.trim(),
+        None => {
+            return HttpResponse::BadRequest().json(ApiResponse {
+                success: false,
+                message: "statement is required".to_string(),
+                count: 0,
+                data: vec![],
+            })
+        }
+    };
+    if let Err(e) = validate_query_safety(unsafe_query_raw) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if contains_dangerous_removal_statements(unsafe_query_raw) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query contains potentially destructive statements".to_string(),
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_update_has_where(unsafe_query_raw) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    if let Err(e) = validate_execute_payloads(unsafe_query_raw) {
+        return HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: e,
+            count: 0,
+            data: vec![],
+        });
+    }
+    let unsafe_query = normalize_whitespace_outside_strings(unsafe_query_raw);
+    let name_lit = format!("'{}'", job_name);
+    let schedule_lit = format!("'{}'", schedule);
+    let ext_sql = "CREATE EXTENSION IF NOT EXISTS pg_cron;";
+    let schedule_sql = format!(
+        "SELECT cron.schedule({}, {}, $$ {} $$);",
+        name_lit, schedule_lit, unsafe_query
+    );
+    let mut conn = db::get_async_connection().await;
+    let _ = sql_query(ext_sql).execute(&mut conn).await;
+    let warn = "pg_cron requires shared_preload_libraries = 'pg_cron' in postgresql.conf and a PostgreSQL restart";
+    match sql_query(&schedule_sql).execute(&mut conn).await {
+        Ok(_) => HttpResponse::Ok().json(ApiResponse {
+            success: true,
+            message: warn.to_string(),
+            count: 0,
+            data: vec![],
+        }),
+        Err(e) => HttpResponse::InternalServerError().json(ApiResponse {
+            success: false,
+            message: format!("Failed to schedule cron job: {}. {}", e, warn),
+            count: 0,
+            data: vec![],
+        }),
+    }
+}
+
+async fn exec_pg_matviews_filter(parameters: GetByFilter) -> HttpResponse {
+    log::debug!("exec_pg_matviews_filter: {:?}", parameters);
+    let mut conn = db::get_async_connection().await;
+    let effective_params = parameters.clone();
+    let mut query = "SELECT matviewname AS name FROM pg_matviews WHERE schemaname = 'public'"
+        .to_string();
+    if !effective_params.advance_filters.is_empty() {
+        let mut mapped_filters: Vec<crate::structs::core::FilterCriteria> = Vec::new();
+        let filters = &effective_params.advance_filters;
+        let len = filters.len();
+        let mut i = 0;
+        while i < len {
+            match &filters[i] {
+                crate::structs::core::FilterCriteria::Criteria {
+                    field,
+                    entity,
+                    operator,
+                    values,
+                    case_sensitive,
+                    parse_as,
+                    match_pattern,
+                    is_search,
+                    has_group_count,
+                } => {
+                    if field == "name" {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: "matviewname".to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
+                    }
+                    i += 1;
+                }
+                crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
+                    let has_prev = mapped_filters
+                        .last()
+                        .map(|f| matches!(f, crate::structs::core::FilterCriteria::Criteria { .. }))
+                        .unwrap_or(false);
+                    if has_prev {
+                        let mut found_next = false;
+                        let mut j = i + 1;
+                        while j < len {
+                            if let crate::structs::core::FilterCriteria::Criteria {
+                                field, ..
+                            } = &filters[j]
+                            {
+                                if field == "name" {
+                                    found_next = true;
+                                    break;
+                                }
+                            }
+                            j += 1;
+                        }
+                        if found_next {
+                            mapped_filters.push(
+                                crate::structs::core::FilterCriteria::LogicalOperator {
+                                    operator: operator.clone(),
+                                },
+                            );
+                        }
+                    }
+                    i += 1;
+                }
+            }
+        }
+        if !mapped_filters.is_empty() {
+            let wc = crate::providers::queries::find::constructors::where_constructor::WhereConstructor::new(
+                "pg_matviews",
+                None,
+                true,
+                effective_params.timezone.as_deref(),
+            );
+            match wc.build_infix_expression(
+                &mapped_filters,
+                &[],
+                &effective_params.date_format,
+                &effective_params.time_format,
+            ) {
+                Ok(expr) if !expr.is_empty() => {
+                    query.push_str(" AND ");
+                    query.push_str(&expr);
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: format!("Invalid filters: {}", e),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+        }
+    }
+    if effective_params.limit > 0 {
+        query.push_str(&format!(" LIMIT {}", effective_params.limit));
+    }
+    if effective_params.offset > 0 {
+        query.push_str(&format!(" OFFSET {}", effective_params.offset));
+    }
+    log::debug!("@@@query: {:?}", query);
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .collect();
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Materialized views list retrieved".to_string(),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+async fn exec_procedures_filter(parameters: GetByFilter) -> HttpResponse {
+    let mut conn = db::get_async_connection().await;
+    let effective_params = parameters.clone();
+
+    // Build SELECT list based on pluck (supports: name, definition)
+    let mut select_parts: Vec<String> = Vec::new();
+    if effective_params.pluck.is_empty() {
+        select_parts.push("routine_name AS name".to_string());
+        select_parts.push("routine_definition AS definition".to_string());
+    } else {
+        for field in &effective_params.pluck {
+            match field.as_str() {
+                "name" => select_parts.push("routine_name AS name".to_string()),
+                "definition" => select_parts.push("routine_definition AS definition".to_string()),
+                _ => {}
+            }
+        }
+        if select_parts.is_empty() {
+            select_parts.push("routine_name AS name".to_string());
+        }
+    }
+    let mut query = format!(
+        "SELECT {} FROM information_schema.routines WHERE routine_type = 'PROCEDURE' AND routine_schema = 'public' AND routine_name LIKE 'udp_%'",
+        select_parts.join(", ")
+    );
+
+    // query.push_str(" ORDER BY specific_schema, routine_name");
+
+    if !effective_params.advance_filters.is_empty() {
+        let mut mapped_filters: Vec<crate::structs::core::FilterCriteria> = Vec::new();
+        let filters = &effective_params.advance_filters;
+        let len = filters.len();
+        let mut i = 0;
+        while i < len {
+            match &filters[i] {
+                crate::structs::core::FilterCriteria::Criteria {
+                    field,
+                    entity,
+                    operator,
+                    values,
+                    case_sensitive,
+                    parse_as,
+                    match_pattern,
+                    is_search,
+                    has_group_count,
+                } => {
+                    if field == "name" {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: "routine_name".to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
+                    } else if field == "definition" {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: "routine_definition".to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
+                    }
+                    i += 1;
+                }
+                crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
+                    let has_prev = mapped_filters
+                        .last()
+                        .map(|f| matches!(f, crate::structs::core::FilterCriteria::Criteria { .. }))
+                        .unwrap_or(false);
+                    if has_prev {
+                        let mut found_next = false;
+                        let mut j = i + 1;
+                        while j < len {
+                            if let crate::structs::core::FilterCriteria::Criteria {
+                                field, ..
+                            } = &filters[j]
+                            {
+                                if field == "name" || field == "definition" {
+                                    found_next = true;
+                                    break;
+                                }
+                            }
+                            j += 1;
+                        }
+                        if found_next {
+                            mapped_filters.push(
+                                crate::structs::core::FilterCriteria::LogicalOperator {
+                                    operator: operator.clone(),
+                                },
+                            );
+                        }
+                    }
+                    i += 1;
+                }
+            }
+        }
+        if !mapped_filters.is_empty() {
+            let wc = crate::providers::queries::find::constructors::where_constructor::WhereConstructor::new(
+                "information_schema.routines",
+                None,
+                true,
+                effective_params.timezone.as_deref(),
+            );
+            match wc.build_infix_expression(
+                &mapped_filters,
+                &[],
+                &effective_params.date_format,
+                &effective_params.time_format,
+            ) {
+                Ok(expr) if !expr.is_empty() => {
+                    let expr_simple = expr
+                        .replace("\"information_schema\".\"routines\".", "")
+                        .replace("\"information_schema.routines\".", "")
+                        .replace("\"routines\".", "");
+                    query.push_str(" AND ");
+                    query.push_str(&expr_simple);
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: format!("Invalid filters: {}", e),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+        }
+    }
+
+    if effective_params.limit > 0 {
+        query.push_str(&format!(" LIMIT {}", effective_params.limit));
+    }
+    if effective_params.offset > 0 {
+        query.push_str(&format!(" OFFSET {}", effective_params.offset));
+    }
+    log::debug!("@@@query: {:?}", query);
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .collect();
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Procedures list retrieved".to_string(),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+async fn exec_pg_matviews_count(parameters: GetByFilter) -> HttpResponse {
+    let mut base_query = "SELECT COUNT(*) AS count FROM pg_matviews WHERE schemaname = 'public'"
+        .to_string();
+    if !parameters.advance_filters.is_empty() {
+        let sc = crate::providers::queries::find::sql_constructor::SQLConstructor::new(
+            parameters.clone(),
+            "pg_matviews".to_string(),
+            true,
+            parameters.timezone.clone(),
+        );
+        match sc.build_infix_expression(&parameters.advance_filters) {
+            Ok(expr) if !expr.is_empty() => {
+                base_query.push_str(" AND ");
+                base_query.push_str(&expr);
+            }
+            Ok(_) => {}
+            Err(e) => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: format!("Invalid filters: {}", e),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    }
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", base_query);
+    let mut conn = db::get_async_connection().await;
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let count_value: i64 = results
+        .get(0)
+        .and_then(|r| r.row_to_json.as_ref())
+        .and_then(|j| j.get("count"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Count completed for pg_matviews".to_string(),
+        count: count_value as i32,
+        data: vec![serde_json::json!({ "count": count_value })],
+    })
+}
+
+async fn exec_procedures_count(parameters: GetByFilter) -> HttpResponse {
+    let mut base_query = String::from(
+        "SELECT COUNT(*) AS count FROM information_schema.routines WHERE routine_type = 'PROCEDURE' AND routine_schema = 'public' AND routine_name LIKE 'udp_%'",
+    );
+    if !parameters.advance_filters.is_empty() {
+        let sc = crate::providers::queries::find::sql_constructor::SQLConstructor::new(
+            parameters.clone(),
+            "information_schema.routines".to_string(),
+            true,
+            parameters.timezone.clone(),
+        );
+        match sc.build_infix_expression(&parameters.advance_filters) {
+            Ok(expr) if !expr.is_empty() => {
+                base_query.push_str(" AND ");
+                base_query.push_str(&expr);
+            }
+            Ok(_) => {}
+            Err(e) => {
+                return HttpResponse::BadRequest().json(ApiResponse {
+                    success: false,
+                    message: format!("Invalid filters: {}", e),
+                    count: 0,
+                    data: vec![],
+                });
+            }
+        }
+    }
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", base_query);
+    let mut conn = db::get_async_connection().await;
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let count_value: i64 = results
+        .get(0)
+        .and_then(|r| r.row_to_json.as_ref())
+        .and_then(|j| j.get("count"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Count completed for procedures".to_string(),
+        count: count_value as i32,
+        data: vec![serde_json::json!({ "count": count_value })],
+    })
+}
+
+async fn exec_triggers_filter(parameters: GetByFilter) -> HttpResponse {
+    let mut conn = db::get_async_connection().await;
+    let effective_params = parameters.clone();
+
+    let mut select_parts: Vec<String> = Vec::new();
+    if effective_params.pluck.is_empty() {
+        select_parts.push("trg.tgname AS name".to_string());
+        select_parts.push("cls.relname AS table_name".to_string());
+        select_parts.push("ns.nspname AS schema_name".to_string());
+        select_parts.push("pg_get_triggerdef(trg.oid, true) AS definition".to_string());
+    } else {
+        for field in &effective_params.pluck {
+            match field.as_str() {
+                "name" => select_parts.push("trg.tgname AS name".to_string()),
+                "table" | "table_name" => select_parts.push("cls.relname AS table_name".to_string()),
+                "schema" | "schema_name" => select_parts.push("ns.nspname AS schema_name".to_string()),
+                "definition" => select_parts.push("pg_get_triggerdef(trg.oid, true) AS definition".to_string()),
+                _ => {}
+            }
+        }
+        if select_parts.is_empty() {
+            select_parts.push("trg.tgname AS name".to_string());
+        }
+    }
+
+    let mut query = format!(
+        "SELECT {} FROM pg_trigger trg JOIN pg_class cls ON cls.oid = trg.tgrelid JOIN pg_namespace ns ON ns.oid = cls.relnamespace WHERE NOT trg.tgisinternal AND ns.nspname = 'public'",
+        select_parts.join(", ")
+    );
+
+    if !effective_params.advance_filters.is_empty() {
+        let mut mapped_filters: Vec<crate::structs::core::FilterCriteria> = Vec::new();
+        let filters = &effective_params.advance_filters;
+        let len = filters.len();
+        let mut i = 0;
+        while i < len {
+            match &filters[i] {
+                crate::structs::core::FilterCriteria::Criteria {
+                    field,
+                    entity,
+                    operator,
+                    values,
+                    case_sensitive,
+                    parse_as,
+                    match_pattern,
+                    is_search,
+                    has_group_count,
+                } => {
+                    let mapped_field = match field.as_str() {
+                        "name" => Some("name"),
+                        "table" | "table_name" => Some("table_name"),
+                        "schema" | "schema_name" => Some("schema_name"),
+                        "definition" => Some("definition"),
+                        _ => None,
+                    };
+                    if let Some(mf) = mapped_field {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: mf.to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
+                    }
+                    i += 1;
+                }
+                crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
+                    let has_prev = mapped_filters
+                        .last()
+                        .map(|f| matches!(f, crate::structs::core::FilterCriteria::Criteria { .. }))
+                        .unwrap_or(false);
+                    if has_prev {
+                        let mut found_next = false;
+                        let mut j = i + 1;
+                        while j < len {
+                            if let crate::structs::core::FilterCriteria::Criteria { field, .. } =
+                                &filters[j]
+                            {
+                                if field == "name"
+                                    || field == "table"
+                                    || field == "table_name"
+                                    || field == "schema"
+                                    || field == "schema_name"
+                                    || field == "definition"
+                                {
+                                    found_next = true;
+                                    break;
+                                }
+                            }
+                            j += 1;
+                        }
+                        if found_next {
+                            mapped_filters.push(
+                                crate::structs::core::FilterCriteria::LogicalOperator {
+                                    operator: operator.clone(),
+                                },
+                            );
+                        }
+                    }
+                    i += 1;
+                }
+            }
+        }
+
+        if !mapped_filters.is_empty() {
+            let wc = crate::providers::queries::find::constructors::where_constructor::WhereConstructor::new(
+                "x",
+                None,
+                true,
+                effective_params.timezone.as_deref(),
+            );
+            match wc.build_infix_expression(
+                &mapped_filters,
+                &[],
+                &effective_params.date_format,
+                &effective_params.time_format,
+            ) {
+                Ok(expr) if !expr.is_empty() => {
+                    query = format!("SELECT * FROM ({}) x WHERE {}", query, expr);
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: format!("Invalid filters: {}", e),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+        }
+    }
+
+    if effective_params.limit > 0 {
+        query.push_str(&format!(" LIMIT {}", effective_params.limit));
+    }
+    if effective_params.offset > 0 {
+        query.push_str(&format!(" OFFSET {}", effective_params.offset));
+    }
+
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .collect();
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Triggers list retrieved".to_string(),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+async fn exec_functions_filter(parameters: GetByFilter) -> HttpResponse {
+    let mut conn = db::get_async_connection().await;
+    let effective_params = parameters.clone();
+
+    let mut select_parts: Vec<String> = Vec::new();
+    if effective_params.pluck.is_empty() {
+        select_parts.push("routine_name AS name".to_string());
+        select_parts.push("routine_definition AS definition".to_string());
+    } else {
+        for field in &effective_params.pluck {
+            match field.as_str() {
+                "name" => select_parts.push("routine_name AS name".to_string()),
+                "definition" => select_parts.push("routine_definition AS definition".to_string()),
+                "schema" | "schema_name" => select_parts.push("routine_schema AS schema_name".to_string()),
+                "return_type" => select_parts.push("data_type AS return_type".to_string()),
+                _ => {}
+            }
+        }
+        if select_parts.is_empty() {
+            select_parts.push("routine_name AS name".to_string());
+        }
+    }
+
+    let mut query = format!(
+        "SELECT {} FROM information_schema.routines WHERE routine_type = 'FUNCTION' AND routine_schema = 'public'",
+        select_parts.join(", ")
+    );
+
+    if !effective_params.advance_filters.is_empty() {
+        let mut mapped_filters: Vec<crate::structs::core::FilterCriteria> = Vec::new();
+        let filters = &effective_params.advance_filters;
+        let len = filters.len();
+        let mut i = 0;
+        while i < len {
+            match &filters[i] {
+                crate::structs::core::FilterCriteria::Criteria {
+                    field,
+                    entity,
+                    operator,
+                    values,
+                    case_sensitive,
+                    parse_as,
+                    match_pattern,
+                    is_search,
+                    has_group_count,
+                } => {
+                    let mapped_field = match field.as_str() {
+                        "name" => Some("routine_name"),
+                        "definition" => Some("routine_definition"),
+                        "schema" | "schema_name" => Some("routine_schema"),
+                        "return_type" => Some("data_type"),
+                        _ => None,
+                    };
+                    if let Some(mf) = mapped_field {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: mf.to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
+                    }
+                    i += 1;
+                }
+                crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
+                    let has_prev = mapped_filters
+                        .last()
+                        .map(|f| matches!(f, crate::structs::core::FilterCriteria::Criteria { .. }))
+                        .unwrap_or(false);
+                    if has_prev {
+                        let mut found_next = false;
+                        let mut j = i + 1;
+                        while j < len {
+                            if let crate::structs::core::FilterCriteria::Criteria { field, .. } =
+                                &filters[j]
+                            {
+                                if field == "name"
+                                    || field == "definition"
+                                    || field == "schema"
+                                    || field == "schema_name"
+                                    || field == "return_type"
+                                {
+                                    found_next = true;
+                                    break;
+                                }
+                            }
+                            j += 1;
+                        }
+                        if found_next {
+                            mapped_filters.push(
+                                crate::structs::core::FilterCriteria::LogicalOperator {
+                                    operator: operator.clone(),
+                                },
+                            );
+                        }
+                    }
+                    i += 1;
+                }
+            }
+        }
+        if !mapped_filters.is_empty() {
+            let wc = crate::providers::queries::find::constructors::where_constructor::WhereConstructor::new(
+                "information_schema.routines",
+                None,
+                true,
+                effective_params.timezone.as_deref(),
+            );
+            match wc.build_infix_expression(
+                &mapped_filters,
+                &[],
+                &effective_params.date_format,
+                &effective_params.time_format,
+            ) {
+                Ok(expr) if !expr.is_empty() => {
+                    let expr_simple = expr
+                        .replace("\"information_schema\".\"routines\".", "")
+                        .replace("\"information_schema.routines\".", "")
+                        .replace("\"routines\".", "");
+                    query.push_str(" AND ");
+                    query.push_str(&expr_simple);
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: format!("Invalid filters: {}", e),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+        }
+    }
+
+    if effective_params.limit > 0 {
+        query.push_str(&format!(" LIMIT {}", effective_params.limit));
+    }
+    if effective_params.offset > 0 {
+        query.push_str(&format!(" OFFSET {}", effective_params.offset));
+    }
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", query);
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let data: Vec<serde_json::Value> = results
+        .into_iter()
+        .filter_map(|result| result.row_to_json)
+        .collect();
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Functions list retrieved".to_string(),
+        count: data.len() as i32,
+        data,
+    })
+}
+
+async fn exec_triggers_count(parameters: GetByFilter) -> HttpResponse {
+    let mut base_query = String::from(
+        "SELECT COUNT(*) AS count FROM pg_trigger trg JOIN pg_class cls ON cls.oid = trg.tgrelid JOIN pg_namespace ns ON ns.oid = cls.relnamespace WHERE NOT trg.tgisinternal AND ns.nspname = 'public'",
+    );
+    if !parameters.advance_filters.is_empty() {
+        let mut mapped_filters: Vec<crate::structs::core::FilterCriteria> = Vec::new();
+        for f in &parameters.advance_filters {
+            match f {
+                crate::structs::core::FilterCriteria::Criteria {
+                    field,
+                    entity,
+                    operator,
+                    values,
+                    case_sensitive,
+                    parse_as,
+                    match_pattern,
+                    is_search,
+                    has_group_count,
+                } => {
+                    let mapped_field = match field.as_str() {
+                        "name" => Some("name"),
+                        "table" | "table_name" => Some("table_name"),
+                        "schema" | "schema_name" => Some("schema_name"),
+                        "definition" => Some("definition"),
+                        _ => None,
+                    };
+                    if let Some(mf) = mapped_field {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: mf.to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
+                    }
+                }
+                crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
+                    mapped_filters.push(crate::structs::core::FilterCriteria::LogicalOperator {
+                        operator: operator.clone(),
+                    });
+                }
+            }
+        }
+        if !mapped_filters.is_empty() {
+            let wc = crate::providers::queries::find::constructors::where_constructor::WhereConstructor::new(
+                "x",
+                None,
+                true,
+                parameters.timezone.as_deref(),
+            );
+            match wc.build_infix_expression(
+                &mapped_filters,
+                &[],
+                &parameters.date_format,
+                &parameters.time_format,
+            ) {
+                Ok(expr) if !expr.is_empty() => {
+                    base_query = format!(
+                        "SELECT COUNT(*) AS count FROM (SELECT trg.tgname AS name, cls.relname AS table_name, ns.nspname AS schema_name, pg_get_triggerdef(trg.oid, true) AS definition FROM pg_trigger trg JOIN pg_class cls ON cls.oid = trg.tgrelid JOIN pg_namespace ns ON ns.oid = cls.relnamespace WHERE NOT trg.tgisinternal AND ns.nspname = 'public') x WHERE {}",
+                        expr
+                    );
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: format!("Invalid filters: {}", e),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+        }
+    }
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", base_query);
+    let mut conn = db::get_async_connection().await;
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let count_value: i64 = results
+        .get(0)
+        .and_then(|r| r.row_to_json.as_ref())
+        .and_then(|j| j.get("count"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Count completed for triggers".to_string(),
+        count: count_value as i32,
+        data: vec![serde_json::json!({ "count": count_value })],
+    })
+}
+
+async fn exec_functions_count(parameters: GetByFilter) -> HttpResponse {
+    let mut base_query = String::from(
+        "SELECT COUNT(*) AS count FROM information_schema.routines WHERE routine_type = 'FUNCTION' AND routine_schema = 'public'",
+    );
+    if !parameters.advance_filters.is_empty() {
+        let mut mapped_filters: Vec<crate::structs::core::FilterCriteria> = Vec::new();
+        let filters = &parameters.advance_filters;
+        let len = filters.len();
+        let mut i = 0;
+        while i < len {
+            match &filters[i] {
+                crate::structs::core::FilterCriteria::Criteria {
+                    field,
+                    entity,
+                    operator,
+                    values,
+                    case_sensitive,
+                    parse_as,
+                    match_pattern,
+                    is_search,
+                    has_group_count,
+                } => {
+                    let mapped_field = match field.as_str() {
+                        "name" => Some("routine_name"),
+                        "definition" => Some("routine_definition"),
+                        "schema" | "schema_name" => Some("routine_schema"),
+                        "return_type" => Some("data_type"),
+                        _ => None,
+                    };
+                    if let Some(mf) = mapped_field {
+                        mapped_filters.push(crate::structs::core::FilterCriteria::Criteria {
+                            field: mf.to_string(),
+                            entity: entity.clone(),
+                            operator: operator.clone(),
+                            values: values.clone(),
+                            case_sensitive: case_sensitive.clone(),
+                            parse_as: parse_as.clone(),
+                            match_pattern: match_pattern.clone(),
+                            is_search: is_search.clone(),
+                            has_group_count: has_group_count.clone(),
+                        });
+                    }
+                    i += 1;
+                }
+                crate::structs::core::FilterCriteria::LogicalOperator { operator } => {
+                    let has_prev = mapped_filters
+                        .last()
+                        .map(|f| matches!(f, crate::structs::core::FilterCriteria::Criteria { .. }))
+                        .unwrap_or(false);
+                    if has_prev {
+                        let mut found_next = false;
+                        let mut j = i + 1;
+                        while j < len {
+                            if let crate::structs::core::FilterCriteria::Criteria { field, .. } =
+                                &filters[j]
+                            {
+                                if field == "name"
+                                    || field == "definition"
+                                    || field == "schema"
+                                    || field == "schema_name"
+                                    || field == "return_type"
+                                {
+                                    found_next = true;
+                                    break;
+                                }
+                            }
+                            j += 1;
+                        }
+                        if found_next {
+                            mapped_filters.push(
+                                crate::structs::core::FilterCriteria::LogicalOperator {
+                                    operator: operator.clone(),
+                                },
+                            );
+                        }
+                    }
+                    i += 1;
+                }
+            }
+        }
+
+        if !mapped_filters.is_empty() {
+            let wc = crate::providers::queries::find::constructors::where_constructor::WhereConstructor::new(
+                "information_schema.routines",
+                None,
+                true,
+                parameters.timezone.as_deref(),
+            );
+            match wc.build_infix_expression(
+                &mapped_filters,
+                &[],
+                &parameters.date_format,
+                &parameters.time_format,
+            ) {
+                Ok(expr) if !expr.is_empty() => {
+                    let expr_simple = expr
+                        .replace("\"information_schema\".\"routines\".", "")
+                        .replace("\"information_schema.routines\".", "")
+                        .replace("\"routines\".", "");
+                    base_query.push_str(" AND ");
+                    base_query.push_str(&expr_simple);
+                }
+                Ok(_) => {}
+                Err(e) => {
+                    return HttpResponse::BadRequest().json(ApiResponse {
+                        success: false,
+                        message: format!("Invalid filters: {}", e),
+                        count: 0,
+                        data: vec![],
+                    });
+                }
+            }
+        }
+    }
+    let final_query = format!("SELECT row_to_json(t) FROM ({}) t", base_query);
+    let mut conn = db::get_async_connection().await;
+    let results = match diesel::dsl::sql_query(&final_query)
+        .load::<DynamicResult>(&mut conn)
+        .await
+    {
+        Ok(results) => results,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: format!("Query execution error: {}", e),
+                count: 0,
+                data: vec![],
+            });
+        }
+    };
+    let count_value: i64 = results
+        .get(0)
+        .and_then(|r| r.row_to_json.as_ref())
+        .and_then(|j| j.get("count"))
+        .and_then(|v| v.as_i64())
+        .unwrap_or(0);
+    HttpResponse::Ok().json(ApiResponse {
+        success: true,
+        message: "Count completed for functions".to_string(),
+        count: count_value as i32,
+        data: vec![serde_json::json!({ "count": count_value })],
     })
 }

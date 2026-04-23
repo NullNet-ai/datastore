@@ -179,9 +179,7 @@ fn verify_token(token: &str) -> Result<Claims, String> {
     }
 }
 
-pub fn create_socket_io() -> (socketioxide::layer::SocketIoLayer, SocketIo) {
-    let (layer, io) = SocketIo::new_layer();
-
+pub fn configure_socket_io(io: &SocketIo) {
     io.ns(
         "/",
         |socket: SocketRef, Data(auth_data): Data<serde_json::Value>| {
@@ -253,7 +251,6 @@ pub fn create_socket_io() -> (socketioxide::layer::SocketIoLayer, SocketIo) {
         },
     );
 
-    (layer, io)
 }
 
 fn setup_authenticated_handlers(socket: SocketRef) {

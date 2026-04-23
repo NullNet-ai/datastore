@@ -278,6 +278,14 @@ install-macos-deps:
 	else \
 		echo "✅ Protocol Buffers already installed"; \
 	fi
+	@# Install libpq for PostgreSQL client headers/libs (required by Rust postgres crates at link time)
+	@export PATH="/opt/homebrew/bin:$$PATH"; \
+	if ! brew list libpq >/dev/null 2>&1; then \
+		echo "📦 Installing libpq..."; \
+		brew install libpq; \
+	else \
+		echo "✅ libpq already installed"; \
+	fi
 	@echo "🎉 macOS system dependencies installed!"
 	@make start-docker-services
 
@@ -469,6 +477,15 @@ store:
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
 	fi && \
+	PG_LIB_DIR="$$(pg_config --libdir 2>/dev/null || true)" && \
+	PG_INCLUDE_DIR="$$(pg_config --includedir 2>/dev/null || true)" && \
+	if [ -z "$$PG_LIB_DIR" ] || [ ! -d "$$PG_LIB_DIR" ]; then PG_LIB_DIR="/opt/homebrew/opt/libpq/lib"; fi && \
+	if [ -z "$$PG_INCLUDE_DIR" ] || [ ! -d "$$PG_INCLUDE_DIR" ]; then PG_INCLUDE_DIR="/opt/homebrew/opt/libpq/include"; fi && \
+	export PQ_LIB_DIR="$$PG_LIB_DIR" && \
+	export LIBRARY_PATH="$$PG_LIB_DIR:$$LIBRARY_PATH" && \
+	export DYLD_LIBRARY_PATH="$$PG_LIB_DIR:$$DYLD_LIBRARY_PATH" && \
+	export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:$$PKG_CONFIG_PATH" && \
+	export C_INCLUDE_PATH="$$PG_INCLUDE_DIR:$$C_INCLUDE_PATH" && \
 	cd bin/store && RUST_MIN_STACK=16777216 cargo run
 
 # =============================================================================
@@ -604,7 +621,16 @@ store-build:
 		echo "❌ Cargo not found. Please run 'make install' first."; \
 		exit 1; \
 	fi
-	@cd bin/store && cargo build --release && cp -f ../../target/release/store ../../store
+	@PG_LIB_DIR="$$(pg_config --libdir 2>/dev/null || true)"; \
+	PG_INCLUDE_DIR="$$(pg_config --includedir 2>/dev/null || true)"; \
+	if [ -z "$$PG_LIB_DIR" ] || [ ! -d "$$PG_LIB_DIR" ]; then PG_LIB_DIR="/opt/homebrew/opt/libpq/lib"; fi; \
+	if [ -z "$$PG_INCLUDE_DIR" ] || [ ! -d "$$PG_INCLUDE_DIR" ]; then PG_INCLUDE_DIR="/opt/homebrew/opt/libpq/include"; fi; \
+	export PQ_LIB_DIR="$$PG_LIB_DIR"; \
+	export LIBRARY_PATH="$$PG_LIB_DIR:$$LIBRARY_PATH"; \
+	export DYLD_LIBRARY_PATH="$$PG_LIB_DIR:$$DYLD_LIBRARY_PATH"; \
+	export PKG_CONFIG_PATH="/opt/homebrew/opt/libpq/lib/pkgconfig:$$PKG_CONFIG_PATH"; \
+	export C_INCLUDE_PATH="$$PG_INCLUDE_DIR:$$C_INCLUDE_PATH"; \
+	cd bin/store && cargo build --release && cp -f ../../target/release/store ../../store
 
 # Build a Linux binary in Docker and place it at repo root as ./store
 # Usage: make store-build-linux [LINUX_PLATFORM=linux/amd64|linux/arm64]

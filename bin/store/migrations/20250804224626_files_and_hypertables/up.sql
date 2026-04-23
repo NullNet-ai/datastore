@@ -68,6 +68,7 @@ CREATE TABLE "test_hypertables" (
     "sensitivity_level" INTEGER,
     "sync_status" TEXT DEFAULT 'in_process',
     "is_batch" BOOLEAN DEFAULT false,
+    "image_url" TEXT,
     PRIMARY KEY ("timestamp", "id")
 );
 --> statement-breakpoint

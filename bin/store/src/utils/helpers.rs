@@ -3,9 +3,12 @@ use crate::controllers::store_controller::ApiError;
 use crate::database::schema::verify::field_type_in_table;
 use crate::generated::table_enum::Table as TableEnum;
 use crate::structs::core::CommandArgs;
+use crate::structs::core::{ApiResponse, Auth};
 use actix_web::http;
+use actix_web::{HttpMessage, HttpRequest, HttpResponse};
 use diesel::result::Error as DieselError;
 use pluralizer::pluralize;
+use serde_json::Value;
 use std::env;
 
 pub fn _token_data_extractor(_token: &str) -> String {
@@ -345,4 +348,80 @@ pub fn pluralize_wrapper(name: &str, count: isize, is_include_count: Option<bool
         parts.push(plural_last);
     }
     parts.join("_")
+}
+
+pub fn ensure_root_access(auth: &HttpRequest) -> Result<(), HttpResponse> {
+    let extensions = auth.extensions();
+    let auth_data = match extensions.get::<Auth>() {
+        Some(data) => data,
+        None => {
+            return Err(HttpResponse::InternalServerError().json(ApiResponse {
+                success: false,
+                message: "Authentication information not available".to_string(),
+                count: 0,
+                data: vec![],
+            }))
+        }
+    };
+    let is_root_controller = is_root_controller_request(auth);
+    if !is_root_controller || !auth_data.is_root_account {
+        return Err(HttpResponse::Unauthorized().json(ApiResponse {
+            success: false,
+            message: "Unauthorized: only root can perform this action".to_string(),
+            count: 0,
+            data: vec![],
+        }));
+    }
+    Ok(())
+}
+
+pub fn is_root_controller_request(auth: &HttpRequest) -> bool {
+    let extensions = auth.extensions();
+    let controller_type = extensions.get::<Option<String>>();
+    controller_type
+        .and_then(|opt| opt.as_ref())
+        .map(|s| s == "root")
+        .unwrap_or(false)
+}
+
+pub fn validate_identifier(name: &str, allow_dot: bool) -> bool {
+    if name.is_empty() {
+        return false;
+    }
+    name.chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_' || (allow_dot && c == '.'))
+}
+
+pub fn require_unsafe_query_raw(body: &Value) -> Result<String, HttpResponse> {
+    match body.get("unsafe_query").and_then(|v| v.as_str()) {
+        Some(q) if !q.trim().is_empty() => Ok(q.trim().to_string()),
+        _ => Err(HttpResponse::BadRequest().json(ApiResponse {
+            success: false,
+            message: "unsafe_query is required".to_string(),
+            count: 0,
+            data: vec![],
+        })),
+    }
+}
+
+pub fn format_diesel_error(e: &DieselError) -> String {
+    match e {
+        DieselError::DatabaseError(_, info) => {
+            let mut msg = format!("{}", e);
+            if let Some(d) = info.details() {
+                msg = format!("{}; detail: {}", msg, d);
+            }
+            if let Some(h) = info.hint() {
+                msg = format!("{}; hint: {}", msg, h);
+            }
+            if let Some(t) = info.table_name() {
+                msg = format!("{}; table: {}", msg, t);
+            }
+            if let Some(c) = info.column_name() {
+                msg = format!("{}; column: {}", msg, c);
+            }
+            msg
+        }
+        _ => format!("{}", e),
+    }
 }

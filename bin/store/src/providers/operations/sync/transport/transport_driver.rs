@@ -3,7 +3,7 @@ use log::debug;
 use reqwest::{Client, ClientBuilder, StatusCode};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use std::error::Error;
+use std::error::Error as StdError;
 use std::fmt;
 use std::pin::Pin;
 
@@ -26,7 +26,7 @@ impl fmt::Display for BadRequestException {
     }
 }
 
-impl Error for BadRequestException {}
+impl StdError for BadRequestException {}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PostOpts {
@@ -46,7 +46,7 @@ impl HttpTransportDriver {
         &'a self,
         client_id: &'a str,
         opts: &'a PostOpts,
-    ) -> Pin<Box<dyn Stream<Item = Result<Vec<Value>, Box<dyn Error + Send + Sync>>> + 'a>> {
+    ) -> Pin<Box<dyn Stream<Item = Result<Vec<Value>, Box<dyn StdError + Send + Sync>>> + 'a>> {
         let debug = std::env::var("DEBUG").unwrap_or_else(|_| "false".to_string()) == "true";
 
         Box::pin(stream::unfold(
@@ -60,7 +60,7 @@ impl HttpTransportDriver {
                     return Some((
                         Err(
                             Box::new(BadRequestException::new("Missing username or password"))
-                                as Box<dyn Error + Send + Sync>,
+                                as Box<dyn StdError + Send + Sync>,
                         ),
                         (start, items, client_id, opts),
                     ));
@@ -70,7 +70,7 @@ impl HttpTransportDriver {
                     Ok(client) => client,
                     Err(e) => {
                         return Some((
-                            Err(Box::new(e) as Box<dyn Error + Send + Sync>),
+                            Err(Box::new(e) as Box<dyn StdError + Send + Sync>),
                             (start, items, client_id, opts),
                         ));
                     }
@@ -88,7 +88,7 @@ impl HttpTransportDriver {
                     Ok(resp) => resp,
                     Err(e) => {
                         return Some((
-                            Err(Box::new(e) as Box<dyn Error + Send + Sync>),
+                            Err(Box::new(e) as Box<dyn StdError + Send + Sync>),
                             (start, items, client_id, opts),
                         ));
                     }
@@ -99,7 +99,7 @@ impl HttpTransportDriver {
                         Err(Box::new(std::io::Error::new(
                             std::io::ErrorKind::Other,
                             format!("API error: {}", response.status()),
-                        )) as Box<dyn Error + Send + Sync>),
+                        )) as Box<dyn StdError + Send + Sync>),
                         (start, items, client_id, opts),
                     ));
                 }
@@ -109,14 +109,14 @@ impl HttpTransportDriver {
                         Ok(data) => data,
                         Err(e) => {
                             return Some((
-                                Err(Box::new(e) as Box<dyn Error + Send + Sync>),
+                                Err(Box::new(e) as Box<dyn StdError + Send + Sync>),
                                 (start, items, client_id, opts),
                             ));
                         }
                     },
                     Err(e) => {
                         return Some((
-                            Err(Box::new(e) as Box<dyn Error + Send + Sync>),
+                            Err(Box::new(e) as Box<dyn StdError + Send + Sync>),
                             (start, items, client_id, opts),
                         ));
                     }
@@ -279,7 +279,7 @@ impl HttpTransportDriver {
     //     Ok(result)
     // }
 
-    pub async fn post(&self, data: Value, opts: &PostOpts) -> Result<Value, Box<dyn Error>> {
+    pub async fn post(&self, data: Value, opts: &PostOpts) -> Result<Value, Box<dyn StdError>> {
         log::debug!(
             "Posting to {}",
             serde_json::to_string_pretty(opts).unwrap_or_else(|e| {
@@ -379,7 +379,7 @@ impl HttpTransportDriver {
         start: usize,
         limit: usize,
         opts: &PostOpts,
-    ) -> Result<Vec<Value>, Box<dyn Error>> {
+    ) -> Result<Vec<Value>, Box<dyn StdError>> {
         let client = ClientBuilder::new().build()?;
         let sync_endpoint = &opts.url;
         let username = &opts.username;
@@ -485,7 +485,7 @@ impl HttpTransportDriver {
         client_id: &str,
         expected_total: usize,
         opts: &PostOpts,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), Box<dyn StdError>> {
         let client = ClientBuilder::new().build()?;
         let mut delay_ms = 500u64;
         const MAX_DELAY_MS: u64 = 8_000;
@@ -571,7 +571,7 @@ impl HttpTransportDriver {
         &self,
         client_id: &str,
         opts: &PostOpts,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> Result<(), Box<dyn StdError>> {
         let client = ClientBuilder::new().build()?;
         client
             .delete(&format!("{}/app/sync/chunk", opts.url))

@@ -10,8 +10,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Duration;
+use utoipa::ToSchema;
 /// Health check response structure
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct HealthResponse {
     pub status: String,
     pub timestamp: String,
@@ -21,7 +22,7 @@ pub struct HealthResponse {
 }
 
 /// Component health status for API response
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct ComponentHealthStatus {
     pub status: String,
     pub last_check: Option<String>,
@@ -29,7 +30,7 @@ pub struct ComponentHealthStatus {
 }
 
 /// System metrics for health response
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct SystemMetrics {
     pub memory_usage_mb: f64,
     pub cpu_usage_percent: f64,
@@ -40,7 +41,7 @@ pub struct SystemMetrics {
 }
 
 /// Detailed health check response
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct DetailedHealthResponse {
     pub status: String,
     pub timestamp: String,
@@ -51,7 +52,7 @@ pub struct DetailedHealthResponse {
 }
 
 /// Individual check result
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct CheckResult {
     pub status: String,
     pub message: String,
@@ -59,40 +60,40 @@ pub struct CheckResult {
 }
 
 /// Readiness probe response
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct ReadinessResponse {
     pub ready: bool,
     pub components: HashMap<String, bool>,
 }
 
 /// Liveness probe response
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct LivenessResponse {
     pub alive: bool,
     pub uptime_seconds: u64,
 }
 
 /// Component metadata update request
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, ToSchema)]
 pub struct ComponentMetadataRequest {
     pub key: String,
     pub value: String,
 }
 
 /// Health check record request
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, ToSchema)]
 pub struct HealthCheckRequest {
     pub success: bool,
 }
 
 /// Monitoring configuration request
-#[derive(Deserialize, Serialize, Debug)]
+#[derive(Deserialize, Serialize, Debug, ToSchema)]
 pub struct MonitoringConfigRequest {
     pub interval_seconds: u64,
 }
 
 /// Component statistics response
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct ComponentStatisticsResponse {
     pub statistics: HashMap<String, HashMap<String, u64>>,
     pub timestamp: String,
@@ -114,7 +115,7 @@ pub struct ComponentCountsResponse {
 }
 
 /// Monitoring status response
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, ToSchema)]
 pub struct MonitoringStatusResponse {
     pub enabled: bool,
     pub timestamp: String,
