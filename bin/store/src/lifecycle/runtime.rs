@@ -663,7 +663,10 @@ impl RuntimeManager {
                 bucket_name: bucket_name.clone(),
             };
 
-            let metrics_layer = ActixWebMetricsBuilder::new().build();
+            let metrics_layer = ActixWebMetricsBuilder::new()
+                .exclude("/swagger-ui")
+                .exclude_regex(r"^/swagger-ui(?:/.*)?$")
+                .build();
 
             let mut app = App::new()
                 .wrap(Logger::default())
@@ -691,7 +694,6 @@ impl RuntimeManager {
                 .configure(health_router::configure_health_routes);
 
             app = app
-                .service(api_routes)
                 .route(
                     "/swagger-ui",
                     web::get().to(|| async {
@@ -707,7 +709,8 @@ impl RuntimeManager {
                             SwaggerConfig::new(["/api-docs/openapi.json"])
                                 .persist_authorization(true),
                         ),
-                );
+                )
+                .service(api_routes);
 
             if let Some(hs) = &health_service {
                 app = app.app_data(web::Data::new(hs.clone()));
