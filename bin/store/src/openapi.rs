@@ -194,7 +194,11 @@ impl Modify for SecurityAddon {
     info(
         title = "Store Service API",
         version = "0.2.84",
-        description = "Phase 2 OpenAPI docs with tags, security schemes, parameter and payload metadata for routes configured in src/routers"
+        description = "API documentation for the Store service, covering organization authentication, token verification, store and root data operations, system initialization, PostgreSQL listener management, file services, and health/monitoring endpoints.",
+        contact(
+            name = "DNA Micro DB Team",
+            url = "https://www.dnamicro.com/"
+        )
     )
 )]
 pub struct ApiDoc;
