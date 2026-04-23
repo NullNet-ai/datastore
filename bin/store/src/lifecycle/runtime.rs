@@ -667,7 +667,6 @@ impl RuntimeManager {
 
             let mut app = App::new()
                 .wrap(Logger::default())
-                .wrap(metrics_layer.clone())
                 .app_data(web::Data::new(pool.clone()));
 
             // In migration mode, increase payload limit to 10 MB for large batch inserts
@@ -677,7 +676,8 @@ impl RuntimeManager {
                     .app_data(web::PayloadConfig::new(20 * 1024 * 1024));
             }
 
-            app = app
+            let api_routes = web::scope("")
+                .wrap(metrics_layer.clone())
                 .configure(sync_router::configure_sync_routes)
                 .configure(organizations_router::configure_organizations_routes)
                 .configure(organizations_router::configure_token_routes)
@@ -688,7 +688,10 @@ impl RuntimeManager {
                 .configure(|cfg| file_router::configure_file_routes(cfg, app_state.clone()))
                 // TODO: not sure what happens here if the order is set at above
                 // order issue
-                .configure(health_router::configure_health_routes)
+                .configure(health_router::configure_health_routes);
+
+            app = app
+                .service(api_routes)
                 .route(
                     "/swagger-ui",
                     web::get().to(|| async {
