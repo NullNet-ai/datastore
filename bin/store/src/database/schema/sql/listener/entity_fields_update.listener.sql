@@ -1,0 +1,3 @@
+-- 4. Optional: Listen to the notification channel (run this from a client, not in SQL script)
+-- This should be done in your application code or `psql` session
+-- LISTEN entity_fields_update;

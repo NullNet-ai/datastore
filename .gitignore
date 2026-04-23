@@ -1,0 +1,71 @@
+# Rust build artifacts
+/target/
+**/target/
+
+#Cargo.lock
+# Generated protocol buffer files
+*.pb
+
+# IDE specific files
+.idea/
+# .vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Debug files
+*.pdb
+
+# Generated binaries
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Environment files
+.env
+.env.local
+
+# Test files
+/tests/*.test.*
+/tests/*.rs
+/bin/store/src/database/schema/tables/test_samples.rs
+
+# Log files
+/logs/
+/bin/**/**/*.log
+
+# Test queries
+/bin/store/tests/*
+
+# Test Invalid SQL
+/bin/store/raw_queries/*
+
+# Generated store files (keep schema.rs)
+# bin/store/src/generated/*
+# !bin/store/src/generated/schema.rs
+
+# Checkpoint storage (ckpt tool)
+.mycheckpoints/
+
+# Store binary
+/store*
+
+# temp files
+/tmp/*  
+
+# nginx
+data
+letsencrypt
+
+# schema bases
+/datastore-postgres-experimental-qa-src-schema-application
+/bin/store/src/database/schema/application_tables/*

@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Post-checkout hook: ensure hooks stay configured on every checkout/branch switch
+# Runs after: git clone, git checkout, git checkout -b
+
+# $3 = 1 for branch checkout, 0 for file checkout
+if [ "$3" = "1" ]; then
+    REPO_ROOT="$(git rev-parse --show-toplevel)"
+    if [ -f "$REPO_ROOT/scripts/setup-hooks.sh" ]; then
+        "$REPO_ROOT/scripts/setup-hooks.sh"
+    fi
+fi

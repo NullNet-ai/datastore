@@ -1,0 +1,8 @@
+- linux/arm64 — Apple Silicon (M1/M2/M3), AWS Graviton
+- linux/amd64 — Intel/AMD x86_64 (most servers/desktops)
+- linux/arm/v7 — 32-bit ARM (Raspberry Pi 2–3, some SBCs)
+- linux/arm/v6 — Older 32-bit ARM (Raspberry Pi 1/Zero)
+- linux/386 — 32-bit x86
+- linux/ppc64le — IBM PowerPC (little endian)
+- linux/s390x — IBM Z mainframe
+- linux/riscv64 — RISC‑V 64-bit

@@ -1,0 +1,24 @@
+[workspace]
+
+[package]
+name = "mcp-diesel-proto-generator"
+version = "1.0.1"
+edition = "2021"
+authors = ["Kashan Ali Khalid <kashankhalid@dnamicro.com>"]
+description = "A Model Context Protocol (MCP) server that generates Protocol Buffer definitions from Diesel schemas"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/kashanalikhalid/mcp-diesel-proto-generator"
+documentation = "https://docs.rs/mcp-diesel-proto-generator"
+readme = "README.md"
+keywords = ["protobuf", "mcp", "claude", "diesel", "schema"]
+categories = ["command-line-utilities", "development-tools"]
+exclude = ["claude_desktop_config.json", "example_schema.rs"]
+
+[[bin]]
+name = "mcp-proto-generator"
+path = "src/main.rs"
+
+[dependencies]
+serde_json = "1.0"
+convert_case = "0.6"
+regex = "1.0"

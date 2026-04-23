@@ -1,0 +1,11 @@
+[package]
+name = "main"
+version = "0.1.0"
+edition = "2021"
+authors = [
+  "Bon Lazaga <bon@dnamicro.com>"
+]
+
+[dependencies]
+hlc = { path = '../../libs/hlc' }
+merkle = { path = '../../libs/merkle' }

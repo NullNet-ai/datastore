@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Post-merge hook: refresh hooks after git pull (picks up any new hooks from upstream)
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+if [ -f "$REPO_ROOT/scripts/setup-hooks.sh" ]; then
+    "$REPO_ROOT/scripts/setup-hooks.sh"
+fi

@@ -1,0 +1,47 @@
+{
+    "rust-analyzer.checkOnSave": false,
+    "rust-analyzer.linkedProjects": [
+        "./Cargo.toml"
+    ],
+    "rust-analyzer.cargo.buildScripts.enable": true,
+    "rust-analyzer.procMacro.enable": true,
+    "rust-analyzer.cargo.buildScripts.useRustcWrapper": true,
+    "rust-analyzer.diagnostics.enable": true,
+    "rust-analyzer.inlayHints.parameterHints.enable": true,
+    "rust-analyzer.inlayHints.typeHints.enable": true,
+    "rust-analyzer.lens.enable": true,
+    "rust-analyzer.hover.actions.enable": true,
+    "rust-analyzer.hover.actions.implementations.enable": true,
+    "rust-analyzer.hover.actions.references.enable": true,
+    "rust-analyzer.hover.actions.run.enable": true,
+    "rust-analyzer.hover.actions.debug.enable": true,
+    "rust-analyzer.server.extraEnv": {
+        "PROTOC": "/opt/homebrew/bin/protoc"
+    },
+    "rust-analyzer.runnables.extraEnv": {
+        "PATH": "${env:PATH}:${env:HOME}/.cargo/bin",
+        "PROTOC": "/opt/homebrew/bin/protoc"
+    },
+    "rust-analyzer.runnables.extraTestBinaryArgs": ["--nocapture", "--exact"],
+    "terminal.integrated.env.osx": {
+        "PROTOC": "/opt/homebrew/bin/protoc",
+        "PATH": "${env:PATH}:${env:HOME}/.cargo/bin"
+    },
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    "terminal.integrated.profiles.osx": {
+        "zsh": { "path": "/bin/zsh" },
+        "bash": { "path": "/bin/bash" }
+    },
+    "terminal.explorerKind": "external",
+    "files.watcherExclude": {
+        "**/target/**": true,
+        "**/.git/**": true
+    },
+    "search.exclude": {
+        "**/target/**": true
+    },
+    "[rust]": {
+        "editor.defaultFormatter": "rust-lang.rust-analyzer",
+        "editor.formatOnSave": true
+    }
+}

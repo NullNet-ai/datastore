@@ -1,0 +1,12 @@
+use crate::schema::core::sync_endpoint_groups;
+use diesel::prelude::*;
+use serde::{Deserialize, Serialize};
+
+#[derive(Insertable, Queryable, Serialize, Deserialize, Debug, Clone)]
+#[diesel(table_name = sync_endpoint_groups)]
+#[diesel(check_for_backend(diesel::pg::Pg))]
+pub struct SyncEndpointGroup {
+    pub sync_endpoint_id: i32,
+    pub group_id: String,
+    pub status: String,
+}

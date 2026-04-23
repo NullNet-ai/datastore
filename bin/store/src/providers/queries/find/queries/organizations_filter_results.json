@@ -1,0 +1,1390 @@
+{
+    "success": true,
+    "message": "Filter operation completed for table: organizations",
+    "count": 27,
+    "data": [
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000147",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/29/2025",
+            "created_time": "22:35",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6CHXP3X859ENKT2G6HWRFAX",
+            "name": null,
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": null,
+            "status": "Draft",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [],
+            "updated_by_account_organizations": [],
+            "updated_date": "09/29/2025",
+            "updated_time": "22:35"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000145",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/29/2025",
+            "created_time": "22:32",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6CHQPDQWSM0K5MMFD3ZFYA1",
+            "name": null,
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": null,
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/29/2025",
+            "updated_time": "22:33"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000143",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/29/2025",
+            "created_time": "22:27",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6CHDZB0Y6H6GTHRWP338NBG",
+            "name": null,
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": null,
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/29/2025",
+            "updated_time": "22:28"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000146",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/29/2025",
+            "created_time": "22:34",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6CHV3HJJFH00EP1FTXT8GBT",
+            "name": null,
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": null,
+            "status": "Draft",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [],
+            "updated_by_account_organizations": [],
+            "updated_date": "09/29/2025",
+            "updated_time": "22:34"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000484",
+            "county": null,
+            "created_by": [],
+            "created_by_account_organizations": [],
+            "created_date": "12/02/2025",
+            "created_time": "16:51",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": null,
+            "district_identifier": "90",
+            "district_superintendent": [],
+            "id": "01KBGV1WQSCR4229BFM0B3Q8EZ",
+            "name": "A County Schools",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [],
+            "updated_by_account_organizations": [],
+            "updated_date": "12/02/2025",
+            "updated_time": "16:51"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000082",
+            "county": "New York County",
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/22/2025",
+            "created_time": "15:41",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5SSE4C8E3JS80VHJPXT6NE0",
+            "name": "Addison Central School District",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "New York",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "15:42"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": "New York",
+            "code": "OR000083",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/22/2025",
+            "created_time": "15:43",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": "01K5SSE4C8E3JS80VHJPXT6NE0",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5SSGYXSCQR8W28A9N8CFTV9",
+            "name": "Addison Middle/High School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "New York",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "15:44"
+        },
+        {
+            "categories": [
+                "Department"
+            ],
+            "city": null,
+            "code": "OR000099",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/22/2025",
+            "created_time": "19:08",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5T57VZQRAFFKM31ADV4W7NR",
+            "name": "AKDE",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "Alaska",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "19:08"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000100",
+            "county": "Anchorage, Municipality of",
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/22/2025",
+            "created_time": "19:09",
+            "department_id": "01K5T57VZQRAFFKM31ADV4W7NR",
+            "district_id": null,
+            "district_identifier": "AK-46",
+            "district_superintendent": [],
+            "id": "01K5T5APT1TWNEN25G0VRQ88S5",
+            "name": "Anchorage School District",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "Alaska",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "19:13"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000144",
+            "county": "Steuben County",
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/29/2025",
+            "created_time": "22:31",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6CHMNNXJRP4E1G85R3Z6Y7Q",
+            "name": "Arkport Central School District",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "New York",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/29/2025",
+            "updated_time": "22:32"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000037",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/18/2025",
+            "created_time": "23:38",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5GB3HHA6ND411001S8HPZAP",
+            "name": "Ashford Rumble Elementary School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/18/2025",
+            "updated_time": "23:38"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": "New York",
+            "code": "OR000149",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/29/2025",
+            "created_time": "22:43",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": "01K6CJ8N7YPG6QTEQPAF90C2T3",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6CJANT49KAFA79GMVRME7GC",
+            "name": "Avoca Central School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "New York",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/29/2025",
+            "updated_time": "22:45"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000148",
+            "county": "Steuben County",
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/29/2025",
+            "created_time": "22:41",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6CJ8N7YPG6QTEQPAF90C2T3",
+            "name": "Avoca Central School District",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "New York",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/29/2025",
+            "updated_time": "22:42"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000015",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/18/2025",
+            "created_time": "17:32",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "name": "Boone County Schools",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/18/2025",
+            "updated_time": "23:36"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000036",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/18/2025",
+            "created_time": "23:37",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5GB1WZ093D457B5PJ18RRYC",
+            "name": "Cabell County Schools",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/18/2025",
+            "updated_time": "23:37"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000160",
+            "county": "Steuben County",
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "10/01/2025",
+            "created_time": "14:33",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6GV3M17F3GT9YHNS1VFP4X0",
+            "name": "Campbell-Savona Central School District",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "New York",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "10/01/2025",
+            "updated_time": "14:35"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": "New York",
+            "code": "OR000161",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "10/01/2025",
+            "created_time": "14:34",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": "01K6GV3M17F3GT9YHNS1VFP4X0",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6GV5ATDJZEDAJP921HRDQMV",
+            "name": "Campbell-Savona Elementary School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "New York",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "10/01/2025",
+            "updated_time": "14:35"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000075",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/21/2025",
+            "created_time": "19:14",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": "01K5QK4N4HXJTDMWV5449FFF2V",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5QK6BBW3S3H5J5SS18AX8DF",
+            "name": "Fellowsville Elementary School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/21/2025",
+            "updated_time": "19:14"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000039",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/18/2025",
+            "created_time": "23:39",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5GB5RP5REGGF5T1ZP32139T",
+            "name": "Madison Elementary School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/18/2025",
+            "updated_time": "23:39"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000040",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/18/2025",
+            "created_time": "23:40",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5GB8MGZYW0D47XBHPVDBTEG",
+            "name": "Madison Middle School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/18/2025",
+            "updated_time": "23:41"
+        },
+        {
+            "categories": [
+                "Department"
+            ],
+            "city": null,
+            "code": "OR000079",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/22/2025",
+            "created_time": "14:41",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5SP0M016SRHGY7C5DF2A7M6",
+            "name": "MEDE",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "Maine",
+            "status": "Draft",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "14:42"
+        },
+        {
+            "categories": [
+                "Department"
+            ],
+            "city": null,
+            "code": "OR000081",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/22/2025",
+            "created_time": "15:36",
+            "department_id": null,
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "name": "NDE",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "New York",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "15:36"
+        },
+        {
+            "categories": [
+                "District"
+            ],
+            "city": null,
+            "code": "OR000074",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/21/2025",
+            "created_time": "19:13",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": null,
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5QK4N4HXJTDMWV5449FFF2V",
+            "name": "Preston County Schools",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/21/2025",
+            "updated_time": "19:13"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000057",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/19/2025",
+            "created_time": "18:17",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": "01K5GB1WZ093D457B5PJ18RRYC",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5JB4JH7EW07J8TSA1A5NJDJ",
+            "name": "Salt Rock Elementary School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/19/2025",
+            "updated_time": "18:17"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": null,
+            "code": "OR000038",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/18/2025",
+            "created_time": "23:38",
+            "department_id": "01K3SKCH4R3Z9KYSKKSVEKYCHV",
+            "district_id": "01K5FP6K3Z8WBYP6MJC7A9YY6Q",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5GB4G7A0WSZ2WARA8HTY3ZY",
+            "name": "Scott High School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "West Virginia",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/18/2025",
+            "updated_time": "23:38"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": "Anchorage",
+            "code": "OR000101",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "09/22/2025",
+            "created_time": "19:14",
+            "department_id": "01K5T57VZQRAFFKM31ADV4W7NR",
+            "district_id": "01K5T5APT1TWNEN25G0VRQ88S5",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K5T5JV60VGZTYDBZ9FB8HF9K",
+            "name": "South Anchorage High School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": "0204240",
+            "state": "Alaska",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "09/22/2025",
+            "updated_time": "19:18"
+        },
+        {
+            "categories": [
+                "School"
+            ],
+            "city": "New York",
+            "code": "OR000201",
+            "county": null,
+            "created_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "created_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "created_date": "10/02/2025",
+            "created_time": "20:44",
+            "department_id": "01K5SS3QWNGABSQNQ4YG968YD8",
+            "district_id": "01K5SSE4C8E3JS80VHJPXT6NE0",
+            "district_identifier": null,
+            "district_superintendent": [],
+            "id": "01K6M2PW9CF2X3HXVV5Z2BXTCC",
+            "name": "Tuscarora Elementary School",
+            "principal": [],
+            "principal_id": null,
+            "school_identifier": null,
+            "state": "New York",
+            "status": "Active",
+            "superintendent": [],
+            "superintendent_id": null,
+            "updated_by": [
+                {
+                    "first_name": "Super",
+                    "full_name": "Super Admin",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "last_name": "Admin"
+                }
+            ],
+            "updated_by_account_organizations": [
+                {
+                    "contact_id": "01JCSAG79KQ1WM0F9B47Q700P1",
+                    "id": "01JCSAG79KQ1WM0F9B47Q700P1"
+                }
+            ],
+            "updated_date": "10/02/2025",
+            "updated_time": "20:44"
+        }
+    ]
+}

@@ -1,0 +1,14 @@
+# syntax=docker/dockerfile:1.4
+FROM rust:bookworm
+WORKDIR /usr/src/crdt-workspace
+ENV PATH="/usr/local/cargo/bin:/root/.cargo/bin:${PATH}"
+RUN apt-get update && apt-get install -y libpq-dev libssl-dev protobuf-compiler pkg-config make clang lld binutils ca-certificates expect postgresql-client && rm -rf /var/lib/apt/lists/*
+RUN rustup set profile minimal && rustup toolchain install stable && rustup default stable && cargo --version && rustc --version
+COPY . .
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    true
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    cargo install diesel_cli --no-default-features --features postgres
+CMD ["bash", "-lc", "PORT=6543 make store-clean-setup"]

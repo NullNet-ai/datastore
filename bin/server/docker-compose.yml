@@ -1,0 +1,18 @@
+networks:
+  internal:
+  frontend:
+    external: true
+
+services:
+  sync-server:
+    build:
+      context: ../..
+      dockerfile: bin/server/Dockerfile
+    platform: linux/arm64
+    container_name: crdt-sync-server
+    env_file:
+      - ../../.env-sync-server
+    ports:
+      - "3002:3002"
+    networks:
+      - internal

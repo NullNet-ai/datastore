@@ -1,0 +1,26 @@
+{
+  "pluck": [
+    "id",
+    "name"
+  ],
+  "pluck_object": {},
+  "pluck_group_object": {},
+  "advance_filters": [],
+  "group_advance_filters": [],
+  "joins": [],
+  "group_by": {
+    "fields": [],
+    "has_count": false
+  },
+  "concatenate_fields": [],
+  "multiple_sort": [],
+  "date_format": "",
+  "order_by": "",
+  "order_direction": "",
+  "is_case_sensitive_sorting": null,
+  "offset": 0,
+  "limit": 10,
+  "distinct_by": null,
+  "timezone": null,
+  "time_format": ""
+}

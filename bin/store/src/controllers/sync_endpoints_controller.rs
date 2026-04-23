@@ -1,0 +1,47 @@
+use crate::database::db;
+use crate::generated::models::sync_endpoint_model::SyncEndpointModel;
+use crate::providers::operations::sync::sync_endpoints_service;
+use crate::providers::operations::sync::transport::transport_driver::PostOpts;
+use actix_web::{get, post, web, HttpResponse, Responder};
+use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
+
+#[derive(Serialize)]
+pub struct ResponsePackage {
+    pub data: Vec<PostOpts>,
+}
+
+#[derive(Deserialize, Serialize, ToSchema)]
+pub struct EndpointRequest {
+    pub endpoint: SyncEndpointModel,
+}
+
+#[get("/api/sync_endpoints")]
+pub async fn get_sync_endpoints() -> impl Responder {
+    let mut conn = db::get_async_connection().await;
+
+    match sync_endpoints_service::get_sync_endpoints(&mut conn).await {
+        Ok(endpoints) => {
+            let response = ResponsePackage { data: endpoints };
+            HttpResponse::Ok().json(response)
+        }
+        Err(e) => {
+            log::error!("Failed to get sync endpoints: {}", e);
+            HttpResponse::InternalServerError().body("Failed to get sync endpoints")
+        }
+    }
+}
+#[post("/api/sync_endpoints")]
+pub async fn create_endpoint(endpoint_req: web::Json<EndpointRequest>) -> impl Responder {
+    let mut conn = db::get_async_connection().await;
+
+    match sync_endpoints_service::create_endpoint(&mut conn, &endpoint_req.endpoint).await {
+        Ok(_) => HttpResponse::Ok().json(serde_json::json!({
+            "message": "ok"
+        })),
+        Err(e) => {
+            log::error!("Failed to create sync endpoint: {}", e);
+            HttpResponse::InternalServerError().body("Failed to create sync endpoint")
+        }
+    }
+}

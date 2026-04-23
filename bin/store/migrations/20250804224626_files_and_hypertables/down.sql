@@ -1,0 +1,47 @@
+-- This file should undo anything in `up.sql`
+
+-- This file should undo anything in `up.sql`
+
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_location";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_sensor";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_sensitivity_level";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_code";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_categories";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_tags";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_requested_by";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_deleted_by";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_updated_by";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_created_by";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_organization_id";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_updated_date";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_created_date";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_version";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_previous_status";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_status";
+DROP INDEX IF EXISTS "idx_test_hypertables_idx_test_hypertables_tombstone";
+ALTER TABLE "test_hypertables" DROP CONSTRAINT IF EXISTS "test_hypertables_requested_by_account_organizations_id_fk";
+ALTER TABLE "test_hypertables" DROP CONSTRAINT IF EXISTS "test_hypertables_deleted_by_account_organizations_id_fk";
+ALTER TABLE "test_hypertables" DROP CONSTRAINT IF EXISTS "test_hypertables_updated_by_account_organizations_id_fk";
+ALTER TABLE "test_hypertables" DROP CONSTRAINT IF EXISTS "test_hypertables_created_by_account_organizations_id_fk";
+ALTER TABLE "test_hypertables" DROP CONSTRAINT IF EXISTS "test_hypertables_organization_id_organizations_id_fk";
+DROP TABLE IF EXISTS "test_hypertables";
+DROP INDEX IF EXISTS "idx_files_idx_files_image_url";
+DROP INDEX IF EXISTS "idx_files_idx_files_mimetype";
+DROP INDEX IF EXISTS "idx_files_idx_files_etag";
+DROP INDEX IF EXISTS "idx_files_idx_files_filename";
+DROP INDEX IF EXISTS "idx_files_idx_files_sensitivity_level";
+DROP INDEX IF EXISTS "idx_files_idx_files_code";
+DROP INDEX IF EXISTS "idx_files_idx_files_categories";
+DROP INDEX IF EXISTS "idx_files_idx_files_tags";
+DROP INDEX IF EXISTS "idx_files_idx_files_requested_by";
+DROP INDEX IF EXISTS "idx_files_idx_files_deleted_by";
+DROP INDEX IF EXISTS "idx_files_idx_files_updated_by";
+DROP INDEX IF EXISTS "idx_files_idx_files_created_by";
+DROP INDEX IF EXISTS "idx_files_idx_files_organization_id";
+DROP INDEX IF EXISTS "idx_files_idx_files_updated_date";
+DROP INDEX IF EXISTS "idx_files_idx_files_created_date";
+DROP INDEX IF EXISTS "idx_files_idx_files_version";
+DROP INDEX IF EXISTS "idx_files_idx_files_previous_status";
+DROP INDEX IF EXISTS "idx_files_idx_files_status";
+DROP INDEX IF EXISTS "idx_files_idx_files_tombstone";
+DROP TABLE IF EXISTS "files";

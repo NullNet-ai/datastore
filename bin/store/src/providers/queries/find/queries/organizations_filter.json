@@ -1,0 +1,336 @@
+{
+  "pluck": [
+    "id",
+    "code",
+    "name",
+    "categories",
+    "district_id",
+    "department_id",
+    "city",
+    "county",
+    "state",
+    "school_identifier",
+    "district_identifier",
+    "status",
+    "superintendent_id",
+    "principal_id",
+    "created_date",
+    "created_time",
+    "created_by",
+    "updated_date",
+    "updated_time",
+    "updated_by"
+  ],
+  "pluck_object": {
+    "created_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "created_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
+    "updated_by_account_organizations": [
+      "id",
+      "contact_id"
+    ],
+    "updated_by": [
+      "id",
+      "first_name",
+      "last_name"
+    ],
+    "organizations": [
+      "id",
+      "code",
+      "name",
+      "categories",
+      "district_id",
+      "department_id",
+      "city",
+      "county",
+      "state",
+      "school_identifier",
+      "district_identifier",
+      "status",
+      "superintendent_id",
+      "principal_id",
+      "created_date",
+      "created_time",
+      "created_by",
+      "updated_date",
+      "updated_time",
+      "updated_by"
+    ],
+    "district_orgs": [
+      "id",
+      "code",
+      "name",
+      "categories",
+      "district_id",
+      "department_id",
+      "city",
+      "county",
+      "state",
+      "school_identifier",
+      "district_identifier",
+      "status",
+      "created_date",
+      "created_time",
+      "created_by",
+      "updated_date",
+      "updated_time",
+      "updated_by",
+      "superintendent_id",
+      "principal_id"
+    ],
+    "district_superintendent": [
+      "first_name",
+      "code",
+      "last_name",
+      "username"
+    ],
+    "superintendent": [
+      "first_name",
+      "code",
+      "last_name",
+      "username"
+    ],
+    "principal": [
+      "first_name",
+      "code",
+      "last_name",
+      "username"
+    ]
+  },
+  "pluck_group_object": {},
+  "advance_filters": [
+    {
+      "type": "criteria",
+      "field": "status",
+      "operator": "equal",
+      "values": [
+        "Active",
+        "Draft"
+      ]
+    },
+    {
+      "type": "operator",
+      "operator": "and"
+    },
+    {
+      "type": "criteria",
+      "field": "categories",
+      "operator": "not_contains",
+      "values": [
+        "Personal",
+        "Root",
+        "Team"
+      ],
+      "parse_as": "text"
+    }
+  ],
+  "offset": 0,
+  "limit": 100,
+  "joins": [
+    {
+      "type": "left",
+      "field_relation": {
+        "to": {
+          "alias": "created_by_account_organizations",
+          "entity": "account_organizations",
+          "field": "id"
+        },
+        "from": {
+          "entity": "organizations",
+          "field": "created_by"
+        }
+      },
+      "nested": false
+    },
+    {
+      "type": "left",
+      "field_relation": {
+        "to": {
+          "alias": "created_by",
+          "entity": "contacts",
+          "field": "id"
+        },
+        "from": {
+            "alias": "ccc",
+          "entity": "created_by_account_organizations",
+          "field": "contact_id"
+        }
+      },
+      "nested": true
+    },
+    {
+      "type": "left",
+      "field_relation": {
+        "to": {
+          "alias": "updated_by_account_organizations",
+          "entity": "account_organizations",
+          "field": "id"
+        },
+        "from": {
+          "entity": "organizations",
+          "field": "updated_by"
+        }
+      },
+      "nested": false
+    },
+    {
+      "type": "left",
+      "field_relation": {
+        "to": {
+          "alias": "updated_by",
+          "entity": "contacts",
+          "field": "id"
+        },
+        "from": {
+          "entity": "updated_by_account_organizations",
+          "field": "contact_id"
+        }
+      },
+      "nested": true
+    },
+    {
+      "type": "self",
+      "field_relation": {
+        "to": {
+          "entity": "organizations",
+          "field": "id"
+        },
+        "from": {
+          "alias": "district_orgs",
+          "entity": "organizations",
+          "field": "district_id"
+        }
+      },
+      "nested": false
+    },
+    {
+      "type": "left",
+      "field_relation": {
+        "to": {
+          "alias": "district_superintendent",
+          "entity": "contacts",
+          "field": "id"
+        },
+        "from": {
+          "entity": "district_orgs",
+          "field": "superintendent_id"
+        }
+      },
+      "nested": true
+    },
+    {
+      "type": "left",
+      "field_relation": {
+        "to": {
+          "alias": "superintendent",
+          "entity": "contacts",
+          "field": "id"
+        },
+        "from": {
+          "entity": "organizations",
+          "field": "superintendent_id"
+        }
+      },
+      "nested": false
+    },
+    {
+      "type": "left",
+      "field_relation": {
+        "to": {
+          "alias": "principal",
+          "entity": "contacts",
+          "field": "id"
+        },
+        "from": {
+          "entity": "organizations",
+          "field": "principal_id"
+        }
+      },
+      "nested": false
+    }
+  ],
+  "order_direction": "asc",
+  "order_by": "organizations.name",
+  "is_case_sensitive_sorting": false,
+  "multiple_sort": [],
+  "date_format": "mm/dd/YYYY",
+  "concatenate_fields": [
+    {
+      "fields": [
+        "first_name",
+        "last_name"
+      ],
+      "field_name": "full_name",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": "created_by"
+    },
+    {
+      "fields": [
+        "first_name",
+        "last_name"
+      ],
+      "field_name": "full_name",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": "updated_by"
+    },
+    {
+      "fields": [
+        "first_name",
+        "last_name"
+      ],
+      "field_name": "full_name",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": "district_superintendent"
+    },
+    {
+      "fields": [
+        "first_name",
+        "last_name"
+      ],
+      "field_name": "full_name",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": "superintendent"
+    },
+    {
+      "fields": [
+        "first_name",
+        "last_name"
+      ],
+      "field_name": "full_name",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": "principal"
+    },
+    {
+      "fields": [
+        "created_date",
+        "created_time"
+      ],
+      "field_name": "created_date_time",
+      "separator": " ",
+      "entity": "organizations"
+    },
+    {
+      "fields": [
+        "updated_date",
+        "updated_time"
+      ],
+      "field_name": "updated_date_time",
+      "separator": " ",
+      "entity": "organizations"
+    }
+  ],
+  "group_advance_filters": [],
+  "distinct_by": "",
+  "time_format": "HH24:MI"
+}

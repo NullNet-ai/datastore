@@ -1,0 +1,109 @@
+{
+  "pluck": [
+    "id",
+    "categories",
+    "organization_id",
+    "first_name",
+    "middle_name",
+    "last_name",
+    "created_date",
+    "created_time",
+    "updated_date",
+    "updated_time"
+  ],
+  "pluck_object": {},
+  "pluck_group_object": {},
+  "advance_filters": [
+    {
+      "type": "criteria",
+      "field": "first_name",
+      "operator": "like",
+      "values": [
+        "Sup"
+      ],
+      "case_sensitive": false,
+      "parse_as": "",
+      "match_pattern": "contains",
+      "is_search": true,
+      "has_group_count": null
+    },
+    {
+      "type": "operator",
+      "operator": "or"
+    },
+    {
+      "type": "criteria",
+      "field": "last_name",
+      "operator": "like",
+      "values": [
+        "Sup"
+      ],
+      "case_sensitive": false,
+      "parse_as": "",
+      "match_pattern": "contains",
+      "is_search": true,
+      "has_group_count": null
+    },
+    {
+      "type": "operator",
+      "operator": "and"
+    },
+    {
+      "type": "criteria",
+      "field": "status",
+      "operator": "equal",
+      "values": [
+        "Active"
+      ],
+      "case_sensitive": false,
+      "parse_as": "",
+      "match_pattern": "contains",
+      "is_search": false,
+      "has_group_count": null
+    }
+  ],
+  "group_advance_filters": [],
+  "joins": [],
+  "group_by": {
+    "fields": [],
+    "has_count": false
+  },
+  "concatenate_fields": [
+    {
+      "fields": [
+        "created_date",
+        "created_time"
+      ],
+      "field_name": "created_date_time",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": null
+    },
+    {
+      "fields": [
+        "updated_date",
+        "updated_time"
+      ],
+      "field_name": "updated_date_time",
+      "separator": " ",
+      "entity": "contacts",
+      "aliased_entity": null
+    }
+  ],
+  "multiple_sort": [
+    {
+      "by_field": "created_date",
+      "by_direction": "desc",
+      "is_case_sensitive_sorting": false
+    }
+  ],
+  "date_format": "mm/dd/YYYY",
+  "order_by": "id",
+  "order_direction": "asc",
+  "is_case_sensitive_sorting": false,
+  "offset": 0,
+  "limit": 100,
+  "distinct_by": "",
+  "timezone": "America/Los_Angeles",
+  "time_format": "HH24:MI"
+}

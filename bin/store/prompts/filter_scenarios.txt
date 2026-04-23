@@ -1,0 +1,19 @@
+create a new scenarios in /scenarios/filters for filters where:
+
+<start_scenario>
+
+<end_scenario>
+
+If the scenarios are existing, skip it.
+
+Verify the payload by checking the /providers/queries/find/sql_constructor.rs struct to ensure the correct payload to create
+
+after creating the filter scenarios, create a unit tests and load the scenarios in /controllers/store_controller_test.rs
+
+Run make store
+
+after creating the unit tests from /controllers/store_controller_test.rs fix the issues in /providers/queries/find/sql_constructor.rs
+
+and if the issue is fix re-run the store, if still persist check /providers/queries/find files
+
+ALWAYS re run the store every changes in /providers/queries/find/sql_constructor.rs file then continue fixing issues.

@@ -1,0 +1,2318 @@
+use crate::builders::generator::diesel_schema_definition::{ForeignKeyDefinition, WhereExpr};
+use crate::builders::generator::field_definition::{FieldDefinition, ForeignKey, TableDefinition};
+use crate::builders::generator::migration_generator::MigrationGenerator;
+use crate::builders::generator::model_generator::ModelGenerator;
+use crate::builders::generator::schema_generator::SchemaGenerator;
+use crate::builders::generator::table_validator;
+use crate::constants::paths::database::{
+    HYPERTABLES_FILE, MODELS_DIR, MODELS_MOD_FILE, SCHEMA_FILE, SCHEMA_TABLES_DIR,
+    SYSTEM_FIELDS_FILE,
+};
+use crate::utils::helpers::to_singular;
+use log::{debug, error, info};
+use std::env;
+use std::fs;
+use std::path::Path;
+
+pub struct GeneratorService;
+
+impl GeneratorService {
+    /// Main entry point for schema generation
+    pub fn run() -> Result<(), String> {
+        // Check if CREATE_SCHEMA flag is enabled
+        if !Self::is_create_schema_enabled() {
+            return Ok(());
+        }
+
+        // Find and process all table definition files
+        let all_discovered_tables =
+            Self::discover_table_definitions_in_dir(Path::new(SCHEMA_TABLES_DIR.as_str()))?;
+
+        info!(
+            "Discovered {} table definition(s)",
+            all_discovered_tables.len()
+        );
+        for table_def in &all_discovered_tables {
+            debug!(
+                "Found table: {} with {} field(s)",
+                table_def.name,
+                table_def.fields.len()
+            );
+        }
+
+        if all_discovered_tables.is_empty() {
+            info!("No table definitions found, skipping schema generation");
+            return Ok(());
+        }
+
+        // Filter out invalid hypertables
+        let mut table_definitions = Vec::new();
+        for table_def in all_discovered_tables {
+            table_definitions.push(table_def);
+        }
+
+        let mut all_changes = Vec::new();
+
+        // Process each table definition
+        for table_def in &table_definitions {
+            // Extract indexes and foreign keys from table definition file
+            let (indexes, foreign_keys) = {
+                // Find the table definition file to read its content
+                let table_files_dir = SCHEMA_TABLES_DIR.as_str();
+
+                // Try multiple possible file names for the table
+                let possible_files = vec![
+                    format!("{}/{}.rs", table_files_dir, table_def.name),
+                    format!(
+                        "{}/{}_catalog.rs",
+                        table_files_dir,
+                        table_def.name.trim_end_matches('s')
+                    ),
+                    format!("{}/{}_table.rs", table_files_dir, table_def.name),
+                ];
+
+                let mut extracted_indexes = Vec::new();
+                let mut extracted_foreign_keys = Vec::new();
+
+                for table_file_path in possible_files {
+                    if let Ok(file_content) = fs::read_to_string(&table_file_path) {
+                        extracted_indexes = Self::extract_indexes_from_macro(&file_content)
+                            .unwrap_or_else(|_| Vec::new());
+                        extracted_foreign_keys =
+                            Self::extract_foreign_keys_from_macro(&file_content)
+                                .unwrap_or_else(|_| Vec::new());
+                        break;
+                    }
+                }
+
+                (extracted_indexes, extracted_foreign_keys)
+            };
+
+            // Analyze schema changes with indexes and foreign keys
+            let changes = SchemaGenerator::analyze_changes_with_indexes_and_foreign_keys(
+                &table_def,
+                &indexes,
+                &foreign_keys,
+            )?;
+
+            if !changes.is_empty() {
+                info!(
+                    "Table '{}': Found {} schema change(s)",
+                    table_def.name,
+                    changes.len()
+                );
+                for change in &changes {
+                    debug!(
+                        "  - {:?} for table '{}'",
+                        change.change_type, change.table_name
+                    );
+                }
+                all_changes.extend(changes);
+
+                // Generate model only when there are schema changes
+                let model_content = ModelGenerator::generate_model(&table_def)?;
+                Self::write_model_file(&table_def.name, &model_content)?;
+                info!(
+                    "Regenerated model for table '{}' due to schema changes",
+                    table_def.name
+                );
+
+                // Update schema.rs
+                SchemaGenerator::update_schema_file(table_def)?;
+            } else {
+                // Check if model file exists, if not, create it (for new tables)
+                let singular_name = to_singular(&table_def.name);
+                let model_file_path =
+                    Path::new(MODELS_DIR.as_str()).join(format!("{}_model.rs", singular_name));
+
+                if !model_file_path.exists() {
+                    let model_content = ModelGenerator::generate_model(&table_def)?;
+                    Self::write_model_file(&table_def.name, &model_content)?;
+                    info!("Created initial model for new table '{}'", table_def.name);
+                } else {
+                    // Check if field ordering has changed between schema and model
+                    if Self::has_field_ordering_changed(&table_def)? {
+                        // Rebuild the entire table in schema with proper field ordering
+                        let schema_file_path = SCHEMA_FILE.as_str();
+                        let existing_content = match fs::read_to_string(schema_file_path) {
+                            Ok(content) => content,
+                            Err(e) => return Err(format!("Failed to read schema.rs: {}", e)),
+                        };
+
+                        SchemaGenerator::rebuild_entire_table_in_schema(
+                            &existing_content,
+                            &table_def,
+                            schema_file_path,
+                        )?;
+
+                        let model_content = ModelGenerator::generate_model(&table_def)?;
+                        Self::write_model_file(&table_def.name, &model_content)?;
+                        info!("Regenerated schema and model for table '{}' due to field ordering mismatch", table_def.name);
+                    } else {
+                        debug!("Table '{}': Schema and model field ordering match, skipping regeneration", table_def.name);
+                    }
+                }
+            }
+        }
+
+        // Generate migration if there are any changes
+        if !all_changes.is_empty() {
+            info!(
+                "Generating migration with {} total change(s) across {} table(s)",
+                all_changes.len(),
+                all_changes
+                    .iter()
+                    .map(|c| &c.table_name)
+                    .collect::<std::collections::HashSet<_>>()
+                    .len()
+            );
+            // Create a single migration for all changes
+            // Pass all table definitions for migration context
+            MigrationGenerator::generate_migration(&all_changes, &table_definitions)?
+        } else {
+            info!("No schema changes detected, skipping migration generation");
+        }
+
+        // Update hypertables array based on current table definitions
+        Self::update_hypertables_array(&table_definitions)?;
+
+        Ok(())
+    }
+
+    /// Check if CREATE_SCHEMA environment variable is enabled
+    fn is_create_schema_enabled() -> bool {
+        match env::var("CREATE_SCHEMA") {
+            Ok(value) => {
+                let normalized = value.to_lowercase();
+                normalized == "true" || normalized == "1" || normalized == "yes"
+            }
+            Err(_) => false,
+        }
+    }
+
+    /// Check if field ordering has changed by comparing current model with expected ordering
+    fn has_field_ordering_changed(table_def: &TableDefinition) -> Result<bool, String> {
+        let singular_name = to_singular(&table_def.name);
+        let model_file_path =
+            Path::new(MODELS_DIR.as_str()).join(format!("{}_model.rs", singular_name));
+
+        if !model_file_path.exists() {
+            return Ok(true); // Model doesn't exist, needs to be created
+        }
+
+        // Read existing model file
+        let existing_content = fs::read_to_string(&model_file_path)
+            .map_err(|e| format!("Failed to read existing model file: {}", e))?;
+
+        // Get expected field ordering using the same logic as generators
+        let expected_fields = Self::get_expected_field_order(table_def)?;
+        let model_fields = Self::extract_field_order_from_model(&existing_content);
+
+        // Compare expected field order with current model field order
+        Ok(expected_fields != model_fields)
+    }
+
+    /// Get expected field ordering using the same logic as generators (system fields first, then entity fields)
+    fn get_expected_field_order(table_def: &TableDefinition) -> Result<Vec<String>, String> {
+        let system_field_names = Self::get_system_field_names()?;
+        let mut ordered_fields = Vec::new();
+
+        // Parse all fields from table definition
+        let mut parsed_fields = Vec::new();
+        for field in &table_def.fields {
+            match field.parse() {
+                Ok(parsed) => parsed_fields.push(parsed),
+                Err(e) => return Err(format!("Error parsing field {}: {}", field.name, e)),
+            }
+        }
+
+        // First, add system fields in the order defined by system_fields macro
+        for system_field_name in &system_field_names {
+            if let Some(field) = parsed_fields.iter().find(|f| f.name == *system_field_name) {
+                ordered_fields.push(field.name.clone());
+            }
+        }
+
+        // Then, add non-system fields (entity-specific fields)
+        for field in &parsed_fields {
+            if !system_field_names.contains(&field.name) {
+                ordered_fields.push(field.name.clone());
+            }
+        }
+
+        Ok(ordered_fields)
+    }
+
+    /// Get system field names from the system_fields macro
+    fn get_system_field_names() -> Result<Vec<String>, String> {
+        let system_fields_path = SYSTEM_FIELDS_FILE.as_str();
+        let content = fs::read_to_string(system_fields_path)
+            .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
+
+        // Find the macro definition
+        let macro_start = content
+            .find("() => {")
+            .ok_or("Could not find system_fields macro definition")?;
+        let macro_content_start = macro_start + "() => {".len();
+
+        // Find the closing brace of the macro
+        let mut brace_count = 1;
+        let mut macro_end = macro_content_start;
+        let chars: Vec<char> = content.chars().collect();
+
+        for i in macro_content_start..chars.len() {
+            match chars[i] {
+                '{' => brace_count += 1,
+                '}' => {
+                    brace_count -= 1;
+                    if brace_count == 0 {
+                        macro_end = i;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        let macro_content = &content[macro_content_start..macro_end];
+        let mut field_names = Vec::new();
+
+        for line in macro_content.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with("//") {
+                continue;
+            }
+
+            // Look for field definitions (field_name: type)
+            if let Some(colon_pos) = line.find(':') {
+                let field_name = line[..colon_pos].trim();
+                if !field_name.is_empty() {
+                    field_names.push(field_name.to_string());
+                }
+            }
+        }
+
+        Ok(field_names)
+    }
+
+    /// Extract field order from model content for comparison
+    fn extract_field_order_from_model(content: &str) -> Vec<String> {
+        let mut fields = Vec::new();
+
+        for line in content.lines() {
+            let line = line.trim();
+            if line.starts_with("pub ") && line.contains(":") && !line.contains("struct") {
+                if let Some(field_name) = line.split_whitespace().nth(1) {
+                    if let Some(name_only) = field_name.split(':').next() {
+                        fields.push(name_only.to_string());
+                    }
+                }
+            }
+        }
+
+        fields
+    }
+
+    /// Write model file to the models directory
+    fn write_model_file(table_name: &str, model_content: &str) -> Result<(), String> {
+        let models_dir = Path::new(MODELS_DIR.as_str());
+
+        // Create models directory if it doesn't exist
+        if !models_dir.exists() {
+            fs::create_dir_all(models_dir)
+                .map_err(|e| format!("Failed to create models directory: {}", e))?;
+        }
+
+        // Convert table name to singular for model file name
+        let singular_name = to_singular(table_name);
+        let model_file_path = models_dir.join(format!("{}_model.rs", singular_name));
+
+        // Write model content to file
+        fs::write(&model_file_path, model_content).map_err(|e| {
+            format!(
+                "Failed to write model file {}: {}",
+                model_file_path.display(),
+                e
+            )
+        })?;
+
+        // Add module declaration to mod.rs
+        Self::add_module_to_mod_rs(&singular_name)?;
+
+        Ok(())
+    }
+
+    /// Add module declaration to models/mod.rs
+    fn add_module_to_mod_rs(singular_name: &str) -> Result<(), String> {
+        let mod_file_path = Path::new(MODELS_MOD_FILE.as_str());
+
+        // Read existing mod.rs content
+        let content = fs::read_to_string(mod_file_path)
+            .map_err(|e| format!("Failed to read mod.rs: {}", e))?;
+
+        let module_declaration = format!("pub mod {}_model;", singular_name);
+
+        // Check if module is already declared
+        if content.contains(&module_declaration) {
+            return Ok(()); // Already exists
+        }
+
+        // Find the right place to insert (alphabetically)
+        let mut lines: Vec<&str> = content.lines().collect();
+        let mut insert_index = lines.len();
+
+        for (i, line) in lines.iter().enumerate() {
+            if line.starts_with("pub mod ") && *line > module_declaration.as_str() {
+                insert_index = i;
+                break;
+            }
+        }
+
+        // Insert the new module declaration
+        lines.insert(insert_index, &module_declaration);
+
+        // Write back to file
+        let new_content = lines.join("\n");
+        fs::write(mod_file_path, new_content)
+            .map_err(|e| format!("Failed to update mod.rs: {}", e))?;
+
+        Ok(())
+    }
+
+    /// Discover all table definition files in the schema directory.
+    /// Returns Err and aborts on validation failure (does not continue with other tables).
+    pub(crate) fn discover_table_definitions_in_dir(
+        tables_dir: &Path,
+    ) -> Result<Vec<TableDefinition>, String> {
+        debug!("Scanning directory: {}", tables_dir.display());
+
+        if !tables_dir.exists() {
+            debug!("Tables directory does not exist: {}", tables_dir.display());
+            return Ok(Vec::new());
+        }
+
+        let entries = fs::read_dir(tables_dir)
+            .map_err(|e| format!("Failed to read tables directory: {}", e))?;
+
+        let mut table_definitions = Vec::new();
+
+        for entry in entries {
+            let entry = entry.map_err(|e| format!("Failed to read directory entry: {}", e))?;
+            let path = entry.path();
+
+            // Skip if not a file
+            if !path.is_file() {
+                continue;
+            }
+
+            // Skip if not a .rs file
+            if let Some(extension) = path.extension() {
+                if extension != "rs" {
+                    continue;
+                }
+            } else {
+                continue;
+            }
+
+            // Skip module files
+            if let Some(file_name) = path.file_name() {
+                let file_name_str = file_name.to_string_lossy();
+                if file_name_str == "mod.rs"
+                    || file_name_str.ends_with("_generator.rs")
+                    || file_name_str == "field_definition.rs"
+                    || file_name_str == "generator_service.rs"
+                {
+                    continue;
+                }
+            }
+
+            // Try to parse as table definition
+            debug!("Processing file: {:?}", path);
+            match Self::parse_table_definition_file(&path) {
+                Ok(Some(table_def)) => {
+                    debug!("Successfully parsed table definition: {}", table_def.name);
+                    table_definitions.push(table_def);
+                }
+                Ok(None) => {
+                    // File doesn't contain table definition, skip
+                    debug!(
+                        "File {:?} does not contain table definition, skipping",
+                        path
+                    );
+                    continue;
+                }
+                Err(e) if e.starts_with("Skipping table") => {
+                    // Table was skipped due to validation error, continue with other tables
+                    continue;
+                }
+                Err(e) => {
+                    error!("Failed to parse table definition: {}", e);
+                    return Err(e);
+                }
+            }
+        }
+
+        Ok(table_definitions)
+    }
+
+    /// Parse a table definition file
+    fn parse_table_definition_file(file_path: &Path) -> Result<Option<TableDefinition>, String> {
+        let content =
+            fs::read_to_string(file_path).map_err(|e| format!("Failed to read file: {}", e))?;
+
+        // Try to extract table name from file name
+        let file_stem = file_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .ok_or("Invalid file name")?;
+
+        // Look for table definition patterns in the file
+        if Self::contains_table_definition(&content) {
+            // Parse the table definition
+            let table_def = Self::parse_table_definition_content(&content, file_stem)?;
+            if let Some(ref def) = table_def {
+                // Run validation (plural, file name match, duplicate detection, index/FK naming)
+                let indexes = Self::extract_indexes_from_macro(&content).unwrap_or_default();
+                let fk_names = Self::extract_foreign_key_names_and_columns(&content)?;
+                let field_names: Vec<String> = def.fields.iter().map(|f| f.name.clone()).collect();
+                if let Err(e) = table_validator::validate_table_file(
+                    file_stem,
+                    &content,
+                    &def.name,
+                    &field_names,
+                    &indexes,
+                    &fk_names,
+                ) {
+                    return Err(format!(
+                        "Table validation failed for {}:\n{}\n\nAborting.",
+                        def.name, e
+                    ));
+                }
+            }
+            Ok(table_def)
+        } else {
+            Ok(None)
+        }
+    }
+
+    /// Check if content contains table definition patterns
+    fn contains_table_definition(content: &str) -> bool {
+        // Look for comment-based field definition patterns
+        let has_comment_based = content.contains("field_name:") && content.contains("field_type:");
+
+        // Look for struct-based patterns
+        let has_struct_based = content.contains("DieselTableDefinition")
+            || content.contains("define_table_schema!")
+            || content.contains("impl DieselTableDefinition");
+
+        // Look for legacy patterns
+        let has_legacy = content.contains("FieldDefinition") || content.contains("TableDefinition");
+
+        has_comment_based || has_struct_based || has_legacy
+    }
+
+    /// Parse table definition content
+    fn parse_table_definition_content(
+        content: &str,
+        table_name: &str,
+    ) -> Result<Option<TableDefinition>, String> {
+        // Try to parse as new struct-based Diesel definition first
+        if let Ok(table_def) = Self::parse_diesel_table_definition(content, table_name) {
+            return Ok(Some(table_def));
+        }
+
+        // Try to parse as structured Rust code
+        if let Ok(table_def) = Self::parse_rust_table_definition(content, table_name) {
+            return Ok(Some(table_def));
+        }
+
+        // Try to parse as simple comment-based format
+        if let Ok(table_def) = Self::parse_simple_table_definition(content, table_name) {
+            return Ok(Some(table_def));
+        }
+
+        Ok(None)
+    }
+
+    /// Parse new struct-based Diesel table definition
+    fn parse_diesel_table_definition(
+        content: &str,
+        file_name: &str,
+    ) -> Result<TableDefinition, String> {
+        // Look for struct definitions that implement DieselTableDefinition
+        if content.contains("DieselTableDefinition") || content.contains("define_table_schema!") {
+            // Extract table name from macro or struct
+            let table_name = Self::extract_table_name_from_diesel_def(content, file_name)?;
+
+            // Extract hypertable parameter
+            let hypertable = Self::extract_hypertable_from_macro(content)?;
+
+            let mut fields = Vec::new();
+
+            // Try to extract field information from macro usage
+            if let Ok(extracted_fields) = Self::extract_fields_from_macro(content) {
+                fields = extracted_fields;
+            } else {
+                // Fallback: create a placeholder field to indicate this is a valid table
+                let id_field = FieldDefinition::new("id".to_string(), "integer()".to_string())
+                    .map_err(|e| format!("Failed to create fallback field: {}", e))?
+                    .with_attributes(true, false, true, None);
+                fields.push(id_field);
+            }
+
+            // Extract foreign keys from macro
+            let foreign_key_definitions =
+                Self::extract_foreign_keys_from_macro(content).unwrap_or_else(|_| Vec::new());
+
+            // Convert ForeignKeyDefinition to ForeignKey
+            let foreign_keys: Vec<ForeignKey> = foreign_key_definitions
+                .into_iter()
+                .map(|fk_def| ForeignKey {
+                    field: fk_def.column,
+                    references_table: fk_def.references_table,
+                    references_field: fk_def.references_column,
+                })
+                .collect();
+
+            // Validate hypertable constraints if hypertable is enabled
+            if hypertable {
+                if let Err(validation_error) =
+                    Self::validate_hypertable_constraints(&table_name, &fields)
+                {
+                    return Err(format!(
+                        "Skipping table '{}': {}",
+                        table_name, validation_error
+                    ));
+                }
+            }
+
+            return Ok(TableDefinition {
+                name: table_name,
+                fields,
+                indexes: Vec::new(),
+                foreign_keys,
+                is_hypertable: hypertable,
+            });
+        }
+
+        Err("No Diesel table definition found".to_string())
+    }
+
+    /// Extract table name from Diesel definition
+    fn extract_table_name_from_diesel_def(
+        content: &str,
+        file_name: &str,
+    ) -> Result<String, String> {
+        // Look for table_name in macro
+        if let Some(start) = content.find("table_name:") {
+            let after_colon = &content[start + 11..]; // "table_name:".len() = 11
+            if let Some(quote_start) = after_colon.find('"') {
+                let after_quote = &after_colon[quote_start + 1..];
+                if let Some(quote_end) = after_quote.find('"') {
+                    return Ok(after_quote[..quote_end].to_string());
+                }
+            }
+        }
+
+        // Fallback to file name
+        Ok(file_name.replace("_struct", "").replace("_table", ""))
+    }
+
+    /// Convert field type for schema generation (VarChar -> Text)
+    fn convert_field_type_for_schema(field_type: &str) -> String {
+        if field_type.starts_with("Nullable<Varchar<") {
+            "Nullable<Text>".to_string()
+        } else if field_type.starts_with("Varchar<") {
+            "Text".to_string()
+        } else if field_type == "Nullable<Varchar>" {
+            "Nullable<Text>".to_string()
+        } else if field_type == "Varchar" {
+            "Text".to_string()
+        } else {
+            field_type.to_string()
+        }
+    }
+
+    /// Extract fields from macro definition
+    fn extract_fields_from_macro(content: &str) -> Result<Vec<FieldDefinition>, String> {
+        let mut fields = Vec::new();
+
+        // Look for fields section in macro
+        if let Some(fields_start) = content.find("fields: {") {
+            let after_fields = &content[fields_start + 9..];
+
+            // Find the end of the fields section by counting braces (skip braces inside string literals)
+            let mut brace_count = 1;
+            let mut fields_end = 0;
+            let chars: Vec<char> = after_fields.chars().collect();
+            let n = chars.len();
+            let mut i = 0;
+            let mut in_double = false;
+            let mut in_single = false;
+            let mut escape = false;
+
+            while i < n {
+                let ch = chars[i];
+                if escape {
+                    escape = false;
+                    i += 1;
+                    continue;
+                }
+                if in_double {
+                    if ch == '\\' {
+                        escape = true;
+                    } else if ch == '"' {
+                        in_double = false;
+                    }
+                    i += 1;
+                    continue;
+                }
+                if in_single {
+                    if ch == '\\' {
+                        escape = true;
+                    } else if ch == '\'' {
+                        in_single = false;
+                    }
+                    i += 1;
+                    continue;
+                }
+                if ch == '"' {
+                    in_double = true;
+                    i += 1;
+                    continue;
+                }
+                if ch == '\'' {
+                    in_single = true;
+                    i += 1;
+                    continue;
+                }
+                match ch {
+                    '{' => brace_count += 1,
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 {
+                            fields_end = i;
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+
+            if fields_end > 0 {
+                let mut fields_content = after_fields[..fields_end].to_string();
+
+                // First, collect all explicitly defined fields to track overrides
+                let mut explicit_fields = std::collections::HashSet::new();
+                for line in fields_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty()
+                        || line.starts_with("//")
+                        || line.contains("system_fields!()")
+                    {
+                        continue;
+                    }
+                    if let Some(colon_pos) = line.find(':') {
+                        let field_name = line[..colon_pos].trim().to_string();
+                        explicit_fields.insert(field_name.clone());
+                    }
+                }
+
+                // Expand system_fields!() macro if present, but filter out overridden fields
+                if fields_content.contains("system_fields!()") {
+                    let system_fields_expansion = Self::get_system_fields_expansion()?;
+
+                    let filtered_system_fields =
+                        Self::filter_system_fields(&system_fields_expansion, &explicit_fields)?;
+
+                    fields_content =
+                        fields_content.replace("system_fields!()", &filtered_system_fields);
+                }
+
+                // Parse each field line - process explicit fields first, then system fields
+                let mut explicit_field_lines = Vec::new();
+                let mut system_field_lines = Vec::new();
+
+                for line in fields_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") {
+                        continue;
+                    }
+
+                    // Check if this line defines an explicit field (has a colon and field name)
+                    if let Some(colon_pos) = line.find(':') {
+                        let field_name = line[..colon_pos].trim();
+                        if explicit_fields.contains(field_name) {
+                            explicit_field_lines.push(line);
+                        } else {
+                            system_field_lines.push(line);
+                        }
+                    }
+                }
+
+                // Process explicit fields first, then system fields
+                let all_lines: Vec<&str> = explicit_field_lines
+                    .into_iter()
+                    .chain(system_field_lines.into_iter())
+                    .collect();
+
+                for line in all_lines {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") {
+                        continue;
+                    }
+
+                    // Parse field definition like: "id: integer(), primary_key: true,"
+                    if let Some(colon_pos) = line.find(':') {
+                        let field_name = line[..colon_pos].trim().to_string();
+                        let rest = &line[colon_pos + 1..];
+
+                        // Extract type (check nullable first to avoid false matches)
+                        let field_type = if rest.contains("nullable(") {
+                            // Extract inner type from nullable wrapper
+                            if rest.contains("nullable(text())") {
+                                "Nullable<Text>".to_string()
+                            } else if rest.contains("nullable(integer())") {
+                                "Nullable<Int4>".to_string()
+                            } else if rest.contains("nullable(bigint())") {
+                                "Nullable<Int8>".to_string()
+                            } else if rest.contains("nullable(boolean())") {
+                                "Nullable<Bool>".to_string()
+                            } else if rest.contains("nullable(jsonb())") {
+                                "Nullable<Jsonb>".to_string()
+                            } else if rest.contains("nullable(timestamp())") {
+                                "Nullable<Timestamp>".to_string()
+                            } else if rest.contains("nullable(timestamptz())") {
+                                "Nullable<Timestamptz>".to_string()
+                            } else if rest.contains("nullable(array(text()))") {
+                                "Nullable<Array<Text>>".to_string()
+                            } else if rest.contains("nullable(varchar(Some(") {
+                                // Parse varchar(Some(300)) format
+                                if let Some(start) = rest.find("varchar(Some(") {
+                                    if let Some(end) = rest[start..].find("))") {
+                                        let length_part = &rest[start + 13..start + end]; // Skip "varchar(Some("
+                                        format!("Nullable<Varchar<{}>>", length_part)
+                                    } else {
+                                        "Nullable<Varchar>".to_string()
+                                    }
+                                } else {
+                                    "Nullable<Varchar>".to_string()
+                                }
+                            } else {
+                                "Nullable<Text>".to_string() // default
+                            }
+                        } else if rest.contains("varchar(Some(") {
+                            // Parse varchar(Some(300)) format for non-nullable
+                            if let Some(start) = rest.find("varchar(Some(") {
+                                if let Some(end) = rest[start..].find("))") {
+                                    let length_part = &rest[start + 13..start + end]; // Skip "varchar(Some("
+                                    format!("Varchar<{}>", length_part)
+                                } else {
+                                    "Varchar".to_string()
+                                }
+                            } else {
+                                "Varchar".to_string()
+                            }
+                        } else if rest.contains("integer()") {
+                            "Int4".to_string()
+                        } else if rest.contains("bigint()") {
+                            "Int8".to_string()
+                        } else if rest.contains("text()") {
+                            "Text".to_string()
+                        } else if rest.contains("boolean()") {
+                            "Bool".to_string()
+                        } else if rest.contains("timestamp()") {
+                            "Timestamp".to_string()
+                        } else if rest.contains("timestamptz()") {
+                            "Timestamptz".to_string()
+                        } else {
+                            "Text".to_string() // default
+                        };
+
+                        let is_primary_key = rest.contains("primary_key: true");
+                        let is_index = rest.contains("indexed: true");
+
+                        // Extract migration_nullable value, default to true if not specified
+                        let migration_nullable = if rest.contains("migration_nullable: false") {
+                            false
+                        } else {
+                            true // Default to nullable
+                        };
+
+                        // Extract default value if specified
+                        let default_value = if let Some(default_start) = rest.find("default: ") {
+                            let default_part = &rest[default_start + 9..]; // Skip "default: "
+                            if let Some(comma_pos) = default_part.find(',') {
+                                Some(
+                                    default_part[..comma_pos]
+                                        .trim()
+                                        .trim_matches('"')
+                                        .to_string(),
+                                )
+                            } else {
+                                Some(default_part.trim().trim_matches('"').to_string())
+                            }
+                        } else {
+                            None
+                        };
+
+                        // JSONB default validation: must use ::jsonb format; no default empty array
+                        let is_jsonb =
+                            rest.contains("nullable(jsonb())") || rest.contains("jsonb()");
+                        if is_jsonb {
+                            if let Err(e) = table_validator::validate_jsonb_default(
+                                &field_name,
+                                default_value.as_deref(),
+                            ) {
+                                return Err(e);
+                            }
+                        }
+
+                        // Error on duplicate field names (user must not redefine system fields)
+                        if fields
+                            .iter()
+                            .any(|f: &FieldDefinition| f.name == field_name)
+                        {
+                            return Err(format!(
+                                "Duplicate field name '{}'. Do not redefine system fields or add the same field twice. Remove the duplicate.",
+                                field_name
+                            ));
+                        }
+
+                        // Create field definition with original type for migrations
+                        let mut field_def =
+                            FieldDefinition::new_direct(field_name.clone(), field_type.clone())
+                                .map_err(|e| format!("Failed to create field definition: {}", e))?
+                                .with_attributes(
+                                    is_primary_key,
+                                    is_index,
+                                    migration_nullable,
+                                    default_value.clone(),
+                                );
+
+                        // Store the original type for migrations and converted type for schema
+                        field_def.migration_type = Some(field_type.clone());
+                        field_def.diesel_type = Self::convert_field_type_for_schema(&field_type);
+
+                        fields.push(field_def);
+                    }
+                }
+            }
+        }
+
+        if fields.is_empty() {
+            return Err("No fields found in macro definition".to_string());
+        }
+
+        Ok(fields)
+    }
+
+    /// Extract first quoted string value after key. Format-agnostic - works for
+    /// "key: \"value\"" or "key: \"value\" }" or "key: \"value\","
+    fn extract_quoted_value_after(key: &str, line: &str) -> Option<String> {
+        line.split(key)
+            .nth(1)
+            .and_then(|s| s.trim().strip_prefix('"'))
+            .and_then(|s| s.split('"').next())
+            .map(|s| {
+                s.trim()
+                    .trim_end_matches(|c: char| c == ' ' || c == '}' || c == ',')
+                    .to_string()
+            })
+            .filter(|s| !s.is_empty())
+    }
+
+    /// Extract values from bracketed list like ["a","b"]. Format-agnostic.
+    /// If key is provided, search for the bracket pair after that key (for multiple lists per line).
+    fn extract_bracketed_quoted_values(line: &str, after_key: Option<&str>) -> Vec<String> {
+        let search_start = match after_key {
+            Some(key) => line.find(key).map(|i| i + key.len()).unwrap_or(0),
+            None => 0,
+        };
+        let rest = &line[search_start..];
+        if let (Some(start), Some(end)) = (rest.find('['), rest.find(']')) {
+            let inner = &rest[start + 1..end];
+            inner
+                .split(',')
+                .filter_map(|s| {
+                    let t = s.trim();
+                    t.strip_prefix('"')
+                        .and_then(|x| x.split('"').next())
+                        .map(|x| x.trim().to_string())
+                        .filter(|x| !x.is_empty())
+                })
+                .collect()
+        } else {
+            Vec::new()
+        }
+    }
+
+    /// Convert idiomatic where block to JSON (unquoted keys -> "key":).
+    /// Input is the content after "where:" e.g. `{ and: [ { op: "=", column: "x", value: "y" } ] }`.
+    fn where_block_to_json(block: &str) -> String {
+        let mut out = String::with_capacity(block.len() * 2);
+        let mut i = 0;
+        let chars: Vec<char> = block.chars().collect();
+        let n = chars.len();
+        let mut in_double = false;
+        let mut in_single = false;
+        let mut escape = false;
+
+        while i < n {
+            let c = chars[i];
+            if escape {
+                out.push(c);
+                escape = false;
+                i += 1;
+                continue;
+            }
+            if in_double {
+                if c == '\\' {
+                    escape = true;
+                    out.push(c);
+                    i += 1;
+                    continue;
+                }
+                if c == '"' {
+                    in_double = false;
+                }
+                out.push(c);
+                i += 1;
+                continue;
+            }
+            if in_single {
+                if c == '\\' {
+                    escape = true;
+                    out.push(c);
+                    i += 1;
+                    continue;
+                }
+                if c == '\'' {
+                    in_single = false;
+                }
+                out.push(c);
+                i += 1;
+                continue;
+            }
+            if c == '"' {
+                in_double = true;
+                out.push(c);
+                i += 1;
+                continue;
+            }
+            if c == '\'' {
+                in_single = true;
+                out.push(c);
+                i += 1;
+                continue;
+            }
+            // Outside string: look for identifier followed by ':'
+            if c.is_alphabetic() || c == '_' {
+                let start = i;
+                i += 1;
+                while i < n && (chars[i].is_alphanumeric() || chars[i] == '_') {
+                    i += 1;
+                }
+                let ident: String = chars[start..i].iter().collect();
+                // Skip whitespace
+                while i < n && chars[i].is_whitespace() {
+                    out.push(chars[i]);
+                    i += 1;
+                }
+                if i < n && chars[i] == ':' {
+                    out.push('"');
+                    out.push_str(&ident);
+                    out.push_str("\":");
+                    i += 1;
+                    continue;
+                }
+                out.push_str(&ident);
+                continue;
+            }
+            out.push(c);
+            i += 1;
+        }
+        out
+    }
+
+    /// Parse optional WHERE clause from an index block.
+    /// Supports:
+    /// - Block format: where: { and: [ { op: "=", column: "x", value: "y" } ] }
+    /// - JSON string: where: r#"{"and":[...]}"# or where: "..."
+    fn parse_where_from_index_block(block: &str) -> Option<WhereExpr> {
+        let where_pos = block.find("where:")?;
+        let rest = block[where_pos + 6..].trim_start();
+        let json_str = if rest.starts_with('{') {
+            let mut depth = 0;
+            let mut end = 0;
+            let mut in_double = false;
+            let mut in_single = false;
+            let mut escape = false;
+            let chars: Vec<char> = rest.chars().collect();
+            let n = chars.len();
+            let mut i = 0;
+            while i < n {
+                let c = chars[i];
+                if escape {
+                    escape = false;
+                    i += 1;
+                    continue;
+                }
+                if in_double {
+                    if c == '\\' {
+                        escape = true;
+                    } else if c == '"' {
+                        in_double = false;
+                    }
+                    i += 1;
+                    continue;
+                }
+                if in_single {
+                    if c == '\\' {
+                        escape = true;
+                    } else if c == '\'' {
+                        in_single = false;
+                    }
+                    i += 1;
+                    continue;
+                }
+                if c == '"' {
+                    in_double = true;
+                    i += 1;
+                    continue;
+                }
+                if c == '\'' {
+                    in_single = true;
+                    i += 1;
+                    continue;
+                }
+                match c {
+                    '{' => {
+                        depth += 1;
+                    }
+                    '}' => {
+                        depth -= 1;
+                        if depth == 0 {
+                            end = i + 1;
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+            if end == 0 {
+                return None;
+            }
+            let block_content = &rest[..end];
+            Self::where_block_to_json(block_content)
+        } else if rest.starts_with("r#\"") {
+            let start = 3;
+            let end = rest[start..].find("\"#").map(|i| start + i)?;
+            rest[start..end].to_string()
+        } else if rest.starts_with('"') {
+            let mut i = 1;
+            let chars: Vec<char> = rest.chars().collect();
+            while i < chars.len() {
+                if chars[i] == '\\' && i + 1 < chars.len() {
+                    i += 2;
+                    continue;
+                }
+                if chars[i] == '"' {
+                    break;
+                }
+                i += 1;
+            }
+            rest[1..i].to_string()
+        } else {
+            return None;
+        };
+        serde_json::from_str(json_str.trim()).ok()
+    }
+
+    /// Extract indexes from macro definition. Returns (name, columns, unique, index_type, where_clause).
+    pub(crate) fn extract_indexes_from_macro(
+        content: &str,
+    ) -> Result<Vec<table_validator::TableFileIndex>, String> {
+        let mut indexes = Vec::new();
+
+        // Look for indexes section in macro
+        if let Some(indexes_start) = content.find("indexes: {") {
+            let after_indexes = &content[indexes_start + 10..];
+
+            // Find the end of the indexes section by counting braces
+            let mut brace_count = 1;
+            let mut indexes_end = 0;
+            let chars: Vec<char> = after_indexes.chars().collect();
+
+            for (i, &ch) in chars.iter().enumerate() {
+                match ch {
+                    '{' => brace_count += 1,
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 {
+                            indexes_end = i;
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            if indexes_end > 0 {
+                let mut indexes_content = after_indexes[..indexes_end].to_string();
+
+                // Expand system_indexes!(table_name) macro if present
+                if let Some(table_name) =
+                    Self::extract_table_name_from_system_indexes(&indexes_content)
+                {
+                    let system_indexes_expansion = Self::get_system_indexes_expansion(&table_name)?;
+                    let pattern = format!("system_indexes!(\"{}\")", table_name);
+                    indexes_content = indexes_content.replace(&pattern, &system_indexes_expansion);
+                }
+
+                // Parse each index definition
+                let mut current_index: Option<(String, Vec<String>, bool, Option<String>)> = None;
+                let mut in_index_def = false;
+                let mut index_block_lines: Vec<String> = Vec::new();
+
+                for line in indexes_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") {
+                        continue;
+                    }
+
+                    // Check for index name: only "idx_*" starts a new index; "where: {", "not: {", etc. are part of current index block
+                    if line.contains(": {") {
+                        let possible_name = line.split(':').next().unwrap().trim();
+                        let is_where_block_key = matches!(possible_name, "where" | "not");
+                        let looks_like_index_name = possible_name.starts_with("idx_");
+                        if is_where_block_key || !looks_like_index_name {
+                            index_block_lines.push(line.to_string());
+                            continue;
+                        }
+                        // Save previous index if exists (parse where from accumulated block)
+                        if let Some(index) = current_index.take() {
+                            let block_str = index_block_lines.join("\n");
+                            let where_clause = Self::parse_where_from_index_block(&block_str);
+                            indexes.push((index.0, index.1, index.2, index.3, where_clause));
+                        }
+                        index_block_lines.clear();
+
+                        let index_name = line.split(':').next().unwrap().trim().to_string();
+                        let mut columns = Vec::new();
+                        let mut is_unique = false;
+                        let mut idx_type: Option<String> = None;
+
+                        // Extract columns/unique/type from same line if present (single-line format)
+                        if line.contains("columns:") && !line.contains("foreign_columns:") {
+                            columns = Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                        }
+                        if line.contains("unique:") {
+                            let unique_val = line
+                                .split("unique:")
+                                .nth(1)
+                                .and_then(|s| s.split(|c| c == ',' || c == '}').next())
+                                .map(|s| s.trim())
+                                .unwrap_or("");
+                            is_unique = unique_val == "true";
+                        }
+                        if let Some(type_val) = Self::extract_quoted_value_after("type:", line) {
+                            idx_type = Some(type_val);
+                        }
+
+                        current_index = Some((index_name, columns, is_unique, idx_type));
+                        in_index_def = true;
+                        index_block_lines.push(line.to_string());
+                    } else if in_index_def {
+                        index_block_lines.push(line.to_string());
+                        if line.contains("columns:") && !line.contains("foreign_columns:") {
+                            let columns =
+                                Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                            if let Some(ref mut index) = current_index {
+                                index.1 = columns;
+                            }
+                        } else if line.contains("unique:") {
+                            let unique_val = line
+                                .split("unique:")
+                                .nth(1)
+                                .and_then(|s| s.split(|c| c == ',' || c == '}').next())
+                                .map(|s| s.trim())
+                                .unwrap_or("");
+                            let is_unique = unique_val == "true";
+                            if let Some(ref mut index) = current_index {
+                                index.2 = is_unique;
+                            }
+                        } else if let Some(type_val) =
+                            Self::extract_quoted_value_after("type:", line)
+                        {
+                            if let Some(ref mut index) = current_index {
+                                index.3 = Some(type_val);
+                            }
+                        }
+                        if line == "}" {
+                            in_index_def = false;
+                        }
+                    }
+                }
+
+                // Save last index if exists
+                if let Some(index) = current_index {
+                    let block_str = index_block_lines.join("\n");
+                    let where_clause = Self::parse_where_from_index_block(&block_str);
+                    indexes.push((index.0, index.1, index.2, index.3, where_clause));
+                }
+            }
+        }
+
+        Ok(indexes)
+    }
+
+    /// Extract (constraint_name, column) for validation - used by table_validator.
+    fn extract_foreign_key_names_and_columns(
+        content: &str,
+    ) -> Result<Vec<(String, String)>, String> {
+        let mut result = Vec::new();
+        if let Some(fk_start) = content.find("foreign_keys: {") {
+            let after_fk = &content[fk_start + 15..];
+            let mut brace_count = 1;
+            let mut fk_end = 0;
+            let chars: Vec<char> = after_fk.chars().collect();
+            for (i, &ch) in chars.iter().enumerate() {
+                match ch {
+                    '{' => brace_count += 1,
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 {
+                            fk_end = i;
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+            if fk_end > 0 {
+                let mut fk_content = after_fk[..fk_end].to_string();
+                if let Some(table_name) =
+                    Self::extract_table_name_from_system_foreign_keys(&fk_content)
+                {
+                    let system_foreign_keys_expansion =
+                        Self::get_system_foreign_keys_expansion(&table_name)?;
+                    let pattern = format!("system_foreign_keys!(\"{}\")", table_name);
+                    fk_content = fk_content.replace(&pattern, &system_foreign_keys_expansion);
+                }
+                let mut current_name = String::new();
+                let mut current_column = String::new();
+                let mut in_fk_def = false;
+                for line in fk_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") {
+                        continue;
+                    }
+                    if line.contains(": {") {
+                        if in_fk_def && !current_name.is_empty() && !current_column.is_empty() {
+                            result.push((current_name.clone(), current_column.clone()));
+                        }
+                        current_name = line.split(':').next().unwrap_or("").trim().to_string();
+                        current_column = String::new();
+                        in_fk_def = true;
+                    } else if in_fk_def {
+                        if line.contains("columns:") && !line.contains("foreign_columns:") {
+                            let cols =
+                                Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                            current_column = cols.join("_");
+                        } else if line == "}" {
+                            if !current_name.is_empty() && !current_column.is_empty() {
+                                result.push((current_name.clone(), current_column.clone()));
+                            }
+                            in_fk_def = false;
+                        }
+                    }
+                }
+            }
+        }
+        Ok(result)
+    }
+
+    /// Extract foreign keys from macro definition
+    pub(crate) fn extract_foreign_keys_from_macro(
+        content: &str,
+    ) -> Result<Vec<ForeignKeyDefinition>, String> {
+        use crate::builders::generator::diesel_schema_definition::ForeignKeyDefinition;
+
+        let mut foreign_keys = Vec::new();
+
+        // Look for foreign_keys section in macro
+        if let Some(fk_start) = content.find("foreign_keys: {") {
+            let after_fk = &content[fk_start + 15..];
+
+            // Find the end of the foreign_keys section by counting braces
+            let mut brace_count = 1;
+            let mut fk_end = 0;
+            let chars: Vec<char> = after_fk.chars().collect();
+
+            for (i, &ch) in chars.iter().enumerate() {
+                match ch {
+                    '{' => brace_count += 1,
+                    '}' => {
+                        brace_count -= 1;
+                        if brace_count == 0 {
+                            fk_end = i;
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
+            if fk_end > 0 {
+                let mut fk_content = after_fk[..fk_end].to_string();
+
+                // Expand system_foreign_keys!(table_name) macro if present
+                if let Some(table_name) =
+                    Self::extract_table_name_from_system_foreign_keys(&fk_content)
+                {
+                    let system_foreign_keys_expansion =
+                        Self::get_system_foreign_keys_expansion(&table_name)?;
+                    let pattern = format!("system_foreign_keys!(\"{}\")", table_name);
+                    fk_content = fk_content.replace(&pattern, &system_foreign_keys_expansion);
+                }
+
+                // Parse each foreign key definition
+                let mut current_fk: Option<ForeignKeyDefinition> = None;
+                let mut in_fk_def = false;
+
+                for line in fk_content.lines() {
+                    let line = line.trim();
+                    if line.is_empty() || line.starts_with("//") {
+                        continue;
+                    }
+
+                    // Check for foreign key constraint name
+                    if line.contains(": {") {
+                        // Save previous foreign key if exists
+                        if let Some(fk) = current_fk.take() {
+                            foreign_keys.push(fk);
+                        }
+
+                        let mut fk = ForeignKeyDefinition {
+                            column: String::new(),
+                            references_table: String::new(),
+                            references_column: String::new(),
+                            on_delete: None,
+                            on_update: None,
+                        };
+
+                        // Parse from same line if present (single-line format)
+                        if line.contains("columns:") {
+                            if let Some(col) =
+                                Self::extract_bracketed_quoted_values(line, Some("columns:"))
+                                    .first()
+                            {
+                                fk.column = col.clone();
+                            }
+                        }
+                        if let Some(v) = Self::extract_quoted_value_after("foreign_table:", line) {
+                            fk.references_table = v;
+                        }
+                        if line.contains("foreign_columns:") {
+                            if let Some(col) = Self::extract_bracketed_quoted_values(
+                                line,
+                                Some("foreign_columns:"),
+                            )
+                            .first()
+                            {
+                                fk.references_column = col.clone();
+                            }
+                        }
+                        if let Some(v) = Self::extract_quoted_value_after("on_delete:", line) {
+                            fk.on_delete = Some(v);
+                        }
+                        if let Some(v) = Self::extract_quoted_value_after("on_update:", line) {
+                            fk.on_update = Some(v);
+                        }
+
+                        current_fk = Some(fk);
+                        in_fk_def = true;
+                    } else if in_fk_def {
+                        if line.contains("columns:") && !line.contains("foreign_columns:") {
+                            let cols =
+                                Self::extract_bracketed_quoted_values(line, Some("columns:"));
+                            if let (Some(ref mut fk), Some(col)) =
+                                (current_fk.as_mut(), cols.first())
+                            {
+                                fk.column = col.clone();
+                            }
+                        } else if line.contains("foreign_table:") {
+                            if let (Some(ref mut fk), Some(table_val)) = (
+                                current_fk.as_mut(),
+                                Self::extract_quoted_value_after("foreign_table:", line),
+                            ) {
+                                fk.references_table = table_val;
+                            }
+                        } else if line.contains("foreign_columns:") {
+                            let cols = Self::extract_bracketed_quoted_values(
+                                line,
+                                Some("foreign_columns:"),
+                            );
+                            if let (Some(ref mut fk), Some(col)) =
+                                (current_fk.as_mut(), cols.first())
+                            {
+                                fk.references_column = col.clone();
+                            }
+                        } else if line.contains("on_delete:") {
+                            if let (Some(ref mut fk), Some(val)) = (
+                                current_fk.as_mut(),
+                                Self::extract_quoted_value_after("on_delete:", line),
+                            ) {
+                                fk.on_delete = Some(val);
+                            }
+                        } else if line.contains("on_update:") {
+                            if let (Some(ref mut fk), Some(val)) = (
+                                current_fk.as_mut(),
+                                Self::extract_quoted_value_after("on_update:", line),
+                            ) {
+                                fk.on_update = Some(val);
+                            }
+                        } else if line == "}" {
+                            in_fk_def = false;
+                        }
+                    }
+
+                    // Also handle old format: "category_id -> "categories"."id""
+                    if line.contains(" -> ") {
+                        let parts: Vec<&str> = line.split(" -> ").collect();
+                        if parts.len() == 2 {
+                            let column = parts[0].trim().to_string();
+                            let reference = parts[1].trim().trim_matches(',');
+
+                            // Parse "table"."column" format
+                            if let Some(dot_pos) = reference.find('.') {
+                                let table_part = &reference[..dot_pos].trim_matches('"');
+                                let column_part = &reference[dot_pos + 1..].trim_matches('"');
+
+                                foreign_keys.push(ForeignKeyDefinition {
+                                    column,
+                                    references_table: table_part.to_string(),
+                                    references_column: column_part.to_string(),
+                                    on_delete: None,
+                                    on_update: None,
+                                });
+                            }
+                        }
+                    }
+                }
+
+                // Save last foreign key if exists
+                if let Some(fk) = current_fk {
+                    foreign_keys.push(fk);
+                }
+            }
+        }
+
+        Ok(foreign_keys)
+    }
+
+    /// Extract hypertable parameter from macro definition
+    fn extract_hypertable_from_macro(content: &str) -> Result<bool, String> {
+        // Look for hypertable parameter in macro
+        if let Some(hypertable_start) = content.find("hypertable:") {
+            let after_hypertable = &content[hypertable_start + 11..]; // "hypertable:".len() = 11
+            let line = after_hypertable.lines().next().unwrap_or("").trim();
+
+            if line.starts_with("true") {
+                return Ok(true);
+            } else if line.starts_with("false") {
+                return Ok(false);
+            }
+        }
+
+        // Default to false if not specified
+        Ok(false)
+    }
+
+    /// Update the hypertables array in hypertables.rs based on current table definitions
+    fn update_hypertables_array(table_definitions: &[TableDefinition]) -> Result<(), String> {
+        let hypertables_file_path = HYPERTABLES_FILE.as_str();
+
+        // Collect all hypertable names
+        let hypertable_names: Vec<&str> = table_definitions
+            .iter()
+            .filter(|def| def.is_hypertable)
+            .map(|def| def.name.as_str())
+            .collect();
+
+        // Generate the new hypertables.rs content
+        let mut content = String::new();
+        content.push_str("#[allow(warnings)]\n");
+        content.push_str("pub const HYPERTABLES: &[&str] = &[\n");
+
+        for table_name in &hypertable_names {
+            content.push_str(&format!("    \"{}\",\n", table_name));
+        }
+
+        content.push_str("    // Add more hypertable names as needed\n");
+        content.push_str("];\n");
+        content.push_str("#[allow(warnings)]\n");
+        content.push_str("// Helper function to check if a table is a hypertable\n");
+        content.push_str("pub fn is_hypertable(table_name: &str) -> bool {\n");
+        content.push_str("    HYPERTABLES.contains(&table_name)\n");
+        content.push_str("}\n");
+
+        // Write the updated content to the file
+        fs::write(hypertables_file_path, content)
+            .map_err(|e| format!("Failed to update hypertables.rs: {}", e))?;
+
+        if !hypertable_names.is_empty() {
+        } else {
+        }
+
+        Ok(())
+    }
+
+    /// Validate hypertable constraints
+    fn validate_hypertable_constraints(
+        table_name: &str,
+        fields: &[FieldDefinition],
+    ) -> Result<(), String> {
+        // Check for hypertable_timestamp field with text type
+        let has_hypertable_timestamp = fields.iter().any(|f| {
+            f.name == "hypertable_timestamp"
+                && (f.diesel_type == "Text" || f.diesel_type == "Nullable<Text>")
+        });
+
+        if !has_hypertable_timestamp {
+            return Err(format!(
+                "Hypertable '{}' must have a 'hypertable_timestamp' field of type 'Text'",
+                table_name
+            ));
+        }
+
+        // Check for composite primary key (id, timestamp)
+        let primary_key_fields: Vec<&str> = fields
+            .iter()
+            .filter(|f| f.is_primary_key)
+            .map(|f| f.name.as_str())
+            .collect();
+
+        let has_id_pk = primary_key_fields.contains(&"id");
+        let has_timestamp_pk = primary_key_fields.contains(&"timestamp")
+            || primary_key_fields.contains(&"hypertable_timestamp");
+
+        if !has_id_pk {
+            return Err(format!(
+                "Hypertable '{}' must have 'id' as part of the primary key",
+                table_name
+            ));
+        }
+
+        if !has_timestamp_pk {
+            return Err(format!(
+                "Hypertable '{}' must have 'timestamp' or 'hypertable_timestamp' as part of the primary key", 
+                table_name
+            ));
+        }
+
+        // Ensure timestamp field has timestamptz type
+        let timestamp_field = fields.iter().find(|f| {
+            (f.name == "timestamp" || f.name == "hypertable_timestamp") && f.is_primary_key
+        });
+        if let Some(ts_field) = timestamp_field {
+            if ts_field.name == "timestamp"
+                && !(ts_field.diesel_type == "Timestamptz"
+                    || ts_field.diesel_type == "Nullable<Timestamptz>")
+            {
+                return Err(format!(
+                    "Hypertable '{}' timestamp field must have type 'Timestamptz'",
+                    table_name
+                ));
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Parse Rust-style table definition
+    fn parse_rust_table_definition(
+        content: &str,
+        _table_name: &str,
+    ) -> Result<TableDefinition, String> {
+        // Look for TableDefinition struct instantiation
+        if content.contains("TableDefinition") {
+            // This would be a more complex parser for Rust syntax
+            // For now, we'll implement a simple pattern matcher
+            return Err("Rust table definition parsing not yet implemented".to_string());
+        }
+
+        Err("No Rust table definition found".to_string())
+    }
+
+    /// Parse simple table definition format
+    fn parse_simple_table_definition(
+        content: &str,
+        table_name: &str,
+    ) -> Result<TableDefinition, String> {
+        let mut fields = Vec::new();
+        let lines: Vec<&str> = content.lines().collect();
+
+        let mut current_field_name: Option<String> = None;
+        let mut current_field_type: Option<String> = None;
+        let mut current_is_index = false;
+        // joins_with functionality removed
+        let mut current_default_value: Option<String> = None;
+
+        for line in lines {
+            let line = line.trim();
+
+            // Skip empty lines and comments
+            if line.is_empty() || line.starts_with("//") || line.starts_with("/*") {
+                continue;
+            }
+
+            // Parse field properties
+            if line.starts_with("field_name:") {
+                // Save previous field if exists
+                if let (Some(name), Some(field_type)) =
+                    (current_field_name.take(), current_field_type.take())
+                {
+                    let field = FieldDefinition::new(name, field_type)
+                        .map_err(|e| format!("Failed to create field: {}", e))?
+                        .with_attributes(
+                            false,
+                            current_is_index,
+                            true,
+                            current_default_value.take(),
+                        );
+                    fields.push(field);
+                    current_is_index = false;
+                }
+
+                current_field_name = Some(
+                    line.split(':')
+                        .nth(1)
+                        .ok_or("Invalid field_name format")?
+                        .trim()
+                        .to_string(),
+                );
+            } else if line.starts_with("field_type:") {
+                current_field_type = Some(
+                    line.split(':')
+                        .nth(1)
+                        .ok_or("Invalid field_type format")?
+                        .trim()
+                        .to_string(),
+                );
+            } else if line.starts_with("is_index:") {
+                let value = line
+                    .split(':')
+                    .nth(1)
+                    .ok_or("Invalid is_index format")?
+                    .trim();
+                current_is_index = value == "true";
+            } else if line.starts_with("joins_with:") {
+                // joins_with functionality removed - ignoring this attribute
+            } else if line.starts_with("default_value:") {
+                let value = line
+                    .split(':')
+                    .nth(1)
+                    .ok_or("Invalid default_value format")?
+                    .trim();
+                if !value.is_empty() && value != "null" && value != "None" {
+                    current_default_value = Some(value.to_string());
+                }
+            }
+        }
+
+        // Save last field
+        if let (Some(name), Some(field_type)) = (current_field_name, current_field_type) {
+            let field = FieldDefinition::new(name, field_type)
+                .map_err(|e| format!("Failed to create field: {}", e))?
+                .with_attributes(false, current_is_index, true, current_default_value);
+            fields.push(field);
+        }
+
+        if fields.is_empty() {
+            return Err("No fields found in table definition".to_string());
+        }
+
+        Ok(TableDefinition {
+            name: table_name.to_string(),
+            fields,
+            indexes: Vec::new(),
+            foreign_keys: Vec::new(),
+            is_hypertable: false,
+        })
+    }
+
+    /// Dynamically reads the system_fields macro from system_fields.rs
+    fn get_system_fields_expansion() -> Result<String, String> {
+        let system_fields_path = SYSTEM_FIELDS_FILE.as_str();
+        let content = fs::read_to_string(system_fields_path)
+            .map_err(|e| format!("Failed to read system_fields.rs: {}", e))?;
+
+        // Find the macro definition
+        let macro_start = content
+            .find("() => {")
+            .ok_or("Could not find system_fields macro definition")?;
+        let macro_content_start = macro_start + "() => {".len();
+
+        // Find the closing brace of the macro
+        let mut brace_count = 1;
+        let mut macro_end = macro_content_start;
+        let chars: Vec<char> = content.chars().collect();
+
+        for i in macro_content_start..chars.len() {
+            match chars[i] {
+                '{' => brace_count += 1,
+                '}' => {
+                    brace_count -= 1;
+                    if brace_count == 0 {
+                        macro_end = i;
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        if brace_count != 0 {
+            return Err("Could not find closing brace for system_fields macro".to_string());
+        }
+
+        let macro_content = &content[macro_content_start..macro_end];
+
+        // Clean up the content - remove extra whitespace and format for diesel schema
+        let cleaned_content = macro_content
+            .trim()
+            .lines()
+            .map(|line| line.trim())
+            .filter(|line| !line.is_empty())
+            .collect::<Vec<&str>>()
+            .join("\n        ");
+
+        Ok(cleaned_content)
+    }
+
+    /// Dynamically reads the system_indexes macro from system_fields.rs
+    fn extract_table_name_from_system_indexes(content: &str) -> Option<String> {
+        use regex::Regex;
+        let re = Regex::new(r#"system_indexes!\("([^"]+)"\)"#).ok()?;
+        if let Some(captures) = re.captures(content) {
+            captures.get(1).map(|m| m.as_str().to_string())
+        } else {
+            None
+        }
+    }
+
+    fn get_system_indexes_expansion(table_name: &str) -> Result<String, String> {
+        // Generate the expanded system indexes with table name prefixes
+        let indexes = vec![
+            ("tombstone", "tombstone"),
+            ("status", "status"),
+            ("previous_status", "previous_status"),
+            ("version", "version"),
+            ("created_date", "created_date"),
+            ("updated_date", "updated_date"),
+            ("organization_id", "organization_id"),
+            ("created_by", "created_by"),
+            ("updated_by", "updated_by"),
+            ("deleted_by", "deleted_by"),
+            ("requested_by", "requested_by"),
+            ("tags", "tags"),
+            ("categories", "categories"),
+            ("code", "code"),
+            ("sensitivity_level", "sensitivity_level"),
+        ];
+
+        let mut result = String::new();
+        for (i, (field_suffix, column_name)) in indexes.iter().enumerate() {
+            if i > 0 {
+                result.push_str(",\n        ");
+            }
+            result.push_str(&format!(
+                "idx_{}_{}: {{\n            columns: [\"{}\"],\n            unique: false,\n            type: \"btree\"\n        }}",
+                table_name, field_suffix, column_name
+            ));
+        }
+
+        Ok(result)
+    }
+
+    /// Extract table name from system_foreign_keys macro call
+    fn extract_table_name_from_system_foreign_keys(content: &str) -> Option<String> {
+        use regex::Regex;
+        let re = Regex::new(r#"system_foreign_keys!\("([^"]+)"\)"#).ok()?;
+        if let Some(captures) = re.captures(content) {
+            captures.get(1).map(|m| m.as_str().to_string())
+        } else {
+            None
+        }
+    }
+
+    /// Get system foreign keys expansion for a given table name
+    fn get_system_foreign_keys_expansion(table_name: &str) -> Result<String, String> {
+        // Constraint name format: fk_{table_name}_{column_name}
+        let clean_table_name = table_name.replace(",", "").replace("\"", "");
+
+        let result = format!(
+            "fk_{}_organization_id: {{\n            columns: [\"organization_id\"],\n            foreign_table: \"organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        fk_{}_created_by: {{\n            columns: [\"created_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        fk_{}_updated_by: {{\n            columns: [\"updated_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        fk_{}_deleted_by: {{\n            columns: [\"deleted_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }},\n        fk_{}_requested_by: {{\n            columns: [\"requested_by\"],\n            foreign_table: \"account_organizations\",\n            foreign_columns: [\"id\"],\n            on_delete: \"no action\",\n            on_update: \"no action\"\n        }}",
+            clean_table_name,
+            clean_table_name,
+            clean_table_name,
+            clean_table_name,
+            clean_table_name
+        );
+
+        Ok(result)
+    }
+
+    /// Filter system fields to exclude those that are explicitly overridden
+    fn filter_system_fields(
+        system_fields_expansion: &str,
+        explicit_fields: &std::collections::HashSet<String>,
+    ) -> Result<String, String> {
+        let mut filtered_lines = Vec::new();
+
+        for line in system_fields_expansion.lines() {
+            let line = line.trim();
+            if line.is_empty() {
+                continue;
+            }
+
+            // Extract field name from line
+            if let Some(colon_pos) = line.find(':') {
+                let field_name = line[..colon_pos].trim();
+                // Only include system field if it's not explicitly overridden
+                if !explicit_fields.contains(field_name) {
+                    filtered_lines.push(line);
+                }
+            }
+        }
+
+        Ok(filtered_lines.join("\n        "))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::GeneratorService;
+    use crate::builders::generator::diesel_schema_definition::WhereExpr;
+
+    #[test]
+    fn test_extract_indexes_single_line_format_postgres_channels() {
+        // Regression: single-line index format type: "btree" } used to capture " } in type value
+        let content = r#"
+define_table_schema! {
+    fields: { id: primary_key(text()), channel_name: nullable(text()), channel_timestamp: nullable(timestamptz()), function: nullable(text()) },
+    indexes: {
+        idx_postgres_channels_channel_name: { columns: ["channel_name"], unique: false, type: "btree" },
+        idx_postgres_channels_channel_timestamp: { columns: ["channel_timestamp"], unique: false, type: "btree" },
+        idx_postgres_channels_function: { columns: ["function"], unique: false, type: "btree" }
+    },
+    foreign_keys: {}
+}
+"#;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 3);
+
+        for (name, columns, _unique, idx_type, _where) in &indexes {
+            assert_eq!(columns.len(), 1, "Each index should have one column");
+            let ty = idx_type.as_ref().expect("index type should be present");
+            assert!(
+                !ty.contains('}'),
+                "Type must not contain '}}' - got '{}' for index {}",
+                ty,
+                name
+            );
+            assert_eq!(ty, "btree", "Type should be 'btree' for index {}", name);
+        }
+
+        let (name1, cols1, _, ty1, _) = &indexes[0];
+        assert_eq!(name1, "idx_postgres_channels_channel_name");
+        assert_eq!(cols1, &["channel_name"]);
+        assert_eq!(ty1.as_deref(), Some("btree"));
+
+        let (name2, cols2, _, ty2, _) = &indexes[1];
+        assert_eq!(name2, "idx_postgres_channels_channel_timestamp");
+        assert_eq!(cols2, &["channel_timestamp"]);
+        assert_eq!(ty2.as_deref(), Some("btree"));
+
+        let (name3, cols3, _, ty3, _) = &indexes[2];
+        assert_eq!(name3, "idx_postgres_channels_function");
+        assert_eq!(cols3, &["function"]);
+        assert_eq!(ty3.as_deref(), Some("btree"));
+    }
+
+    #[test]
+    fn test_extract_foreign_keys_single_line_format() {
+        let content = r#"
+define_table_schema! {
+    fields: { id: primary_key(text()), organization_id: nullable(text()) },
+    indexes: {},
+    foreign_keys: {
+        fk_foo_organization_id: { columns: ["organization_id"], foreign_table: "organizations", foreign_columns: ["id"], on_delete: "no action", on_update: "no action" }
+    }
+}
+"#;
+        let fks = GeneratorService::extract_foreign_keys_from_macro(content).unwrap();
+        assert_eq!(fks.len(), 1);
+        let fk = &fks[0];
+        assert_eq!(fk.column, "organization_id");
+        assert_eq!(fk.references_table, "organizations");
+        assert_eq!(fk.references_column, "id");
+        assert_eq!(fk.on_delete.as_deref(), Some("no action"));
+        assert_eq!(fk.on_update.as_deref(), Some("no action"));
+    }
+
+    #[test]
+    fn test_extract_foreign_keys_multi_line_format() {
+        let content = r#"
+foreign_keys: {
+    fk_demo_items_org: {
+        columns: ["organization_id"],
+        foreign_table: "organizations",
+        foreign_columns: ["id"],
+        on_delete: "no action",
+        on_update: "no action"
+    }
+}
+"#;
+        let fks = GeneratorService::extract_foreign_keys_from_macro(content).unwrap();
+        assert_eq!(fks.len(), 1);
+        let fk = &fks[0];
+        assert_eq!(fk.column, "organization_id");
+        assert_eq!(fk.references_table, "organizations");
+        assert_eq!(fk.references_column, "id");
+    }
+
+    #[test]
+    fn test_extract_indexes_multiple_formats() {
+        // Format 1: Single-line with trailing brace (regression case)
+        let content1 =
+            r#"indexes: { idx_foo_bar: { columns: ["bar"], unique: false, type: "btree" } }"#;
+        let idx1 = GeneratorService::extract_indexes_from_macro(content1).unwrap();
+        assert_eq!(idx1.len(), 1);
+        assert_eq!(idx1[0].0, "idx_foo_bar");
+        assert_eq!(idx1[0].1, vec!["bar"]);
+        assert_eq!(idx1[0].3.as_deref(), Some("btree"));
+
+        // Format 2: Multi-line
+        let content2 = r#"
+indexes: {
+    idx_foo_baz: {
+        columns: ["baz"],
+        unique: true,
+        type: "btree"
+    }
+}
+"#;
+        let idx2 = GeneratorService::extract_indexes_from_macro(content2).unwrap();
+        assert_eq!(idx2.len(), 1);
+        assert_eq!(idx2[0].0, "idx_foo_baz");
+        assert!(idx2[0].2); // unique
+        assert_eq!(idx2[0].3.as_deref(), Some("btree"));
+
+        // Format 3: Multiple indexes, mixed single-line
+        let content3 = r#"
+indexes: {
+    idx_t1_a: { columns: ["a"], unique: false, type: "btree" },
+    idx_t1_b: { columns: ["b"], unique: false, type: "hash" }
+}
+"#;
+        let idx3 = GeneratorService::extract_indexes_from_macro(content3).unwrap();
+        assert_eq!(idx3.len(), 2);
+        assert_eq!(idx3[0].1, vec!["a"]);
+        assert_eq!(idx3[0].3.as_deref(), Some("btree"));
+        assert_eq!(idx3[1].1, vec!["b"]);
+        assert_eq!(idx3[1].3.as_deref(), Some("hash"));
+
+        // Format 4: Extra spacing, trailing comma
+        let content4 =
+            r#"indexes: { idx_x_y: { columns: [ "y" ], unique: false , type: "btree" , } }"#;
+        let idx4 = GeneratorService::extract_indexes_from_macro(content4).unwrap();
+        assert_eq!(idx4.len(), 1);
+        assert_eq!(idx4[0].1, vec!["y"]);
+        assert_eq!(idx4[0].3.as_deref(), Some("btree"));
+    }
+
+    #[test]
+    fn test_extract_indexes_organizations_style_single_line() {
+        // Regression: organizations table format - single-line indexes with type: "btree" },
+        // must not capture " } in type value (produces invalid USING btree" }("col") in migrations)
+        let content = r#"
+define_table_schema! {
+    fields: { system_fields!() },
+    indexes: {
+        system_indexes!("organizations"),
+        idx_organizations_name: { columns: ["name"], unique: false, type: "btree" },
+        idx_organizations_skyll_id: { columns: ["skyll_id"], unique: false, type: "btree" },
+    },
+    foreign_keys: {}
+}
+"#;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        let custom: Vec<_> = indexes
+            .iter()
+            .filter(|(name, _, _, _, _)| {
+                name.contains("organizations_name") || name.contains("organizations_skyll")
+            })
+            .collect();
+        assert!(
+            custom.len() >= 2,
+            "Should have at least 2 custom indexes, got {}",
+            custom.len()
+        );
+        for (name, _cols, _u, ty, _) in custom {
+            let t = ty.as_deref().unwrap_or("");
+            assert!(
+                !t.contains('}') && !t.contains('"'),
+                "Index {} type must not contain }} or \" - got '{}'",
+                name,
+                t
+            );
+            assert_eq!(t, "btree", "Index {} type should be 'btree'", name);
+        }
+    }
+
+    #[test]
+    fn test_extract_foreign_keys_multiple_formats() {
+        // Format 1: Compact single-line with trailing brace
+        let content1 = r#"foreign_keys: { fk_t1_org: { columns: ["organization_id"], foreign_table: "organizations", foreign_columns: ["id"], on_delete: "no action", on_update: "no action" } }"#;
+        let fks1 = GeneratorService::extract_foreign_keys_from_macro(content1).unwrap();
+        assert_eq!(fks1.len(), 1);
+        assert_eq!(fks1[0].column, "organization_id");
+        assert_eq!(fks1[0].references_table, "organizations");
+        assert_eq!(fks1[0].references_column, "id");
+
+        // Format 2: Multiple FKs, mixed formats
+        let content2 = r#"
+foreign_keys: {
+    fk_t2_org: { columns: ["organization_id"], foreign_table: "organizations", foreign_columns: ["id"], on_delete: "cascade", on_update: "cascade" },
+    fk_t2_owner: {
+        columns: ["owner_id"],
+        foreign_table: "accounts",
+        foreign_columns: ["id"],
+        on_delete: "set null",
+        on_update: "no action"
+    }
+}
+"#;
+        let fks2 = GeneratorService::extract_foreign_keys_from_macro(content2).unwrap();
+        assert_eq!(fks2.len(), 2);
+        assert_eq!(fks2[0].column, "organization_id");
+        assert_eq!(fks2[0].references_table, "organizations");
+        assert_eq!(fks2[0].on_delete.as_deref(), Some("cascade"));
+        assert_eq!(fks2[1].column, "owner_id");
+        assert_eq!(fks2[1].references_table, "accounts");
+        assert_eq!(fks2[1].references_column, "id");
+        assert_eq!(fks2[1].on_delete.as_deref(), Some("set null"));
+
+        // Format 3: Extra spacing, trailing comma
+        let content3 = r#"foreign_keys: { fk_t3_col: { columns: [ "ref_id" ] , foreign_table: "refs" , foreign_columns: [ "id" ] , on_delete: "no action" , on_update: "no action" , } }"#;
+        let fks3 = GeneratorService::extract_foreign_keys_from_macro(content3).unwrap();
+        assert_eq!(fks3.len(), 1);
+        assert_eq!(fks3[0].column, "ref_id");
+        assert_eq!(fks3[0].references_table, "refs");
+        assert_eq!(fks3[0].references_column, "id");
+    }
+
+    /// Ensures that when any table fails validation (e.g. invalid index name),
+    /// discovery aborts and returns Err instead of continuing with other tables.
+    #[test]
+    fn test_validation_failure_aborts_discovery() {
+        let temp = tempfile::tempdir().expect("temp dir");
+        let tables_dir = temp.path();
+        let bad_table_path = tables_dir.join("bad_items.rs");
+
+        // Index name idx_bad_items_sensor does not match format idx_{table}_{column}.
+        // For column sensor_id, expected name is idx_bad_items_sensor_id.
+        let content = r#"
+define_table_schema! {
+    fields: {
+        system_fields!(),
+        sensor_id: nullable(text()),
+    },
+    indexes: {
+        system_indexes!("bad_items"),
+        idx_bad_items_sensor: { columns: ["sensor_id"], unique: false, type: "btree" }
+    },
+    foreign_keys: { system_foreign_keys!("bad_items") }
+}
+"#;
+        std::fs::write(&bad_table_path, content).expect("write bad_items.rs");
+
+        let result = GeneratorService::discover_table_definitions_in_dir(tables_dir);
+
+        assert!(
+            result.is_err(),
+            "discovery should fail when table has validation error"
+        );
+        let err = result.unwrap_err();
+        assert!(
+            err.contains("validation failed") || err.contains("validation"),
+            "error should mention validation: {}",
+            err
+        );
+        assert!(
+            err.contains("Aborting"),
+            "error should indicate abort: {}",
+            err
+        );
+    }
+
+    #[test]
+    fn test_extract_indexes_with_where_clause() {
+        let content = r##"
+indexes: {
+    idx_samples_location: {
+        columns: ["location"],
+        unique: false,
+        type: "btree",
+        where: r#"{"op":"=","column":"location","value":"Active"}"#
+    }
+}
+"##;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert_eq!(indexes[0].0, "idx_samples_location");
+        assert_eq!(indexes[0].1, vec!["location"]);
+        assert!(indexes[0].4.is_some());
+        if let Some(crate::builders::generator::diesel_schema_definition::WhereExpr::Pred {
+            op,
+            column,
+            value,
+        }) = &indexes[0].4
+        {
+            assert_eq!(op, "=");
+            assert_eq!(column, "location");
+            assert_eq!(value.as_ref().and_then(|v| v.as_str()), Some("Active"));
+        } else {
+            panic!("expected Pred variant in WhereExpr ");
+        }
+    }
+
+    #[test]
+    fn test_extract_indexes_without_where() {
+        let content = r#"
+indexes: {
+    idx_foo_bar: {
+        columns: ["bar"],
+        unique: false,
+        type: "btree"
+    }
+}
+"#;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert!(indexes[0].4.is_none());
+    }
+
+    #[test]
+    fn test_extract_indexes_with_complex_where_and_or() {
+        let where_json = r#"{"and":[{"op":"=","column":"name","value":"John Doe"}]}"#;
+        let part1 = r###"indexes: { idx_samples_location_name: { columns: ["location", "name"], unique: false, type: "btree", where: r#" "###;
+        let part2 = r###" "# } }"###;
+        let content = format!("{}{}{}", part1, where_json, part2);
+        let indexes = GeneratorService::extract_indexes_from_macro(&content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert!(indexes[0].4.is_some());
+    }
+
+    #[test]
+    fn test_extract_indexes_with_where_block_format() {
+        let content = r##"
+indexes: {
+    idx_foo_location_name: {
+        columns: ["location", "name"],
+        unique: false,
+        type: "btree",
+        where: {
+            and: [
+                { op: "=", column: "location", value: "Active" },
+                { op: "=", column: "name", value: "John Doe" }
+            ]
+        }
+    }
+}
+"##;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert_eq!(indexes[0].0, "idx_foo_location_name");
+        assert_eq!(indexes[0].1, vec!["location", "name"]);
+        assert!(indexes[0].4.is_some());
+        if let Some(crate::builders::generator::diesel_schema_definition::WhereExpr::And {
+            and: and_exprs,
+        }) = &indexes[0].4
+        {
+            assert_eq!(and_exprs.len(), 2);
+            if let (
+                WhereExpr::Pred {
+                    op: o1,
+                    column: c1,
+                    value: v1,
+                },
+                WhereExpr::Pred {
+                    op: o2,
+                    column: c2,
+                    value: v2,
+                },
+            ) = (&and_exprs[0], &and_exprs[1])
+            {
+                assert_eq!(o1, "=");
+                assert_eq!(c1, "location");
+                assert_eq!(v1.as_ref().and_then(|x| x.as_str()), Some("Active"));
+                assert_eq!(o2, "=");
+                assert_eq!(c2, "name");
+                assert_eq!(v2.as_ref().and_then(|x| x.as_str()), Some("John Doe"));
+            } else {
+                panic!("expected two Pred in and");
+            }
+        } else {
+            panic!("expected And variant in WhereExpr");
+        }
+    }
+
+    #[test]
+    fn test_where_block_format_single_pred_parsed() {
+        let block = "idx_x: { columns: [\"a\"], unique: false, type: \"btree\", where: { op: \"=\", column: \"location\", value: \"Active\" } }";
+        let where_expr = GeneratorService::parse_where_from_index_block(block);
+        assert!(where_expr.is_some());
+        if let Some(WhereExpr::Pred { op, column, value }) = where_expr {
+            assert_eq!(op, "=");
+            assert_eq!(column, "location");
+            assert_eq!(value.as_ref().and_then(|v| v.as_str()), Some("Active"));
+        } else {
+            panic!("expected Pred");
+        }
+    }
+
+    /// Partial index like dx_school_admins_school_id_school_admin_id but with idx_ prefix.
+    /// Ensures where clause (status = 'Active') is parsed and column_names() can be used for validation.
+    #[test]
+    fn test_extract_index_with_where_clause_school_admins_style() {
+        let content = r#"
+        indexes: {
+            idx_school_admins_school_id_school_admin_id: {
+                columns: ["school_id", "school_admin_id"],
+                unique: true,
+                type: "btree",
+                where: {
+                    op: "=",
+                    column: "status",
+                    value: "Active"
+                }
+            },
+        }
+        "#;
+        let indexes = GeneratorService::extract_indexes_from_macro(content).unwrap();
+        assert_eq!(indexes.len(), 1);
+        assert_eq!(indexes[0].0, "idx_school_admins_school_id_school_admin_id");
+        assert_eq!(indexes[0].1, vec!["school_id", "school_admin_id"]);
+        assert!(indexes[0].2);
+        assert!(indexes[0].4.is_some());
+        let mut where_cols = indexes[0].4.as_ref().unwrap().column_names();
+        where_cols.sort();
+        assert_eq!(where_cols, vec!["status".to_string()]);
+    }
+}
