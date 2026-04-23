@@ -3,6 +3,7 @@ use diesel::sql_query;
 use diesel::sql_types::Text;
 use diesel::QueryableByName;
 use diesel_async::RunQueryDsl;
+use futures_util::{stream, StreamExt};
 use log::{debug, info};
 use redis::AsyncCommands;
 use serde::{Deserialize, Serialize};
@@ -73,9 +74,26 @@ impl GenerateSchemaService {
         // Get all table names from the database
         let tables = self.get_all_tables().await?;
 
-        // Process each table
-        for table in tables {
-            self.process_table(&table, &options).await?;
+        // Process tables concurrently with a bounded worker count to improve throughput.
+        let concurrency = std::env::var("SCHEMA_GENERATION_CONCURRENCY")
+            .ok()
+            .and_then(|value| value.parse::<usize>().ok())
+            .filter(|value| *value > 0)
+            .unwrap_or(8);
+        info!(
+            "Schema generation will process {} table(s) with concurrency={}",
+            tables.len(),
+            concurrency
+        );
+
+        let mut work = stream::iter(tables.into_iter().map(|table| {
+            let options = options.clone();
+            async move { self.process_table(&table, &options).await }
+        }))
+        .buffer_unordered(concurrency);
+
+        while let Some(result) = work.next().await {
+            result?;
         }
 
         Ok(())
@@ -196,9 +214,21 @@ impl GenerateSchemaService {
         options: &GenerateSchemaOptions,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
         let mut redis_conn = self.redis_client.get_async_connection().await?;
+        let hash_key = format!("schema:{}", table);
 
-        // Get table schema
-        let table_schema = self.get_table_schema(table).await?;
+        // Skip expensive schema generation when this table schema already exists in Redis.
+        let key_exists: bool = redis_conn.exists(&hash_key).await?;
+        if key_exists {
+            debug!("Skipping {} because Redis key '{}' already exists", table, hash_key);
+            return Ok(());
+        }
+
+        // Fetch metadata in parallel. Each helper grabs its own pooled DB connection.
+        let (table_schema, foreign_keys, indexes) = tokio::try_join!(
+            self.get_table_schema(table),
+            self.extract_foreign_keys(table),
+            self.get_table_indexes(table),
+        )?;
 
         // Format fields with related fields (simplified for now)
         let formatted_fields =
@@ -207,12 +237,10 @@ impl GenerateSchemaService {
         let schema_data = json!({
             "table_name": table,
             "column": serde_json::to_string(&table_schema)?,
-            "constraint": serde_json::to_string(&self.extract_foreign_keys(table).await?)?,
-            "index": serde_json::to_string(&self.get_table_indexes(table).await?)?,
+            "constraint": serde_json::to_string(&foreign_keys)?,
+            "index": serde_json::to_string(&indexes)?,
             "formatted_with_related_fields": serde_json::to_string(&formatted_fields)?,
         });
-
-        let hash_key = format!("schema:{}", table);
 
         // Save to Redis as hash
         for (key, value) in schema_data.as_object().unwrap() {

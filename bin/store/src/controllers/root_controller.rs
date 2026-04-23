@@ -88,6 +88,13 @@ create_root_wrapper!(root_upsert => upsert,
     query: actix_web::web::Query<crate::structs::core::QueryParams>
 );
 
+create_root_wrapper!(root_upsert_advanced => upsert_advanced,
+    auth: HttpRequest,
+    table_name: actix_web::web::Path<String>,
+    request_body: actix_web::web::Json<crate::structs::core::AdvancedUpsertRequestBody>,
+    query: actix_web::web::Query<crate::structs::core::QueryParams>
+);
+
 create_root_wrapper!(root_aggregation_filter => aggregation_filter,
     auth: HttpRequest,
     request_body: actix_web::web::Json<crate::structs::core::AggregationFilter>

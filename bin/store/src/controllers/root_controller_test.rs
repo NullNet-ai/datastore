@@ -2,6 +2,7 @@
 mod tests {
     use crate::config::core::EnvConfig;
     use base64::prelude::*;
+    use dotenv::{dotenv, from_path};
     use reqwest;
     use serde_json::json;
     use tokio;
@@ -18,12 +19,27 @@ mod tests {
         pub password: String,
     }
 
+    fn load_store_dotenv_for_tests() {
+        let _ = dotenv().ok();
+        if let Ok(dir) = std::env::var("CARGO_MANIFEST_DIR") {
+            let path = std::path::Path::new(&dir).join(".env");
+            if path.exists() {
+                let _ = from_path(path).ok();
+            }
+        }
+    }
+
+    fn env_config() -> EnvConfig {
+        load_store_dotenv_for_tests();
+        EnvConfig::default()
+    }
+
     /// Reusable login helper function that can be used across all tests
     /// Returns authentication data including token and session information
     /// Handles both online and offline scenarios gracefully
     async fn perform_login() -> AuthResponse {
         let client = reqwest::Client::new();
-        let config = EnvConfig::default();
+        let config = env_config();
         let base_url = format!("http://{}:{}", config.host, config.port);
 
         // Check server availability first
@@ -49,10 +65,11 @@ mod tests {
         // Attempt login with valid credentials (using root authentication)
         let payload = json!({
             "data": {
-               "account_id": "admin@dnamicro.com",
-                "account_secret": "ch@ng3m3Pl3@s3!!"
+                "account_id": "root",
+                "account_secret":"pl3@s3ch@ng3m3!!"
             }
         });
+
 
         let response = client
             .post(&format!("{}/api/organizations/auth?is_root=true", base_url))
@@ -151,7 +168,7 @@ mod tests {
         }
 
         let client = reqwest::Client::new();
-        let config = EnvConfig::default();
+        let config = env_config();
         let base_url = format!("http://{}:{}", config.host, config.port);
 
         // Get the account ID from the authenticated user (we'll use the admin account)
@@ -359,7 +376,7 @@ mod tests {
         }
 
         let client = reqwest::Client::new();
-        let config = EnvConfig::default();
+        let config = env_config();
         let base_url = format!("http://{}:{}", config.host, config.port);
 
         let account_id = "admin@dnamicro.com";
@@ -427,7 +444,7 @@ mod tests {
         }
 
         let client = reqwest::Client::new();
-        let config = EnvConfig::default();
+        let config = env_config();
         let base_url = format!("http://{}:{}", config.host, config.port);
 
         let account_id = "admin@dnamicro.com";
@@ -482,4 +499,231 @@ mod tests {
             }
         }
     }
+
+    async fn call_root_upsert_advanced(
+        client: &reqwest::Client,
+        base_url: &str,
+        token: &str,
+        table: &str,
+        payload: serde_json::Value,
+    ) -> (reqwest::StatusCode, String) {
+        let resp = client
+            .post(&format!(
+                "{}/api/store/root/advance_upsert/{}?pluck=id,name,status",
+                base_url, table
+            ))
+            .bearer_auth(token)
+            .json(&payload)
+            .timeout(std::time::Duration::from_secs(15))
+            .send()
+            .await;
+
+        match resp {
+            Ok(r) => {
+                let status = r.status();
+                let body_text = r
+                    .text()
+                    .await
+                    .unwrap_or_else(|_| "Failed to read response body".to_string());
+                (status, body_text)
+            }
+            Err(e) => (reqwest::StatusCode::INTERNAL_SERVER_ERROR, format!("{}", e)),
+        }
+    }
+
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_root_upsert_advanced_do_nothing_action() {
+        let auth_response = perform_login().await;
+
+        if !auth_response.is_authenticated {
+            println!("⚠ Skipping test: Unable to authenticate with server");
+            return;
+        }
+
+        let client = reqwest::Client::new();
+        let config = env_config();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+
+        let name = format!("global-organization");
+        let payload = json!({
+            "data": {
+                "name": name,
+                "status": "Active"
+            },
+            "conflict_columns": ["name", "status"],
+            "action": "do_nothing"
+        });
+
+        let (status, body_text) = call_root_upsert_advanced(
+            &client,
+            &base_url,
+            auth_response.token.as_ref().unwrap(),
+            "organizations",
+            payload,
+        )
+        .await;
+
+        if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
+            println!("  ✅ Endpoint responded (auth layer active): {}", status);
+            return;
+        }
+
+        assert!(
+            status.is_success(),
+            "Expected success status for do_nothing action, got: {} body: {}",
+            status,
+            body_text
+        );
+
+        let resp_json = serde_json::from_str::<serde_json::Value>(&body_text)
+            .unwrap_or_else(|_| json!({ "raw": body_text }));
+        assert!(
+            resp_json
+                .get("success")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false),
+            "Expected success=true, got: {}",
+            resp_json
+        );
+
+        let message = resp_json
+            .get("message")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        assert!(
+            message.contains("Record exists"),
+            "Expected message to indicate record exists, got: {}",
+            message
+        );
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_root_upsert_advanced_update_all_action() {
+        let auth_response = perform_login().await;
+
+        if !auth_response.is_authenticated {
+            println!("⚠ Skipping test: Unable to authenticate with server");
+            return;
+        }
+
+        let client = reqwest::Client::new();
+        let config = env_config();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+
+        let name = format!("Test Sample 1");
+        let payload = json!({
+            "data": {
+                "name": name,
+                "status": "Active"
+            },
+            "conflict_columns": ["name", "status"],
+            "action": "update_all"
+        });
+
+        let (status, body_text) = call_root_upsert_advanced(
+            &client,
+            &base_url,
+            auth_response.token.as_ref().unwrap(),
+            "samples",
+            payload,
+        )
+        .await;
+
+        if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
+            println!("  ✅ Endpoint responded (auth layer active): {}", status);
+            return;
+        }
+
+        assert!(
+            status.is_success(),
+            "Expected success status for update_all action, got: {} body: {}",
+            status,
+            body_text
+        );
+
+        let resp_json = serde_json::from_str::<serde_json::Value>(&body_text)
+            .unwrap_or_else(|_| json!({ "raw": body_text }));
+        assert!(
+            resp_json
+                .get("success")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false),
+            "Expected success=true, got: {}",
+            resp_json
+        );
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_root_upsert_advanced_update_fields_action() {
+        let auth_response = perform_login().await;
+
+        if !auth_response.is_authenticated {
+            println!("⚠ Skipping test: Unable to authenticate with server");
+            return;
+        }
+
+        let client = reqwest::Client::new();
+        let config = env_config();
+        let base_url = format!("http://{}:{}", config.host, config.port);
+
+        let name = format!("Test Sample 1");
+        let payload = json!({
+            "data": {
+                "name": name,
+                "status": "Updated"
+            },
+            "conflict_columns": ["name"],
+            "action": "update_fields",
+            "update_fields": ["status"]
+        });
+
+        if payload.get("action").and_then(|v| v.as_str()) == Some("update_fields") {
+            let update_fields_len = payload
+                .get("update_fields")
+                .and_then(|v| v.as_array())
+                .map(|a| a.len())
+                .unwrap_or(0);
+            assert!(
+                update_fields_len > 0,
+                "update_fields action requires update_fields to be provided and non-empty"
+            );
+        }
+
+        let (status, body_text) = call_root_upsert_advanced(
+            &client,
+            &base_url,
+            auth_response.token.as_ref().unwrap(),
+            "organizations",
+            payload,
+        )
+        .await;
+
+        if status == reqwest::StatusCode::UNAUTHORIZED || status == reqwest::StatusCode::FORBIDDEN {
+            println!("  ✅ Endpoint responded (auth layer active): {}", status);
+            return;
+        }
+
+        assert!(
+            status.is_success(),
+            "Expected success status for update_fields action, got: {} body: {}",
+            status,
+            body_text
+        );
+
+        let resp_json = serde_json::from_str::<serde_json::Value>(&body_text)
+            .unwrap_or_else(|_| json!({ "raw": body_text }));
+        assert!(
+            resp_json
+                .get("success")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(false),
+            "Expected success=true, got: {}",
+            resp_json
+        );
+    }
 }
+

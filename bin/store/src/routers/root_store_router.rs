@@ -8,7 +8,7 @@ use crate::controllers::root_controller::{
     root_prometheus_results,
     root_search_suggestions, root_switch_account, root_unsafe_select_query,
     root_unsafe_transaction_query, root_update_account_password, root_update_record, root_upsert,
-    root_verify_schema,
+    root_upsert_advanced, root_verify_schema,
 };
 use crate::middlewares::auth_middleware::Authentication;
 // use crate::middlewares::session_middleware::SessionMiddleware;
@@ -85,6 +85,7 @@ pub fn configure_root_store_routes(cfg: &mut ServiceConfig) {
             .route(
                 "/{table}/filter/suggestions",
                 web::post().to(root_search_suggestions),
-            ),
+            )
+            .route("/advance_upsert/{table}", web::post().to(root_upsert_advanced)),
     );
 }
