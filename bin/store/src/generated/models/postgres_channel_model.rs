@@ -1,6 +1,6 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use chrono::{NaiveDateTime};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
@@ -22,12 +22,11 @@ pub struct PostgresChannelModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
+    pub timestamp: Option<NaiveDateTime>,
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
     pub id: Option<String>,
-    #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,

@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use chrono::{NaiveDateTime};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
@@ -21,7 +22,7 @@ pub struct FileModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub timestamp: Option<NaiveDateTime>,
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
@@ -41,8 +42,8 @@ pub struct FileModel {
     pub uploaded_by: Option<String>,
     pub downloaded_by: Option<String>,
     pub etag: Option<String>,
-    pub version_id: Option<String>,
+    pub versionId: Option<String>,
     pub download_path: Option<String>,
-    pub presigned_url: Option<String>,
-    pub presigned_url_expire: Option<i32>,
+    pub presignedURL: Option<String>,
+    pub presignedURLExpires: Option<i32>,
 }

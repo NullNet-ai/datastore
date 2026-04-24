@@ -1,14 +1,16 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use chrono::{NaiveDateTime};
+#[allow(unused_imports)]
+use serde_json::Value;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::generated::schema::contacts)]
+#[diesel(table_name = crate::generated::schema::grid_filters)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct ContactModel {
+pub struct GridFilterModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -31,10 +33,20 @@ pub struct ContactModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub image_url: Option<String>,
-    pub first_name: Option<String>,
-    pub middle_name: Option<String>,
-    pub last_name: Option<String>,
-    pub date_of_birth: Option<String>,
-    pub address_id: Option<String>,
-    pub account_id: Option<String>,
+    pub name: Option<String>,
+    pub grid_id: Option<String>,
+    pub link: Option<String>,
+    pub is_current: Option<bool>,
+    pub is_default: Option<bool>,
+    pub contact_id: Option<String>,
+    pub account_organization_id: Option<String>,
+    pub entity: Option<String>,
+    #[serde(rename = "columns")]
+    pub columns_data: Option<serde_json::Value>,
+    pub groups: Option<serde_json::Value>,
+    pub sorts: Option<serde_json::Value>,
+    pub default_sorts: Option<serde_json::Value>,
+    pub advance_filters: Option<serde_json::Value>,
+    pub group_advance_filters: Option<serde_json::Value>,
+    pub filter_groups: Option<serde_json::Value>,
 }

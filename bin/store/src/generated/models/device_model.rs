@@ -1,8 +1,6 @@
-use crate::database::schema::common_defaults::default_sensitivity_level;
 use diesel::prelude::*;
-use diesel::{Insertable, Queryable};
-use ipnetwork::IpNetwork;
 use serde::{Deserialize, Serialize};
+use chrono::{NaiveDateTime};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
@@ -11,7 +9,6 @@ use serde::{Deserialize, Serialize};
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
 pub struct DeviceModel {
-    // System fields
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -25,26 +22,25 @@ pub struct DeviceModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
+    pub timestamp: Option<NaiveDateTime>,
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
     pub id: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
-    #[serde(default = "default_sensitivity_level")]
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub image_url: Option<String>,
-    pub model: Option<String>,
-    pub address_id: Option<String>,
-    pub instance_name: Option<String>,
-    pub is_connection_established: Option<bool>,
-    pub system_id: Option<String>,
+    pub is_traffic_monitoring_enabled: Option<bool>,
+    pub is_config_monitoring_enabled: Option<bool>,
+    pub is_telemetry_monitoring_enabled: Option<bool>,
+    pub is_device_authorized: Option<bool>,
+    pub device_uuid: Option<String>,
+    pub device_name: Option<String>,
+    pub device_category: Option<String>,
+    pub device_type: Option<String>,
+    pub device_os: Option<String>,
     pub device_version: Option<String>,
-    pub last_heartbeat: Option<String>,
-    pub is_monitoring_enabled: Option<bool>,
-    pub is_remote_access_enabled: Option<bool>,
-    pub ip_address: Option<IpNetwork>,
-    pub device_status: Option<String>,
-    pub device_gui_protocol: Option<String>,
+    pub is_device_online: Option<bool>,
+    pub address_id: Option<String>,
 }

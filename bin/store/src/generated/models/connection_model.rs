@@ -5,10 +5,10 @@ use chrono::{NaiveDateTime};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::generated::schema::contacts)]
+#[diesel(table_name = crate::generated::schema::connections)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct ContactModel {
+pub struct ConnectionModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -31,10 +31,15 @@ pub struct ContactModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub image_url: Option<String>,
-    pub first_name: Option<String>,
-    pub middle_name: Option<String>,
-    pub last_name: Option<String>,
-    pub date_of_birth: Option<String>,
-    pub address_id: Option<String>,
-    pub account_id: Option<String>,
+    pub interface_name: Option<String>,
+    pub total_packet: Option<i32>,
+    pub total_byte: Option<i32>,
+    pub device_id: Option<String>,
+    pub protocol: Option<String>,
+    pub source_ip: Option<String>,
+    pub destination_ip: Option<String>,
+    pub remote_ip: Option<String>,
+    pub source_port: Option<i32>,
+    pub destination_port: Option<i32>,
+    pub hypertable_timestamp: Option<String>,
 }

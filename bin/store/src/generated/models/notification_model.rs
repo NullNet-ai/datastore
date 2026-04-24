@@ -1,14 +1,16 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use chrono::{NaiveDateTime};
+#[allow(unused_imports)]
+use serde_json::Value;
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::generated::schema::contacts)]
+#[diesel(table_name = crate::generated::schema::notifications)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct ContactModel {
+pub struct NotificationModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -31,10 +33,18 @@ pub struct ContactModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub image_url: Option<String>,
-    pub first_name: Option<String>,
-    pub middle_name: Option<String>,
-    pub last_name: Option<String>,
-    pub date_of_birth: Option<String>,
-    pub address_id: Option<String>,
-    pub account_id: Option<String>,
+    pub title: Option<String>,
+    pub description: Option<String>,
+    pub event_timestamp: Option<String>,
+    pub link: Option<String>,
+    pub icon: Option<String>,
+    pub source: Option<String>,
+    pub is_pinned: Option<bool>,
+    pub recipient_id: Option<String>,
+    pub actions: Option<serde_json::Value>,
+    pub unread: Option<String>,
+    pub low: Option<String>,
+    pub priority_level: Option<i32>,
+    pub expiry_date: Option<String>,
+    pub metadata: Option<String>,
 }

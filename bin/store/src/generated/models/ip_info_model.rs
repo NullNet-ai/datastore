@@ -5,10 +5,10 @@ use chrono::{NaiveDateTime};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::generated::schema::contacts)]
+#[diesel(table_name = crate::generated::schema::ip_infos)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct ContactModel {
+pub struct IpInfoModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -31,10 +31,13 @@ pub struct ContactModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub image_url: Option<String>,
-    pub first_name: Option<String>,
-    pub middle_name: Option<String>,
-    pub last_name: Option<String>,
-    pub date_of_birth: Option<String>,
-    pub address_id: Option<String>,
-    pub account_id: Option<String>,
+    pub ip: Option<String>,
+    pub country: Option<String>,
+    pub asn: Option<String>,
+    pub org: Option<String>,
+    pub continent_code: Option<String>,
+    pub city: Option<String>,
+    pub region: Option<String>,
+    pub postal: Option<String>,
+    pub timezone: Option<String>,
 }

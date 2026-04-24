@@ -1,5 +1,6 @@
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
+use chrono::{NaiveDateTime};
 
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
@@ -21,7 +22,7 @@ pub struct UserRoleModel {
     pub updated_by: Option<String>,
     pub deleted_by: Option<String>,
     pub requested_by: Option<String>,
-    pub timestamp: Option<chrono::NaiveDateTime>,
+    pub timestamp: Option<NaiveDateTime>,
     pub tags: Option<Vec<String>>,
     pub categories: Option<Vec<String>>,
     pub code: Option<String>,
@@ -29,6 +30,7 @@ pub struct UserRoleModel {
     pub sensitivity_level: Option<i32>,
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
-    pub image_url: Option<String>,    pub role: Option<String>,
+    pub image_url: Option<String>,
+    pub role: Option<String>,
     pub entity: Option<String>,
 }

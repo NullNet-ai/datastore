@@ -5,10 +5,10 @@ use chrono::{NaiveDateTime};
 #[derive(
     Queryable, Selectable, Serialize, Default, Deserialize, Clone, AsChangeset, Insertable, Debug,
 )]
-#[diesel(table_name = crate::generated::schema::contacts)]
+#[diesel(table_name = crate::generated::schema::device_remote_access_sessions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
 #[serde(default)]
-pub struct ContactModel {
+pub struct DeviceRemoteAccessSessionModel {
     pub tombstone: Option<i32>,
     pub status: Option<String>,
     pub previous_status: Option<String>,
@@ -31,10 +31,13 @@ pub struct ContactModel {
     pub sync_status: Option<String>,
     pub is_batch: Option<bool>,
     pub image_url: Option<String>,
-    pub first_name: Option<String>,
-    pub middle_name: Option<String>,
-    pub last_name: Option<String>,
-    pub date_of_birth: Option<String>,
-    pub address_id: Option<String>,
-    pub account_id: Option<String>,
+    pub device_id: Option<String>,
+    pub remote_access_type: Option<String>,
+    pub remote_access_session: Option<String>,
+    pub remote_access_status: Option<String>,
+    pub instance_id: Option<String>,
+    pub remote_access_category: Option<String>,
+    pub remote_access_local_addr: Option<String>,
+    pub remote_access_local_port: Option<i32>,
+    pub remote_access_local_protocol: Option<String>,
 }
