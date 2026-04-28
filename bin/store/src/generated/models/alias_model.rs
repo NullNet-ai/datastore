@@ -32,10 +32,10 @@ pub struct AliasModel {
     pub is_batch: Option<bool>,
     pub image_url: Option<String>,
     pub device_configuration_id: Option<String>,
-    pub type: Option<String>,
+    pub type_: Option<String>,
     pub name: Option<String>,
     pub description: Option<String>,
     pub alias_status: Option<String>,
-    pub table: Option<String>,
+    pub table_: Option<String>,
     pub family: Option<String>,
 }

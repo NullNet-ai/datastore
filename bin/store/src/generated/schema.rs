@@ -17,7 +17,6 @@ table! {
     }
 }
 
-
 table! {
     user_roles(id) {
         tombstone -> Nullable<Int4>,
@@ -96,7 +95,6 @@ table! {
         is_encryptable -> Nullable<Bool>,
     }
 }
-
 
 table! {
     sessions(id) {
@@ -1307,7 +1305,7 @@ table! {
         advance_filters -> Nullable<Jsonb>,
         group_advance_filters -> Nullable<Jsonb>,
         filter_groups -> Nullable<Jsonb>,
-    }
+}
 }
 
 table! {
@@ -1746,7 +1744,7 @@ table! {
         chain -> Nullable<Text>,
         family -> Nullable<Text>,
         floating -> Nullable<Bool>,
-    }
+}
 }
 
 table! {
@@ -1774,13 +1772,13 @@ table! {
         is_batch -> Nullable<Bool>,
         image_url -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
-        type -> Nullable<Text>,
+        type_ -> Nullable<Text>,
         name -> Nullable<Text>,
         description -> Nullable<Text>,
         alias_status -> Nullable<Text>,
-        table -> Nullable<Text>,
+        table_ -> Nullable<Text>,
         family -> Nullable<Text>,
-    }
+}
 }
 
 table! {
@@ -1864,10 +1862,10 @@ table! {
         redirect_port -> Nullable<Int4>,
         order -> Nullable<Int4>,
         associated_rule_id -> Nullable<Text>,
-        table -> Nullable<Text>,
+        table_ -> Nullable<Text>,
         chain -> Nullable<Text>,
         family -> Nullable<Text>,
-    }
+}
 }
 
 table! {
@@ -2148,11 +2146,11 @@ table! {
         interface -> Nullable<Text>,
         order -> Nullable<Int4>,
         associated_rule_id -> Nullable<Text>,
-        table -> Nullable<Text>,
+        table_ -> Nullable<Text>,
         chain -> Nullable<Text>,
         family -> Nullable<Text>,
         floating -> Nullable<Bool>,
-    }
+}
 }
 
 table! {
@@ -2374,7 +2372,7 @@ table! {
         table -> Nullable<Text>,
         chain -> Nullable<Text>,
         family -> Nullable<Text>,
-    }
+}
 }
 
 table! {
@@ -2765,13 +2763,13 @@ table! {
         is_batch -> Nullable<Bool>,
         image_url -> Nullable<Text>,
         device_configuration_id -> Nullable<Text>,
-        type -> Nullable<Text>,
+        type_ -> Nullable<Text>,
         name -> Nullable<Text>,
         description -> Nullable<Text>,
         alias_status -> Nullable<Text>,
-        table -> Nullable<Text>,
+        table_ -> Nullable<Text>,
         family -> Nullable<Text>,
-    }
+}
 }
 
 table! {

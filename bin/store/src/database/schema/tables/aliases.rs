@@ -16,11 +16,11 @@ define_table_schema! {
         system_fields!(),
 
         device_configuration_id: nullable(text()),
-        type: nullable(text()),
+        type_: nullable(text()),
         name: nullable(text()),
         description: nullable(text()),
         alias_status: nullable(text()),
-        table: nullable(text()),
+        table_: nullable(text()),
         family: nullable(text()),
     },
     indexes: {
