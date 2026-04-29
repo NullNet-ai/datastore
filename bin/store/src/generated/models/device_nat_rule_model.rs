@@ -56,7 +56,7 @@ pub struct DeviceNatRuleModel {
     pub redirect_port: Option<i32>,
     pub order: Option<i32>,
     pub associated_rule_id: Option<String>,
-    pub table: Option<String>,
+    pub table_: Option<String>,
     pub chain: Option<String>,
     pub family: Option<String>,
 }

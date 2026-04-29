@@ -40,7 +40,7 @@ define_table_schema! {
         redirect_port: nullable(integer()),
         order: nullable(integer()),
         associated_rule_id: nullable(text()), default "",
-        table: nullable(text()),
+        table_: nullable(text()),
         chain: nullable(text()),
         family: nullable(text()),
     },

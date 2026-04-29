@@ -1740,7 +1740,7 @@ table! {
         interface -> Nullable<Text>,
         order -> Nullable<Int4>,
         associated_rule_id -> Nullable<Text>,
-        table -> Nullable<Text>,
+        table_ -> Nullable<Text>,
         chain -> Nullable<Text>,
         family -> Nullable<Text>,
         floating -> Nullable<Bool>,
@@ -2369,7 +2369,7 @@ table! {
         redirect_port -> Nullable<Int4>,
         order -> Nullable<Int4>,
         associated_rule_id -> Nullable<Text>,
-        table -> Nullable<Text>,
+        table_ -> Nullable<Text>,
         chain -> Nullable<Text>,
         family -> Nullable<Text>,
 }
